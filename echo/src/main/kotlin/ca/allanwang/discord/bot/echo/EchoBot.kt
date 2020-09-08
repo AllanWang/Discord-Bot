@@ -6,6 +6,7 @@ import com.gitlab.kordlib.core.on
 
 fun Kord.echoBot() {
     on<MessageCreateEvent> {
-
+        if (message.author?.isBot != false) return@on
+        if (message.content == "!ping") message.channel.createMessage("pong")
     }
 }
