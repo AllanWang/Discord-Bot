@@ -3,6 +3,7 @@
 /build
 .gradle
 /local.properties
+/priv.properties
 *.iml
 
 # Compiled class file

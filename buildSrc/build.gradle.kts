@@ -3,8 +3,6 @@ plugins {
     maven
 }
 
-group = "ca.allanwang"
-
 repositories {
     jcenter()
 }
