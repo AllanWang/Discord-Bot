@@ -1,23 +1,24 @@
 package ca.allanwang.discord.bot
 
 import ca.allanwang.discord.bot.core.BotFeature
-import ca.allanwang.discord.bot.core.create
 import ca.allanwang.discord.bot.echo.EchoBotModule
 import ca.allanwang.discord.bot.time.TimeBotModule
 import com.gitlab.kordlib.core.Kord
 import com.google.common.flogger.FluentLogger
+import dagger.BindsInstance
 import dagger.Component
+import javax.inject.Named
 import javax.inject.Singleton
 
 suspend fun main(args: Array<String>) {
 
     val logger = FluentLogger.forEnclosingClass()
 
-    val kord = Kord.create(args)
-
     logger.atInfo().log("Initialized Bot")
 
-    val component = DaggerBotComponent.create()
+    val component = DaggerBotComponent.builder().args(args).build()
+
+    val kord = Kord(component.token())
 
     val allFeatures = component.features()
 
@@ -56,10 +57,24 @@ suspend fun main(args: Array<String>) {
 @Singleton
 @Component(
     modules = [
+        BotModule::class,
         TimeBotModule::class,
         EchoBotModule::class
     ]
 )
 interface BotComponent {
+
+    @Named("kordToken")
+    fun token(): String
+
     fun features(): Set<@JvmSuppressWildcards BotFeature>
+
+    @Component.Builder
+    interface Builder {
+
+        @BindsInstance
+        fun args(args: Array<String>): Builder
+
+        fun build(): BotComponent
+    }
 }

@@ -20,4 +20,6 @@ object Dependencies {
     // https://github.com/Kotlin/kotlinx.coroutines/releases
     val coroutines = coroutines("core")
     fun coroutines(type: String) = "org.jetbrains.kotlinx:kotlinx-coroutines-${type}:${Versions.coroutines}"
+
+    const val googleMaps = "com.google.maps:google-maps-services:${Versions.googleMaps}"
 }

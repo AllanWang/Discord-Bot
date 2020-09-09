@@ -8,10 +8,10 @@ plugins {
 dependencies {
     implementation(kotlin("stdlib"))
     api(bot.Dependencies.firebase("admin"))
-    api(bot.Dependencies.flogger)
-    api(bot.Dependencies.coroutines)
     implementation(bot.Dependencies.dagger)
     kapt(bot.Dependencies.daggerKapt)
+
+    implementation(project(":core"))
 }
 
 tasks.withType<KotlinCompile> {

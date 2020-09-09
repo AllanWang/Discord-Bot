@@ -28,4 +28,7 @@ object Versions {
 
     // https://github.com/Kotlin/kotlinx.coroutines/releases
     const val coroutines = "1.3.9"
+
+    // https://github.com/googlemaps/google-maps-services-java/releases/tag/v0.15.0
+    const val googleMaps = "0.15.0"
 }

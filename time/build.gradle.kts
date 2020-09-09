@@ -12,6 +12,7 @@ dependencies {
 
     implementation(project(":core"))
     implementation(project(":firebase"))
+    implementation(project(":maps"))
 }
 
 tasks.withType<KotlinCompile> {

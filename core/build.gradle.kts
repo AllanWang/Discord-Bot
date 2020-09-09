@@ -8,6 +8,7 @@ plugins {
 dependencies {
     implementation(kotlin("stdlib"))
     implementation(bot.Dependencies.dagger)
+    kapt(bot.Dependencies.daggerKapt)
     api(bot.Dependencies.coroutines)
     api(bot.Dependencies.kord)
     api(bot.Dependencies.flogger)

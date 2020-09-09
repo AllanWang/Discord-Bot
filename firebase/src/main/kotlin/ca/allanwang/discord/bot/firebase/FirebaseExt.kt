@@ -13,14 +13,15 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 /*
  * Referenced https://stackoverflow.com/questions/57834950/how-to-handle-callback-using-kotlin-coroutines
  */
 
- val _firebase_coroutine_logger: FluentLogger = FluentLogger.forEnclosingClass()
+val _firebase_coroutine_logger: FluentLogger = FluentLogger.forEnclosingClass()
 
-suspend inline fun DatabaseReference.singleSnapshot(): DataSnapshot = withContext(Dispatchers.IO) {
+suspend fun DatabaseReference.singleSnapshot(): DataSnapshot = withContext(Dispatchers.IO) {
     suspendCancellableCoroutine { cont ->
         addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -43,7 +44,7 @@ suspend inline fun <reified T> DatabaseReference.single(): T? = withContext(Disp
     }
 }
 
-suspend inline fun DatabaseReference.listenSnapshot(): Flow<DataSnapshot> = withContext(Dispatchers.IO) {
+suspend fun DatabaseReference.listenSnapshot(): Flow<DataSnapshot> = withContext(Dispatchers.IO) {
     callbackFlow<DataSnapshot> {
         val valueListener = object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
@@ -68,5 +69,13 @@ suspend inline fun <reified T> DatabaseReference.listen(): Flow<T?> = withContex
             _firebase_coroutine_logger.atWarning().withCause(e).log("firebase listen")
             null
         }
+    }
+}
+
+suspend fun DatabaseReference.setValue(value: Any): Boolean = suspendCoroutine { cont ->
+    setValue(value) { error, _ ->
+        if (error != null)
+            _firebase_coroutine_logger.atInfo().log("Set failed")
+        cont.resume(error == null)
     }
 }
