@@ -7,18 +7,11 @@ plugins {
 
 dependencies {
     implementation(kotlin("stdlib"))
-    implementation(project(":core"))
-    implementation(project(":echo"))
-    implementation(project(":firebase"))
-    implementation(project(":time"))
-
-
     implementation(bot.Dependencies.dagger)
     kapt(bot.Dependencies.daggerKapt)
 
-    implementation(bot.Dependencies.slf4j("simple"))
-//    implementation(bot.Dependencies.flogger("slf4j-backend"))
-    implementation(bot.Dependencies.flogger("system-backend"))
+    implementation(project(":core"))
+    implementation(project(":firebase"))
 }
 
 tasks.withType<KotlinCompile> {

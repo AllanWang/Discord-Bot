@@ -6,6 +6,13 @@ import java.io.File
 import java.io.FileInputStream
 import java.util.*
 
+interface BotFeature {
+
+    suspend fun init(): Boolean = true
+
+    suspend fun Kord.attach()
+}
+
 suspend fun Kord.Companion.create(args: Array<String>): Kord {
     val token = BotToken.fromArgs(args) ?: BotToken.fromProperties() ?: error("missing bot token")
     return Kord(token)

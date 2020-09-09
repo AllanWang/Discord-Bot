@@ -7,7 +7,9 @@ plugins {
 
 dependencies {
     implementation(kotlin("stdlib"))
-    implementation(bot.Dependencies.firebase("admin"))
+    api(bot.Dependencies.firebase("admin"))
+    api(bot.Dependencies.flogger)
+    api(bot.Dependencies.coroutines)
     implementation(bot.Dependencies.dagger)
     kapt(bot.Dependencies.daggerKapt)
 }

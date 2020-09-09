@@ -10,6 +10,7 @@ object Gradle {
     private const val time = "-Xopt-in=kotlin.time.ExperimentalTime"
     private const val stdLib = "-Xopt-in=kotlin.ExperimentalStdlibApi"
     private const val optIn = "-Xopt-in=kotlin.RequiresOptIn"
+    private const val newInference = "-XXLanguage:+NewInference"
 
     val compilerArgs: List<String> = listOf(
         coroutines,
