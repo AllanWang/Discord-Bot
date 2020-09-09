@@ -15,4 +15,14 @@ object Versions {
 
     // https://github.com/google/flogger
     const val flogger = "0.5.1"
+
+    // https://github.com/JetBrains/Exposed/releases
+    // https://bintray.com/kotlin/exposed/exposed-core
+    const val exposed = "0.27.1"
+
+    // https://firebase.google.com/docs/admin/setup#add-sdk
+    const val firebase = "7.0.0"
+
+    // https://github.com/google/dagger/releases/tag/dagger-2.28.3
+    const val dagger = "2.28.3"
 }
