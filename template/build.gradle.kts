@@ -7,10 +7,6 @@ plugins {
 dependencies {
     implementation(kotlin("stdlib"))
     implementation(project(":core"))
-    implementation(project(":echo"))
-    implementation(bot.Dependencies.slf4j("simple"))
-    implementation(bot.Dependencies.flogger("slf4j-backend"))
-    implementation(bot.Dependencies.flogger("system-backend"))
 }
 
 tasks.withType<KotlinCompile> {

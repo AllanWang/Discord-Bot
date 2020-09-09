@@ -6,3 +6,4 @@ findProject(":buildSrc")?.name = "gradle-plugin"
 include("core")
 include("echo")
 include("bot")
+include("game")

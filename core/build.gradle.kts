@@ -7,6 +7,7 @@ plugins {
 dependencies {
     implementation(kotlin("stdlib"))
     api(bot.Dependencies.kord)
+    api(bot.Dependencies.flogger)
 }
 
 tasks.withType<KotlinCompile> {
