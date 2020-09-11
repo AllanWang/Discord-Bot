@@ -9,9 +9,15 @@ import com.gitlab.kordlib.core.behavior.channel.createEmbed
 import com.gitlab.kordlib.core.event.message.MessageCreateEvent
 import com.gitlab.kordlib.core.on
 import com.google.common.flogger.FluentLogger
+import com.google.maps.model.AddressType
+import com.google.maps.model.GeocodingResult
 import dagger.Module
 import dagger.Provides
 import dagger.multibindings.IntoSet
+import java.awt.Color
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.*
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -21,7 +27,9 @@ class TimeBot @Inject constructor(
     private val mapApi: MapsApi
 ) : BotFeature {
 
-    val logger = FluentLogger.forEnclosingClass()
+    private val logger = FluentLogger.forEnclosingClass()
+    private val dateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
+
 
     override suspend fun Kord.attach() {
         on<MessageCreateEvent> {
@@ -29,7 +37,7 @@ class TimeBot @Inject constructor(
             when {
                 message.content == "!time" ->
                     getTimezone()
-                message.content.startsWith("!loc") ->
+                message.content.startsWith("!timezone ") ->
                     setTimezone(message.content.substringAfter(' '))
             }
         }
@@ -39,20 +47,63 @@ class TimeBot @Inject constructor(
 
     }
 
+    private fun TimeZone.worldEmoji(): String {
+        val utcOffset = rawOffset / 3600000
+        logger.atFine().log("Utf offset %d", utcOffset)
+        return when (utcOffset) {
+            in -1..4 -> ":earth_africa:"
+            in 5..11 -> ":earth_asia:"
+            else -> ":earth_americas:"
+        }
+    }
+
+    private fun LocalDateTime.clockEmoji(): String {
+        val hourString = (hour % 12).let { if (it == 0) 12 else it }.toString()
+        val minuteString = if (minute in 20..40) "30" else ""
+        return ":clock${hourString}${minuteString}:"
+    }
+
+    suspend fun getTimezone(query: String): TimeZone? {
+        val result = getGeocode(query).firstOrNull() ?: return null
+        result.addressComponents
+        val latLng = result.geometry.location
+        return getTimezone(latLng)
+    }
+
+    private suspend fun getGeocode(query: String): GeocodingResult? = mapApi.getGeocode(query).firstOrNull {
+        it.types.contains(AddressType.LOCALITY)
+    }
+
     private suspend fun MessageCreateEvent.setTimezone(query: String) {
 
-        fun failure() {
-
+        suspend fun failure() {
+            message.channel.createMessage("Failed to set timezone")
         }
 
         logger.atInfo().log("Query %s", query)
-        val result = mapApi.getTimezone(query) ?: return
-
+        val geocode = getGeocode(query) ?: return failure()
+        val result = mapApi.getTimezone(geocode.geometry.location) ?: return failure()
+        logger.atFine().log("Received %s", result.displayName)
         message.channel.createEmbed {
-            title = "Set Timezone"
-            description = "Setting timezone to ${result.displayName}"
+            color = Color.decode("#03a5fc")
+            title = "Timezone Set"
+            field {
+                value = buildString {
+                    append(result.worldEmoji())
+                    append(' ')
+                    append(result.displayName)
+                }
+            }
+
+            field {
+                val dateTime = LocalDateTime.now(result.toZoneId())
+                value = buildString {
+                    append(dateTime.clockEmoji())
+                    append(' ')
+                    append(dateTime.format(dateTimeFormatter))
+                }
+            }
         }
-        message.channel.createMessage("Results ${result.size} ${result.joinToString("\n\n")}")
     }
 }
 

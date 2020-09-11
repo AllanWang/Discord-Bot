@@ -12,12 +12,6 @@ import javax.inject.Inject
 
 interface MapsApi {
 
-    suspend fun getTimezone(query: String): TimeZone? {
-        val result = getGeocode(query).firstOrNull() ?: return null
-        val latLng = result.geometry.location
-        return getTimezone(latLng)
-    }
-
     suspend fun getGeocode(query: String): Array<GeocodingResult>
 
     suspend fun getTimezone(latLng: LatLng): TimeZone?
