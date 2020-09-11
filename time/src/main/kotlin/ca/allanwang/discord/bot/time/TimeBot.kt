@@ -63,13 +63,6 @@ class TimeBot @Inject constructor(
         return ":clock${hourString}${minuteString}:"
     }
 
-    suspend fun getTimezone(query: String): TimeZone? {
-        val result = getGeocode(query).firstOrNull() ?: return null
-        result.addressComponents
-        val latLng = result.geometry.location
-        return getTimezone(latLng)
-    }
-
     private suspend fun getGeocode(query: String): GeocodingResult? = mapApi.getGeocode(query).firstOrNull {
         it.types.contains(AddressType.LOCALITY)
     }

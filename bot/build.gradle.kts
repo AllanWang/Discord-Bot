@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     kotlin("jvm") version bot.Versions.kotlin
     kotlin("kapt") version bot.Versions.kotlin
+    java
 }
 
 dependencies {
@@ -26,5 +27,23 @@ tasks.withType<KotlinCompile> {
     kotlinOptions {
         jvmTarget = bot.Gradle.jvmTarget
         freeCompilerArgs = bot.Gradle.compilerArgs
+    }
+}
+
+val fatJar = task("fatJar", type = Jar::class) {
+    archiveBaseName.set("${project.name}-fat")
+    manifest {
+        attributes["Implementation-Title"] = "Discord Bot Jar"
+        attributes["Implementation-Version"] = bot.Versions.botVersion
+        attributes["Main-Class"] = "ca.allanwang.discord.bot.Bot"
+    }
+    exclude("META-INF/*.RSA", "META-INF/*.SF", "META-INF/*.DSA")
+    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+    with(tasks.jar.get() as CopySpec)
+}
+
+tasks {
+    "build" {
+        dependsOn(fatJar)
     }
 }

@@ -1,3 +1,5 @@
+@file:JvmName("Bot")
+
 package ca.allanwang.discord.bot
 
 import ca.allanwang.discord.bot.core.BotFeature
