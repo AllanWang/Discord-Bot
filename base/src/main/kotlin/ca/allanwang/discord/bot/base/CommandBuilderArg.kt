@@ -1,51 +1,131 @@
 package ca.allanwang.discord.bot.base
 
 import com.gitlab.kordlib.core.event.message.MessageCreateEvent
+import com.gitlab.kordlib.rest.builder.message.EmbedBuilder
+import com.google.common.flogger.FluentLogger
 
 @DslMarker
 @Target(AnnotationTarget.CLASS)
 annotation class BotCommandDsl
 
-@BotCommandDsl
-interface CommandBuilderActionDsl {
-    var help: String?
+typealias CommandHandlerAction = suspend CommandHandlerEvent.() -> Unit
 
-    var action: CommandHandler
+class CommandHandlerEvent(val event: MessageCreateEvent, val command: String, val message: String) {
+    val channel get() = event.message.channel
+    val authorId get() = event.message.author?.id
+
+    fun EmbedBuilder.userFooter() {
+        footer
+        val tag = event.message.author?.tag
+        if (tag != null) footer {
+            text = tag
+        }
+    }
+}
+
+interface CommandHandler {
+
+    val type: Type
+
+    val keys: Set<String>
+
+    suspend fun handle(event: MessageCreateEvent, message: String)
+
+    enum class Type {
+        Prefix, Mention
+    }
 }
 
 @BotCommandDsl
-interface CommandBuilderArgDsl {
+interface CommandBuilderRootDsl {
 
     var help: String?
 
     fun arg(arg: String, help: String? = null, block: CommandBuilderArgDsl.() -> Unit)
 
-    fun action(help: String? = null, action: suspend (event: MessageCreateEvent, message: String) -> Unit)
+}
+
+@BotCommandDsl
+interface CommandBuilderArgDsl : CommandBuilderRootDsl {
+
+    fun action(
+        withMessage: Boolean,
+        help: String? = null,
+        action: CommandHandlerAction
+    )
 
 }
 
-interface CommandHandler {
-    suspend fun handle(event: MessageCreateEvent, message: String)
+@BotCommandDsl
+interface CommandBuilderActionDsl {
+    var help: String?
+
+    var withMessage: Boolean
+
+    var action: CommandHandlerAction
 }
 
-fun commandBuilder(arg: String, block: CommandBuilderArgDsl.() -> Unit): CommandHandler =
-    CommandBuilderRoot(arg = arg).apply(block).also { it.finish() }
+interface CommandHandlerBot {
+    val handler: CommandHandler
+}
 
-internal class CommandBuilderRoot(arg: String) : CommandBuilderArg("", arg = arg) {
+fun commandBuilder(type: CommandHandler.Type, block: CommandBuilderRootDsl.() -> Unit): CommandHandler =
+    CommandBuilderRoot(type).apply(block).also { it.finish() }
 
-    override suspend fun handle(event: MessageCreateEvent, message: String) {
-        if (!message.startsWith(arg)) return
-        super.handle(event, message.substringAfter(arg))
+internal open class CommandBuilderBase : CommandBuilderRootDsl {
+
+    companion object {
+        private val logger = FluentLogger.forEnclosingClass()
+    }
+
+    protected var children: MutableMap<String, CommandBuilderArg> = mutableMapOf()
+
+    val keys: Set<String> get() = children.keys
+
+    suspend fun handle(event: MessageCreateEvent, message: String) {
+        handleImpl(event, message)
+    }
+
+    override var help: String? = null
+
+    protected open suspend fun handleImpl(event: MessageCreateEvent, message: String): Boolean {
+        val key = message.substringBefore(' ')
+        logger.atFine().log("Test key %s in %s", key, keys)
+        val argHandler = children[key]
+        val subMessage = if (key == message) "" else message.substringAfter(' ')
+        if (argHandler != null) {
+            argHandler.handle(event, subMessage)
+            return true
+        }
+        return false
+    }
+
+    override fun arg(arg: String, help: String?, block: CommandBuilderArgDsl.() -> Unit) {
+        val builder = CommandBuilderArg("", arg).apply {
+            this.help = help
+            block()
+            finish()
+        }
+        children[builder.arg] = builder
+    }
+
+    internal fun finish() {
+        children = children.toSortedMap()
     }
 }
 
-internal open class CommandBuilderArg(val prefix: String, val arg: String) : CommandBuilderArgDsl, CommandHandler {
+internal class CommandBuilderRoot(override val type: CommandHandler.Type) : CommandBuilderBase(), CommandBuilderRootDsl,
+    CommandHandler
 
-    private var children: MutableMap<String, CommandBuilderArg> = mutableMapOf()
+internal class CommandBuilderArg(
+    val prefix: String, val arg: String
+) : CommandBuilderBase(), CommandBuilderArgDsl {
+
+    companion object {
+        private val logger = FluentLogger.forEnclosingClass()
+    }
 
     private var action: CommandBuilderAction? = null
-
-    override var help: String? = null
 
     private val command: String = if (prefix.isBlank()) arg else "$prefix $arg"
 
@@ -60,14 +140,17 @@ internal open class CommandBuilderArg(val prefix: String, val arg: String) : Com
 //        }
 //    }
 
-    override suspend fun handle(event: MessageCreateEvent, message: String) {
-        val key = message.substringBefore(' ')
-        val argHandler = children[key]
-        if (argHandler != null) {
-            argHandler.handle(event, message.substringAfter(' '))
-            return
-        }
-        action?.handle(event, message)
+    override suspend fun handleImpl(event: MessageCreateEvent, message: String): Boolean {
+        if (super.handleImpl(event, message)) return true
+        val action = action ?: return false
+        val actionEvent = CommandHandlerEvent(
+            command = command,
+            event = event,
+            message = message
+        )
+        if (action.withMessage) action.action(actionEvent)
+        else if (message.isBlank()) action.action(actionEvent)
+        return true
     }
 
     override fun arg(arg: String, help: String?, block: CommandBuilderArgDsl.() -> Unit) {
@@ -79,37 +162,36 @@ internal open class CommandBuilderArg(val prefix: String, val arg: String) : Com
         children[builder.arg] = builder
     }
 
-    override fun action(help: String?, action: suspend (event: MessageCreateEvent, message: String) -> Unit) {
+    override fun action(
+        withMessage: Boolean,
+        help: String?,
+        action: CommandHandlerAction
+    ) {
         val builder = CommandBuilderAction().apply {
+            this.withMessage = withMessage
             this.help = help
-            this.action = object : CommandHandler {
-                override suspend fun handle(event: MessageCreateEvent, message: String) {
-                    action(event, message)
-                }
-            }
+            this.action = action
             finish()
         }
         this.action = builder
     }
-
-    internal fun finish() {
-        children.toSortedMap()
-    }
 }
 
-internal class CommandBuilderAction : CommandBuilderActionDsl, CommandHandler {
+internal class CommandBuilderAction : CommandBuilderActionDsl {
 
-    override var help: String? = null
+    companion object {
+        private val logger = FluentLogger.forEnclosingClass()
 
-    override var action: CommandHandler = object : CommandHandler {
-        override suspend fun handle(event: MessageCreateEvent, message: String) {
-
+        private val HANDLER_NOOP: CommandHandlerAction = {
+            logger.atWarning().log("NOOP Called")
         }
     }
 
-    override suspend fun handle(event: MessageCreateEvent, message: String) {
-        action.handle(event, message)
-    }
+    override var help: String? = null
+
+    override var withMessage: Boolean = false
+
+    override var action: CommandHandlerAction = HANDLER_NOOP
 
     internal fun finish() {
 

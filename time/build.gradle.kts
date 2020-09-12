@@ -11,6 +11,7 @@ dependencies {
     kapt(bot.Dependencies.daggerKapt)
 
     implementation(project(":core"))
+    implementation(project(":base"))
     implementation(project(":firebase"))
     implementation(project(":maps"))
 }

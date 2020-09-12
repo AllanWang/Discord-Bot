@@ -1,9 +1,5 @@
-package ca.allanwang.discord.bot.echo
+package ca.allanwang.discord.bot.base
 
-import ca.allanwang.discord.bot.base.BotPrefixModule
-import ca.allanwang.discord.bot.base.CommandHandler
-import ca.allanwang.discord.bot.base.CommandHandlerBot
-import ca.allanwang.discord.bot.base.commandBuilder
 import com.google.common.flogger.FluentLogger
 import dagger.Module
 import dagger.Provides
@@ -12,16 +8,17 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class EchoBot @Inject constructor(
+class PrefixBot @Inject constructor(
 ) : CommandHandlerBot {
 
     companion object {
         private val logger = FluentLogger.forEnclosingClass()
     }
 
-    override val handler = commandBuilder(CommandHandler.Type.Prefix) {
-        arg("echo") {
+    override val handler = commandBuilder(CommandHandler.Type.Mention) {
+        arg("prefix") {
             action(withMessage = true) {
+                logger.atInfo().log("Prefix action")
                 channel.createMessage(message)
             }
         }
@@ -29,10 +26,10 @@ class EchoBot @Inject constructor(
 }
 
 @Module(includes = [BotPrefixModule::class])
-object EchoBotModule {
+object PrefixBotModule {
 
     @Provides
     @IntoSet
     @Singleton
-    fun bot(bot: EchoBot): CommandHandlerBot = bot
+    fun bot(bot: PrefixBot): CommandHandlerBot = bot
 }

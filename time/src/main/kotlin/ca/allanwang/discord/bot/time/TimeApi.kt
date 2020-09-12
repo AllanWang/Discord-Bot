@@ -2,6 +2,7 @@ package ca.allanwang.discord.bot.time
 
 import ca.allanwang.discord.bot.firebase.setValue
 import ca.allanwang.discord.bot.firebase.single
+import com.gitlab.kordlib.common.entity.Snowflake
 import com.google.common.flogger.FluentLogger
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
@@ -18,11 +19,9 @@ class TimeApi @Inject constructor(
     private val timeRef: DatabaseReference
         get() = firebaseDatabase.reference.child("time")
 
-    suspend fun getTime(id: Int): Int? {
-        return timeRef.child(id.toString()).single<Int>()
-    }
+    suspend fun getTime(id: Snowflake): String? =
+        timeRef.child(id.value).single<String>()
 
-    suspend fun saveTime(id: Int, key: Int) {
-        timeRef.child(id.toString()).setValue(key)
-    }
+    suspend fun saveTime(id: Snowflake, value: String): Boolean =
+        timeRef.child(id.value).setValue(value)
 }

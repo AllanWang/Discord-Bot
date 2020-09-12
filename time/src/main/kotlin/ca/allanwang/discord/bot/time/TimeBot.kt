@@ -1,13 +1,14 @@
 package ca.allanwang.discord.bot.time
 
-import ca.allanwang.discord.bot.core.BotFeature
+import ca.allanwang.discord.bot.base.CommandHandler
+import ca.allanwang.discord.bot.base.CommandHandlerBot
+import ca.allanwang.discord.bot.base.CommandHandlerEvent
+import ca.allanwang.discord.bot.base.commandBuilder
 import ca.allanwang.discord.bot.firebase.FirebaseModule
 import ca.allanwang.discord.bot.maps.MapsApi
 import ca.allanwang.discord.bot.maps.MapsModule
-import com.gitlab.kordlib.core.Kord
 import com.gitlab.kordlib.core.behavior.channel.createEmbed
-import com.gitlab.kordlib.core.event.message.MessageCreateEvent
-import com.gitlab.kordlib.core.on
+import com.gitlab.kordlib.rest.builder.message.EmbedBuilder
 import com.google.common.flogger.FluentLogger
 import com.google.maps.model.AddressType
 import com.google.maps.model.GeocodingResult
@@ -25,26 +26,32 @@ import javax.inject.Singleton
 class TimeBot @Inject constructor(
     private val timeApi: TimeApi,
     private val mapApi: MapsApi
-) : BotFeature {
+) : CommandHandlerBot {
 
     private val logger = FluentLogger.forEnclosingClass()
-    private val dateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
+    private val dateTimeFormatter = DateTimeFormatter.ofPattern("h:mm a")
     private val embedColor = Color.decode("#03a5fc")
 
-    override suspend fun Kord.attach() {
-        on<MessageCreateEvent> {
-            if (message.author?.isBot == true) return@on
-            when {
-                message.content == "!time" ->
-                    getTimezone()
-                message.content.startsWith("!timezone ") ->
-                    setTimezone(message.content.substringAfter(' '))
+    override val handler = commandBuilder(CommandHandler.Type.Prefix) {
+        arg("timezone") {
+            action(withMessage = true) {
+                logger.atInfo().log("action")
+                if (message.isBlank()) getTimezone()
+                else setTimezone(message)
             }
         }
     }
 
-    private suspend fun MessageCreateEvent.getTimezone() {
-
+    private suspend fun CommandHandlerEvent.getTimezone() {
+        logger.atFine().log()
+        val authorId = authorId ?: return
+        val timezone = timeApi.getTime(authorId)?.let { TimeZone.getTimeZone(it) }
+        if (timezone == null) channel.createMessage("No timezone set; use `$command [city]`")
+        else channel.createEmbed {
+            color = embedColor
+            title = "Saved timezone"
+            addTimezoneInfo(timezone)
+        }
     }
 
     private fun TimeZone.worldEmoji(): String {
@@ -67,35 +74,44 @@ class TimeBot @Inject constructor(
         it.types.contains(AddressType.LOCALITY)
     }
 
-    private suspend fun MessageCreateEvent.setTimezone(query: String) {
-
-        suspend fun failure() {
-            message.channel.createMessage("Failed to set timezone")
+    private fun EmbedBuilder.addTimezoneInfo(timeZone: TimeZone) {
+        field {
+            name = buildString {
+                append(timeZone.worldEmoji())
+                append(' ')
+                append("TimeZone")
+            }
+            value = timeZone.displayName
         }
-member
+        field {
+            val dateTime = LocalDateTime.now(timeZone.toZoneId())
+            name = buildString {
+                append(dateTime.clockEmoji())
+                append(' ')
+                append("Time")
+            }
+            value = dateTime.format(dateTimeFormatter)
+        }
+    }
+
+    private suspend fun CommandHandlerEvent.setTimezone(query: String) {
+        val authorId = authorId ?: return
+        suspend fun failure(message: String) {
+            channel.createMessage(message)
+        }
         logger.atInfo().log("Query %s", query)
-        val geocode = getGeocode(query) ?: return failure()
-        val result = mapApi.getTimezone(geocode.geometry.location) ?: return failure()
+        val geocode = getGeocode(query) ?: return failure("Could not find timezone")
+        val result = mapApi.getTimezone(geocode.geometry.location)
+            ?: return failure("Failed to set timezone")
         logger.atFine().log("Received %s", result.displayName)
-        message.channel.createEmbed {
+
+        if (!timeApi.saveTime(authorId, result.id))
+            return failure("Failed to save timezone")
+
+        channel.createEmbed {
             color = embedColor
             title = "Timezone Set"
-            field {
-                value = buildString {
-                    append(result.worldEmoji())
-                    append(' ')
-                    append(result.displayName)
-                }
-            }
-
-            field {
-                val dateTime = LocalDateTime.now(result.toZoneId())
-                value = buildString {
-                    append(dateTime.clockEmoji())
-                    append(' ')
-                    append(dateTime.format(dateTimeFormatter))
-                }
-            }
+            addTimezoneInfo(result)
         }
     }
 }
@@ -105,5 +121,5 @@ object TimeBotModule {
     @Provides
     @IntoSet
     @Singleton
-    fun botFeature(timebot: TimeBot): BotFeature = timebot
+    fun bot(bot: TimeBot): CommandHandlerBot = bot
 }

@@ -2,7 +2,7 @@
 
 package ca.allanwang.discord.bot
 
-import ca.allanwang.discord.bot.base.PrefixBot
+import ca.allanwang.discord.bot.base.PrefixBotFeatureModule
 import ca.allanwang.discord.bot.core.BotFeature
 import ca.allanwang.discord.bot.echo.EchoBotModule
 import ca.allanwang.discord.bot.time.TimeBotModule
@@ -61,7 +61,7 @@ suspend fun main(args: Array<String>) {
 @Singleton
 @Component(
     modules = [
-        PrefixBot::class,
+        PrefixBotFeatureModule::class,
         TimeBotModule::class,
         EchoBotModule::class
     ]

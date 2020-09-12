@@ -11,38 +11,52 @@ import dagger.multibindings.IntoSet
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Prefix feature bot.
+ *
+ * This bot is in charge of all [CommandHandlerBot]s with [CommandHandler.Type.Prefix].
+ *
+ * Each message is checked against the prefix, before being fed to the handler with a matching key (first word)
+ */
 @Singleton
 class BotPrefixGroupFeature @Inject constructor(
     private val prefixSupplier: BotPrefixSupplier,
-    private val handlers: Set<@JvmSuppressWildcards CommandHandler>
+    handlers: Set<@JvmSuppressWildcards CommandHandlerBot>
 ) : BotFeature {
 
     companion object {
         private val logger = FluentLogger.forEnclosingClass()
     }
 
+    private val handlers = handlers.map { it.handler }.filter { it.type == CommandHandler.Type.Prefix }
+
     override suspend fun Kord.attach() {
-        logger.atInfo().log("Loaded handler %s", handlers.map { it::class.simpleName })
+        logger.atInfo().log("Loaded prefix handler %s", handlers.map { it::class.simpleName })
+        val expectedCandidateCount = handlers.map { it.keys.size }.sum()
+        val candidates = handlers.flatMap { handler -> handler.keys.map { it to handler } }.toMap()
+        if (candidates.size != expectedCandidateCount) {
+            val duplicates = handlers.flatMap { it.keys }.groupBy { it }.filter { it.value.size > 1 }.keys
+            logger.atWarning().log("Duplicate commands found: %s", duplicates)
+        }
         on<MessageCreateEvent> {
             if (message.author?.isBot == true) return@on
             val prefix = prefixSupplier.prefix()
             if (!message.content.startsWith(prefix)) return@on
+            logger.atFine().log("Prefix matched")
             val actualMessage = message.content.substringAfter(prefix)
-            logger.atInfo().log("Prefix matched")
-            handlers.forEach { handler ->
-                runCatching {
-                    handler.handle(this, actualMessage)
-                }.onFailure {
-                    logger.atWarning().withCause(it).log("Failure for %s", handler::class.simpleName)
-                }
+            val key = actualMessage.substringBefore(' ')
+            val handler = candidates[key] ?: return@on
+            runCatching {
+                handler.handle(this, actualMessage)
+            }.onFailure {
+                logger.atWarning().withCause(it).log("Failure for %s", handler::class.simpleName)
             }
-            if (message.content == "!ping") message.channel.createMessage("pong")
         }
     }
 }
 
 @Module(includes = [BotPrefixModule::class])
-object PrefixBot {
+object PrefixBotFeatureModule {
     @Provides
     @IntoSet
     @Singleton
