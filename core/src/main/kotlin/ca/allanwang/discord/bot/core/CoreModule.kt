@@ -15,6 +15,11 @@ interface BotFeature {
     suspend fun Kord.attach()
 }
 
+@Named
+@MustBeDocumented
+@Retention(AnnotationRetention.RUNTIME)
+annotation class PrivProperties
+
 @Module
 object CoreModule {
     @Provides
@@ -24,7 +29,7 @@ object CoreModule {
 
     @Provides
     @JvmStatic
-    @Named("privProperties")
+    @PrivProperties
     fun properties(@Named("privPropertiesPath") privPropertiesPath: String): Properties {
         val prop = Properties()
         val file = File(privPropertiesPath)

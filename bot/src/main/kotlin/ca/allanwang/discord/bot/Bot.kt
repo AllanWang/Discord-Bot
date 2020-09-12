@@ -2,6 +2,7 @@
 
 package ca.allanwang.discord.bot
 
+import ca.allanwang.discord.bot.base.PrefixBot
 import ca.allanwang.discord.bot.core.BotFeature
 import ca.allanwang.discord.bot.echo.EchoBotModule
 import ca.allanwang.discord.bot.time.TimeBotModule
@@ -9,7 +10,6 @@ import com.gitlab.kordlib.core.Kord
 import com.google.common.flogger.FluentLogger
 import dagger.BindsInstance
 import dagger.Component
-import javax.inject.Named
 import javax.inject.Singleton
 
 suspend fun main(args: Array<String>) {
@@ -18,17 +18,19 @@ suspend fun main(args: Array<String>) {
 
     logger.atInfo().log("Initialized Bot")
 
-    val component = DaggerBotComponent.builder().args(args).build()
+    val authComponent = DaggerAuthComponent.builder().args(args).build()
 
-    val kord = Kord(component.token())
+    val kord = Kord(authComponent.token())
 
-    val allFeatures = component.features()
+    val botComponent = DaggerBotComponent.builder().kord(kord).build()
+
+    val allFeatures = botComponent.features()
 
     fun Collection<BotFeature>.logText() = map { it::class.simpleName }
 
     logger.atInfo().log("Initializing %s", allFeatures.logText())
 
-    val (valid, invalid) = component.features().partition {
+    val (valid, invalid) = botComponent.features().partition {
         it.init()
     }
 
@@ -59,15 +61,12 @@ suspend fun main(args: Array<String>) {
 @Singleton
 @Component(
     modules = [
-        BotModule::class,
+        PrefixBot::class,
         TimeBotModule::class,
         EchoBotModule::class
     ]
 )
 interface BotComponent {
-
-    @Named("kordToken")
-    fun token(): String
 
     fun features(): Set<@JvmSuppressWildcards BotFeature>
 
@@ -75,7 +74,7 @@ interface BotComponent {
     interface Builder {
 
         @BindsInstance
-        fun args(args: Array<String>): Builder
+        fun kord(kord: Kord): Builder
 
         fun build(): BotComponent
     }

@@ -1,5 +1,7 @@
 package ca.allanwang.discord.bot.maps
 
+import ca.allanwang.discord.bot.core.CoreModule
+import ca.allanwang.discord.bot.core.PrivProperties
 import com.google.maps.GeoApiContext
 import dagger.Binds
 import dagger.Module
@@ -11,7 +13,7 @@ import javax.inject.Singleton
 @Module(includes = [MapsCoreModule::class, MapsApiModule::class])
 object MapsModule
 
-@Module
+@Module(includes = [CoreModule::class])
 object MapsCoreModule {
     @Provides
     @JvmStatic
@@ -24,7 +26,7 @@ object MapsCoreModule {
     @Named("mapsApiKey")
     fun mapsApiKey(
         @Named("mapsApiPropKey") mapsApiPropKey: String,
-        @Named("privProperties") privProperties: Properties
+        @PrivProperties privProperties: Properties
     ): String = privProperties.getProperty(mapsApiPropKey) ?: error("maps api key not found")
 
     @Provides

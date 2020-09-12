@@ -9,6 +9,7 @@ plugins {
 dependencies {
     implementation(kotlin("stdlib"))
     implementation(project(":core"))
+    implementation(project(":base"))
     implementation(project(":echo"))
     implementation(project(":firebase"))
     implementation(project(":time"))

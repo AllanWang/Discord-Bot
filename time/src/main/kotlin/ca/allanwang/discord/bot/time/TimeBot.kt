@@ -29,7 +29,7 @@ class TimeBot @Inject constructor(
 
     private val logger = FluentLogger.forEnclosingClass()
     private val dateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
-
+    private val embedColor = Color.decode("#03a5fc")
 
     override suspend fun Kord.attach() {
         on<MessageCreateEvent> {
@@ -72,13 +72,13 @@ class TimeBot @Inject constructor(
         suspend fun failure() {
             message.channel.createMessage("Failed to set timezone")
         }
-
+member
         logger.atInfo().log("Query %s", query)
         val geocode = getGeocode(query) ?: return failure()
         val result = mapApi.getTimezone(geocode.geometry.location) ?: return failure()
         logger.atFine().log("Received %s", result.displayName)
         message.channel.createEmbed {
-            color = Color.decode("#03a5fc")
+            color = embedColor
             title = "Timezone Set"
             field {
                 value = buildString {

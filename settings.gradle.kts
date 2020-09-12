@@ -5,6 +5,7 @@ findProject(":buildSrc")?.name = "gradle-plugin"
 
 include("core")
 include("echo")
+include("base")
 include("bot")
 include("firebase")
 include("game")
