@@ -1,7 +1,6 @@
 package ca.allanwang.discord.bot.base
 
 import com.gitlab.kordlib.core.event.message.MessageCreateEvent
-import com.gitlab.kordlib.rest.builder.message.EmbedBuilder
 import com.google.common.flogger.FluentLogger
 
 @DslMarker
@@ -37,8 +36,11 @@ interface CommandBuilderActionDsl {
     var action: CommandHandlerAction
 }
 
-fun commandBuilder(type: CommandHandler.Type, block: CommandBuilderRootDsl.() -> Unit): CommandHandler =
-    CommandBuilderRoot(type).apply(block).also { it.finish() }
+fun CommandHandlerBot.commandBuilder(
+    vararg types: CommandHandler.Type,
+    block: CommandBuilderRootDsl.() -> Unit
+): CommandHandler =
+    CommandBuilderRoot(types.toSet()).apply(block).also { it.finish() }
 
 internal open class CommandBuilderBase : CommandBuilderRootDsl {
 
@@ -82,7 +84,8 @@ internal open class CommandBuilderBase : CommandBuilderRootDsl {
     }
 }
 
-internal class CommandBuilderRoot(override val type: CommandHandler.Type) : CommandBuilderBase(), CommandBuilderRootDsl,
+internal class CommandBuilderRoot(override val types: Set<CommandHandler.Type>) : CommandBuilderBase(),
+    CommandBuilderRootDsl,
     CommandHandler
 
 internal class CommandBuilderArg(

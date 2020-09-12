@@ -2,7 +2,8 @@
 
 package ca.allanwang.discord.bot
 
-import ca.allanwang.discord.bot.base.PrefixBotFeatureModule
+import ca.allanwang.discord.bot.base.CommandBotModule
+import ca.allanwang.discord.bot.base.PrefixBotModule
 import ca.allanwang.discord.bot.core.BotFeature
 import ca.allanwang.discord.bot.echo.EchoBotModule
 import ca.allanwang.discord.bot.time.TimeBotModule
@@ -26,7 +27,7 @@ suspend fun main(args: Array<String>) {
 
     val allFeatures = botComponent.features()
 
-    fun Collection<BotFeature>.logText() = map { it::class.simpleName }
+    fun Collection<Any>.logText() = map { it::class.simpleName }
 
     logger.atInfo().log("Initializing %s", allFeatures.logText())
 
@@ -38,6 +39,11 @@ suspend fun main(args: Array<String>) {
         logger.atSevere().log("Invalid features: %s", invalid.logText())
 
     logger.atInfo().log("Attaching %s", valid.logText())
+
+//    kord.getApplicationInfo().owner.getDmChannel().createEmbed {
+//        title = "Start Report"
+//        description = "Test"
+//    }
 
     valid.forEach {
         with(it) { kord.attach() }
@@ -61,7 +67,9 @@ suspend fun main(args: Array<String>) {
 @Singleton
 @Component(
     modules = [
-        PrefixBotFeatureModule::class,
+        // ca.allanwang.discord.bot.base.LogBotModule::class,
+        CommandBotModule::class,
+        PrefixBotModule::class,
         TimeBotModule::class,
         EchoBotModule::class
     ]

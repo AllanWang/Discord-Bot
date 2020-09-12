@@ -20,7 +20,7 @@ class CommandHandlerEvent(val event: MessageCreateEvent, val command: String, va
 
 interface CommandHandler {
 
-    val type: Type
+    val types: Set<Type>
 
     val keys: Set<String>
 
@@ -36,7 +36,7 @@ interface CommandHandlerBot {
 }
 
 internal fun Collection<CommandHandlerBot>.withType(type: CommandHandler.Type): Collection<CommandHandlerBot> =
-    filter { it.handler.type == type }
+    filter { type in it.handler.types }
 
 /**
  * Returns single map of command handlers based on their supported keys
