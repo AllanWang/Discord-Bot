@@ -28,15 +28,14 @@ class BotPrefixGroupFeature @Inject constructor(
         private val logger = FluentLogger.forEnclosingClass()
     }
 
-    private val handlers = handlers.map { it.handler }.filter { it.type == CommandHandler.Type.Prefix }
+    private val handlers = handlers.withType(CommandHandler.Type.Prefix)
 
     override suspend fun Kord.attach() {
         logger.atInfo().log("Loaded prefix handler %s", handlers.map { it::class.simpleName })
-        val expectedCandidateCount = handlers.map { it.keys.size }.sum()
-        val candidates = handlers.flatMap { handler -> handler.keys.map { it to handler } }.toMap()
-        if (candidates.size != expectedCandidateCount) {
-            val duplicates = handlers.flatMap { it.keys }.groupBy { it }.filter { it.value.size > 1 }.keys
-            logger.atWarning().log("Duplicate commands found: %s", duplicates)
+        val candidates = handlers.candidates()
+        val duplicateKeys = handlers.duplicateKeys()
+        if (duplicateKeys.isNotEmpty()) {
+            logger.atWarning().log("Duplicate commands found: %s", duplicateKeys)
         }
         on<MessageCreateEvent> {
             if (message.author?.isBot == true) return@on

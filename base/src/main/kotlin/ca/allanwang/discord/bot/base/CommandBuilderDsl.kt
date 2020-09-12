@@ -8,34 +8,6 @@ import com.google.common.flogger.FluentLogger
 @Target(AnnotationTarget.CLASS)
 annotation class BotCommandDsl
 
-typealias CommandHandlerAction = suspend CommandHandlerEvent.() -> Unit
-
-class CommandHandlerEvent(val event: MessageCreateEvent, val command: String, val message: String) {
-    val channel get() = event.message.channel
-    val authorId get() = event.message.author?.id
-
-    fun EmbedBuilder.userFooter() {
-        footer
-        val tag = event.message.author?.tag
-        if (tag != null) footer {
-            text = tag
-        }
-    }
-}
-
-interface CommandHandler {
-
-    val type: Type
-
-    val keys: Set<String>
-
-    suspend fun handle(event: MessageCreateEvent, message: String)
-
-    enum class Type {
-        Prefix, Mention
-    }
-}
-
 @BotCommandDsl
 interface CommandBuilderRootDsl {
 
@@ -63,10 +35,6 @@ interface CommandBuilderActionDsl {
     var withMessage: Boolean
 
     var action: CommandHandlerAction
-}
-
-interface CommandHandlerBot {
-    val handler: CommandHandler
 }
 
 fun commandBuilder(type: CommandHandler.Type, block: CommandBuilderRootDsl.() -> Unit): CommandHandler =
