@@ -1,12 +1,16 @@
 package ca.allanwang.discord.bot.firebase
 
+import ca.allanwang.discord.bot.core.PrivProperties
+import com.gitlab.kordlib.core.Kord
 import com.google.auth.oauth2.GoogleCredentials
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import dagger.Module
 import dagger.Provides
 import java.io.FileInputStream
+import java.util.*
 import javax.inject.Named
 import javax.inject.Singleton
 
@@ -19,8 +23,16 @@ object FirebaseModule {
 
     @Provides
     @JvmStatic
+    @Named("firebaseUrlKey")
+    fun firebaseUrlKey(): String = "firebase_url"
+
+    @Provides
+    @JvmStatic
     @Named("firebaseUrl")
-    fun firebaseUrl(): String = "https://discord-bot-3df7d.firebaseio.com"
+    fun firebaseUrl(
+        @Named("firebaseUrlKey") firebaseUrlKey: String,
+        @PrivProperties privProperties: Properties
+    ): String = privProperties.getProperty(firebaseUrlKey) ?: error("firebase url not found")
 
     @Provides
     @JvmStatic
@@ -43,4 +55,9 @@ object FirebaseModule {
     @JvmStatic
     @Singleton
     fun firebaseDatabase(firebaseApp: FirebaseApp) = FirebaseDatabase.getInstance(firebaseApp)
+
+    @Provides
+    @FirebaseRootRef
+    @JvmStatic
+    fun firebaseRootRef(firebaseDatabase: FirebaseDatabase, kord: Kord): DatabaseReference = firebaseDatabase.reference.child(kord.selfId.value)
 }

@@ -1,37 +1,51 @@
 package ca.allanwang.discord.bot.base
 
-import ca.allanwang.discord.bot.firebase.listen
+import ca.allanwang.discord.bot.firebase.FirebaseRootRef
+import ca.allanwang.discord.bot.firebase.listenSnapshot
 import ca.allanwang.discord.bot.firebase.setValue
-import com.gitlab.kordlib.core.Kord
+import com.gitlab.kordlib.common.entity.Snowflake
+import com.gitlab.kordlib.core.event.message.MessageCreateEvent
 import com.google.common.flogger.FluentLogger
 import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.FirebaseDatabase
 import dagger.Module
 import dagger.Provides
 import dagger.multibindings.IntoSet
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class PrefixApi @Inject constructor(
-    private val firebaseDatabase: FirebaseDatabase,
-    kord: Kord
+    @FirebaseRootRef
+    private val rootRef: DatabaseReference
 ) {
     companion object {
         private const val PREFIX = "prefix"
         private val logger = FluentLogger.forEnclosingClass()
     }
 
-    private val selfId = kord.selfId.value
-
     private val ref: DatabaseReference
-        get() = firebaseDatabase.reference.child(selfId).child(PREFIX)
+        get() = rootRef.child(PREFIX)
 
-    suspend fun setPrefix(prefix: String): Boolean = ref.setValue(prefix)
+    suspend fun eventPrefixSnowflake(event: MessageCreateEvent): Snowflake =
+        event.getGuild()?.id ?: event.message.channelId
 
-    suspend fun listen(): Flow<String> = ref.listen<String>().filterNotNull()
+    suspend fun setPrefix(event: MessageCreateEvent, prefix: String) = setPrefix(eventPrefixSnowflake(event), prefix)
+
+    suspend fun setPrefix(server: Snowflake, prefix: String): Boolean = ref.child(server.value).setValue(prefix)
+
+    suspend fun listen(): Flow<Map<Snowflake, String>> = ref.listenSnapshot().filterNotNull().map { snapshot ->
+        snapshot.children
+            .mapNotNull {
+                runCatching {
+                    Snowflake(it.key) to it.getValue(String::class.java)
+                }.onFailure {
+                    logger.atWarning().withCause(it).log("Prefix decode failure at ${snapshot.key}")
+                }.getOrNull()
+            }.toMap()
+    }
 }
 
 @Singleton
@@ -52,7 +66,7 @@ class PrefixBot @Inject constructor(
                     return@action
                 }
                 logger.atInfo().log("Prefix set to %s", message)
-                prefixApi.setPrefix(message)
+                prefixApi.setPrefix(event, message)
                 channel.createMessage("Set prefix to `$message`")
             }
         }

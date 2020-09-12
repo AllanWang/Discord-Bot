@@ -22,7 +22,7 @@ abstract class CommandBot(
 
     private val handlers = handlers.withType(type)
 
-    abstract fun MessageCreateEvent.actualMessage(): String?
+    abstract suspend fun MessageCreateEvent.actualMessage(): String?
 
     final override suspend fun Kord.attach() {
         logger.atInfo().log("Loaded $type handlers %s", handlers.map { it::class.simpleName })
@@ -62,8 +62,8 @@ class BotPrefixGroupFeature @Inject constructor(
         private val logger = FluentLogger.forEnclosingClass()
     }
 
-    override fun MessageCreateEvent.actualMessage(): String? {
-        val prefix = prefixSupplier.prefix()
+    override suspend fun MessageCreateEvent.actualMessage(): String? {
+        val prefix = prefixSupplier.prefix(this)
         if (!message.content.startsWith(prefix)) return null
         logger.atFine().log("Prefix matched")
         return message.content.substringAfter(prefix)
@@ -86,7 +86,7 @@ class BotMentionGroupFeature @Inject constructor(
      */
     private val mentionRegex = Regex("^<@!?${kord.selfId.value}> (.*)$")
 
-    override fun MessageCreateEvent.actualMessage(): String? {
+    override suspend fun MessageCreateEvent.actualMessage(): String? {
         val match = mentionRegex.find(message.content) ?: return null
         logger.atInfo().log("Bot mention matched")
         return match.groupValues.getOrNull(1)

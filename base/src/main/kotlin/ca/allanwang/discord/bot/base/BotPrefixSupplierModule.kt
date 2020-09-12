@@ -1,7 +1,9 @@
 package ca.allanwang.discord.bot.base
 
 import ca.allanwang.discord.bot.firebase.FirebaseModule
+import com.gitlab.kordlib.common.entity.Snowflake
 import com.gitlab.kordlib.core.Kord
+import com.gitlab.kordlib.core.event.message.MessageCreateEvent
 import com.google.common.flogger.FluentLogger
 import dagger.Binds
 import dagger.Module
@@ -12,7 +14,9 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 interface BotPrefixSupplier {
-    fun prefix(): String
+    suspend fun prefix(event: MessageCreateEvent): String
+
+    suspend fun prefix(snowflake: Snowflake): String
 }
 
 class BotPrefixSupplierImpl @Inject constructor(
@@ -21,11 +25,11 @@ class BotPrefixSupplierImpl @Inject constructor(
 ) : BotPrefixSupplier {
 
     companion object {
-        private const val PREFIX = "prefix"
+        private const val DEFAULT_PREFIX = "!"
         private val logger = FluentLogger.forEnclosingClass()
     }
 
-    private val atomicPrefix = AtomicReference("!")
+    private val atomicPrefix: AtomicReference<Map<Snowflake, String>> = AtomicReference(emptyMap())
 
     init {
         kord.launch {
@@ -37,7 +41,9 @@ class BotPrefixSupplierImpl @Inject constructor(
         }
     }
 
-    override fun prefix(): String = atomicPrefix.get()
+    override suspend fun prefix(event: MessageCreateEvent): String = prefix(prefixApi.eventPrefixSnowflake(event))
+
+    override suspend fun prefix(snowflake: Snowflake): String = atomicPrefix.get()[snowflake] ?: DEFAULT_PREFIX
 }
 
 @Module(includes = [FirebaseModule::class])
