@@ -32,6 +32,9 @@ object Versions {
     // https://github.com/google/dagger/releases/tag/dagger-2.28.3
     const val dagger = "2.28.3"
 
+    // https://github.com/InsertKoinIO/koin/releases
+    const val koin = "2.1.6"
+
     // https://github.com/Kotlin/kotlinx.coroutines/releases
     const val coroutines = "1.3.9"
 

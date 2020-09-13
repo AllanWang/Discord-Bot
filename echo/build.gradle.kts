@@ -10,6 +10,11 @@ dependencies {
     implementation(bot.Dependencies.dagger)
     kapt(bot.Dependencies.daggerKapt)
 
+    implementation(bot.Dependencies.koin)
+//    implementation(bot.Dependencies.koin("core-ext"))
+//    implementation(bot.Dependencies.kordxCommands)
+//    kapt(bot.Dependencies.kordxCommandsKapt)
+
     implementation(project(":core"))
     implementation(project(":base"))
 }

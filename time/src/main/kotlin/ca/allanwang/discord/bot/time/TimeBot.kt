@@ -165,6 +165,7 @@ class TimeBot @Inject constructor(
     private suspend fun ReactionAddEvent.handleEvent() {
         if (!pendingReactionCache.containsKey(message.id)) return
         if (emoji.name != timeApi.reactionEmoji.name) return
+        if (getUserOrNull()?.isBot == true) return
         val message = getMessage()
         val info = message.timeBotInfo(message.groupSnowflake(guildId)) ?: return
         pendingReactionCache.remove(message.id)

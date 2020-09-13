@@ -3,6 +3,7 @@ package bot
 object Dependencies {
     const val kord = "com.gitlab.kordlib.kord:kord-core:${Versions.kord}"
     const val kordxCommands = "com.gitlab.kordlib.kordx:kordx-commands-runtime-kord:${Versions.kordxCommands}"
+    const val kordxCommandsKapt = "com.gitlab.kordlib.kordx:kordx-commands-processor:${Versions.kordxCommands}"
     const val kordxEmojis = "com.gitlab.kordlib:kordx.emoji:${Versions.kordxEmojis}"
 
     val slf4j = slf4j("api")
@@ -18,6 +19,9 @@ object Dependencies {
 
     const val dagger = "com.google.dagger:dagger:${Versions.dagger}"
     const val daggerKapt = "com.google.dagger:dagger-compiler:${Versions.dagger}"
+
+    val koin = koin("core")
+    fun koin(type: String) = "org.koin:koin-${type}:${Versions.koin}"
 
     // https://github.com/Kotlin/kotlinx.coroutines/releases
     val coroutines = coroutines("core")

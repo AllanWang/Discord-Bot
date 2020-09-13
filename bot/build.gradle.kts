@@ -19,6 +19,9 @@ dependencies {
     implementation(bot.Dependencies.dagger)
     kapt(bot.Dependencies.daggerKapt)
 
+//    implementation(bot.Dependencies.kordxCommands)
+//    kapt(bot.Dependencies.kordxCommandsKapt)
+
     implementation(bot.Dependencies.slf4j("simple"))
 //    implementation(bot.Dependencies.flogger("slf4j-backend"))
     implementation(bot.Dependencies.flogger("system-backend"))

@@ -60,8 +60,18 @@ class TimeConfigBot @Inject constructor(
         return ":clock${hourString}${minuteString}:"
     }
 
-    private suspend fun getGeocode(query: String): GeocodingResult? = mapApi.getGeocode(query).firstOrNull {
-        it.types.contains(AddressType.LOCALITY)
+    private val validTypes =
+        listOf(AddressType.LOCALITY, AddressType.ADMINISTRATIVE_AREA_LEVEL_1, AddressType.ADMINISTRATIVE_AREA_LEVEL_2)
+
+    private suspend fun getGeocode(query: String): GeocodingResult? {
+        val candidates = mapApi.getGeocode(query)
+//        candidates.forEachIndexed { i, it ->
+//            logger.atInfo().log("Candidate %d %s %s", i, it.formattedAddress, it.types.contentToString())
+//        }
+
+        return candidates.firstOrNull { result ->
+            validTypes.any { it in result.types }
+        }
     }
 
     private fun EmbedBuilder.addTimezoneInfo(timeZone: TimeZone) {

@@ -21,7 +21,7 @@ subprojects {
     version = bot.Versions.botVersion
 
     repositories {
-        mavenCentral()
+        jcenter()
         maven(url = "https://dl.bintray.com/kordlib/Kord")
     }
 }

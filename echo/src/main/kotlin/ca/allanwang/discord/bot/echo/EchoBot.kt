@@ -1,9 +1,6 @@
 package ca.allanwang.discord.bot.echo
 
-import ca.allanwang.discord.bot.base.BotPrefixModule
-import ca.allanwang.discord.bot.base.CommandHandler
-import ca.allanwang.discord.bot.base.CommandHandlerBot
-import ca.allanwang.discord.bot.base.commandBuilder
+import ca.allanwang.discord.bot.base.*
 import com.google.common.flogger.FluentLogger
 import dagger.Module
 import dagger.Provides
@@ -22,9 +19,13 @@ class EchoBot @Inject constructor(
     override val handler = commandBuilder(CommandHandler.Type.Prefix) {
         arg("echo") {
             action(withMessage = true) {
-                channel.createMessage(message)
+                echoAction()
             }
         }
+    }
+
+    private suspend fun CommandHandlerEvent.echoAction() {
+        channel.createMessage(message)
     }
 }
 
