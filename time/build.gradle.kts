@@ -14,6 +14,17 @@ dependencies {
     implementation(project(":base"))
     implementation(project(":firebase"))
     implementation(project(":maps"))
+
+    testImplementation(bot.Dependencies.flogger("system-backend"))
+    testImplementation(kotlin("test-junit5"))
+    testImplementation(bot.Dependencies.junit("api"))
+    testImplementation(bot.Dependencies.junit("params"))
+    testRuntimeOnly(bot.Dependencies.junit("engine"))
+
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 tasks.withType<KotlinCompile> {

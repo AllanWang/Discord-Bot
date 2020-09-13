@@ -63,7 +63,7 @@ class BotPrefixGroupFeature @Inject constructor(
     }
 
     override suspend fun MessageCreateEvent.actualMessage(): String? {
-        val prefix = prefixSupplier.prefix(this)
+        val prefix = prefixSupplier.prefix(groupSnowflake())
         if (!message.content.startsWith(prefix)) return null
         logger.atFine().log("Prefix matched")
         return message.content.substringAfter(prefix)

@@ -31,4 +31,7 @@ object Versions {
 
     // https://github.com/googlemaps/google-maps-services-java/releases/tag/v0.15.0
     const val googleMaps = "0.15.0"
+
+    // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
+    const val junit = "5.6.2"
 }

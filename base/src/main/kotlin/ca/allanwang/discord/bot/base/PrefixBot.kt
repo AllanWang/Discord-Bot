@@ -4,7 +4,6 @@ import ca.allanwang.discord.bot.firebase.FirebaseRootRef
 import ca.allanwang.discord.bot.firebase.listenSnapshot
 import ca.allanwang.discord.bot.firebase.setValue
 import com.gitlab.kordlib.common.entity.Snowflake
-import com.gitlab.kordlib.core.event.message.MessageCreateEvent
 import com.google.common.flogger.FluentLogger
 import com.google.firebase.database.DatabaseReference
 import dagger.Module
@@ -29,12 +28,7 @@ class PrefixApi @Inject constructor(
     private val ref: DatabaseReference
         get() = rootRef.child(PREFIX)
 
-    suspend fun eventPrefixSnowflake(event: MessageCreateEvent): Snowflake =
-        event.getGuild()?.id ?: event.message.channelId
-
-    suspend fun setPrefix(event: MessageCreateEvent, prefix: String) = setPrefix(eventPrefixSnowflake(event), prefix)
-
-    suspend fun setPrefix(server: Snowflake, prefix: String): Boolean = ref.child(server.value).setValue(prefix)
+    suspend fun setPrefix(group: Snowflake, prefix: String): Boolean = ref.child(group.value).setValue(prefix)
 
     suspend fun listen(): Flow<Map<Snowflake, String>> = ref.listenSnapshot().filterNotNull().map { snapshot ->
         snapshot.children
@@ -66,7 +60,7 @@ class PrefixBot @Inject constructor(
                     return@action
                 }
                 logger.atInfo().log("Prefix set to %s", message)
-                prefixApi.setPrefix(event, message)
+                prefixApi.setPrefix(event.groupSnowflake(), message)
                 channel.createMessage("Set prefix to `$message`")
             }
         }

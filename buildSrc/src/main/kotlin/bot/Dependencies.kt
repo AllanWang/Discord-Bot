@@ -22,4 +22,6 @@ object Dependencies {
     fun coroutines(type: String) = "org.jetbrains.kotlinx:kotlinx-coroutines-${type}:${Versions.coroutines}"
 
     const val googleMaps = "com.google.maps:google-maps-services:${Versions.googleMaps}"
+
+    fun junit(type: String) = "org.junit.jupiter:junit-jupiter-${type}:${Versions.junit}"
 }
