@@ -69,7 +69,7 @@ class TimeConfigBot @Inject constructor(
             name = buildString {
                 append(timeZone.worldEmoji())
                 append(' ')
-                append("TimeZone")
+                append("Timezone")
             }
             value = timeZone.displayName
         }
