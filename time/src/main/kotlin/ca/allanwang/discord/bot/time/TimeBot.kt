@@ -2,15 +2,22 @@ package ca.allanwang.discord.bot.time
 
 import ca.allanwang.discord.bot.base.*
 import ca.allanwang.discord.bot.core.BotFeature
+import com.gitlab.kordlib.common.entity.Snowflake
 import com.gitlab.kordlib.core.Kord
 import com.gitlab.kordlib.core.behavior.channel.createEmbed
+import com.gitlab.kordlib.core.entity.Message
 import com.gitlab.kordlib.core.event.message.MessageCreateEvent
+import com.gitlab.kordlib.core.event.message.ReactionAddEvent
+import com.gitlab.kordlib.core.on
 import com.google.common.flogger.FluentLogger
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -53,44 +60,66 @@ class TimeBot @Inject constructor(
         return TimeEntry(hour, minute, pm)
     }
 
+    private val pendingReactionCache: ConcurrentHashMap<Snowflake, Long> = ConcurrentHashMap()
+
     override suspend fun Kord.attach() {
         onMessage {
             handleEvent()
         }
+        on<ReactionAddEvent> {
+            handleEvent()
+        }
     }
 
-    private suspend fun MessageCreateEvent.handleEvent() {
-        val authorId = message.author?.id ?: return
-        val times = timeRegex
-            .findAll(message.content)
+    private fun String.findTimes(): List<TimeEntry> =
+        timeRegex
+            .findAll(this)
             .mapNotNull { it.toTimeEntry() }
             .distinct()
             .toList()
-        if (times.isEmpty()) return
+
+    private class TimeBotInfo(
+        val authorId: Snowflake,
+        val times: List<TimeEntry>,
+        val origZoneId: ZoneId,
+        val timezones: List<TimeZone>
+    )
+
+    private suspend fun Message.timeBotInfo(groupSnowflake: Snowflake): TimeBotInfo? {
+        val authorId = author?.id ?: return null
+        val times = content.findTimes()
+        if (times.isEmpty()) return null
         logger.atInfo().log("Times matched %s", times)
-        val origZoneId =
-            timeApi.getTime(groupSnowflake(), authorId)?.toZoneId() ?: return logger.atInfo().log("No user timezone")
-        val timezones = timeApi.groupTimes(groupSnowflake())
-        if (timezones.size <= 1) return logger.atInfo().log("No multiple group timezones")
+        val origZoneId = timeApi.getTime(groupSnowflake, authorId)?.toZoneId() ?: return null
+        val timezones = timeApi.groupTimes(groupSnowflake)
+        if (timezones.size <= 1) return null
+        return TimeBotInfo(
+            authorId = authorId,
+            times = times,
+            origZoneId = origZoneId,
+            timezones = timezones
+        )
+    }
+
+    private suspend fun MessageCreateEvent.handleEvent() {
+        val info = message.timeBotInfo(groupSnowflake()) ?: return
 
         // To avoid spam, we limit auto messages to only occur during mentions
         if (message.mentionedRoleIds.isNotEmpty() || message.mentionedUserIds.isNotEmpty() || message.mentionsEveryone)
-            createTimezoneMessage(origZoneId, times, timezones)
+            message.createTimezoneMessage(info)
+        else
+            createTimezoneReaction()
     }
 
-    private suspend fun MessageCreateEvent.createTimezoneMessage(
-        origZoneId: ZoneId,
-        times: List<TimeEntry>,
-        timezones: List<TimeZone>
-    ) {
-        message.channel.createEmbed {
+    private suspend fun Message.createTimezoneMessage(info: TimeBotInfo) {
+        channel.createEmbed {
             title = "Timezones"
 
             color = timeApi.embedColor
 
-            times.forEach { time ->
+            info.times.forEach { time ->
 
-                val date = time.toZonedDateTime(origZoneId)
+                val date = time.toZonedDateTime(info.origZoneId)
 
                 field {
                     name = buildString {
@@ -100,9 +129,9 @@ class TimeBot @Inject constructor(
                     }
                     inline = true
                     value = buildString {
-                        timezones.forEach { timezone ->
+                        info.timezones.forEach { timezone ->
                             val zoneId = timezone.toZoneId()
-                            appendOptional(zoneId == origZoneId, this::appendUnderline) {
+                            appendOptional(zoneId == info.origZoneId, this::appendUnderline) {
                                 appendBold {
                                     append(timezone.displayName)
                                 }
@@ -121,5 +150,25 @@ class TimeBot @Inject constructor(
                 }
             }
         }
+    }
+
+    private suspend fun MessageCreateEvent.createTimezoneReaction() {
+        message.addReaction(timeApi.reactionEmoji)
+        pendingReactionCache[message.id] = System.currentTimeMillis()
+        launch {
+            delay(timeApi.reactionThresholdTime)
+            pendingReactionCache.remove(message.id)
+            message.deleteOwnReaction(timeApi.reactionEmoji)
+        }
+    }
+
+    private suspend fun ReactionAddEvent.handleEvent() {
+        if (!pendingReactionCache.containsKey(message.id)) return
+        if (emoji.name != timeApi.reactionEmoji.name) return
+        val message = getMessage()
+        val info = message.timeBotInfo(message.groupSnowflake(guildId)) ?: return
+        pendingReactionCache.remove(message.id)
+        message.deleteReaction(timeApi.reactionEmoji)
+        message.createTimezoneMessage(info)
     }
 }

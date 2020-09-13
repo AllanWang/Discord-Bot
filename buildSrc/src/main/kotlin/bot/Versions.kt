@@ -10,6 +10,12 @@ object Versions {
     // https://github.com/kordlib/kord/releases
     const val kord = "0.6.3"
 
+    // https://github.com/kordlib/kordx.commands/releases
+    const val kordxCommands = "0.3.3"
+
+    // https://github.com/kordlib/kordx.emoji/releases
+    const val kordxEmojis = "0.2.0"
+
     // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
     const val slf4j = "1.7.30"
 

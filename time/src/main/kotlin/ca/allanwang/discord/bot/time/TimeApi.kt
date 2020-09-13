@@ -5,6 +5,11 @@ import ca.allanwang.discord.bot.firebase.setValue
 import ca.allanwang.discord.bot.firebase.single
 import ca.allanwang.discord.bot.firebase.singleSnapshot
 import com.gitlab.kordlib.common.entity.Snowflake
+import com.gitlab.kordlib.core.entity.ReactionEmoji
+import com.gitlab.kordlib.kordx.emoji.DiscordEmoji
+import com.gitlab.kordlib.kordx.emoji.Emojis
+import com.gitlab.kordlib.kordx.emoji.toReaction
+import com.gitlab.kordlib.rest.route.Route
 import com.google.common.flogger.FluentLogger
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
@@ -26,6 +31,10 @@ class TimeApi @Inject constructor(
     val dateTimeFormatterNoAmPm = DateTimeFormatter.ofPattern("h:mm")
 
     val dateTimeFormatter = DateTimeFormatter.ofPattern("h:mm a")
+
+    val reactionEmoji: ReactionEmoji = Emojis.clock3.toReaction()
+
+    val reactionThresholdTime: Long = 10_000
 
     val embedColor: Color = Color.decode("#03a5fc")
 

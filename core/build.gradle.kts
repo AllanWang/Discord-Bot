@@ -11,6 +11,7 @@ dependencies {
     kapt(bot.Dependencies.daggerKapt)
     api(bot.Dependencies.coroutines)
     api(bot.Dependencies.kord)
+    api(bot.Dependencies.kordxEmojis)
     api(bot.Dependencies.flogger)
 }
 

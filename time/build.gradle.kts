@@ -8,6 +8,7 @@ plugins {
 dependencies {
     implementation(kotlin("stdlib"))
     implementation(bot.Dependencies.dagger)
+    implementation(bot.Dependencies.kordxEmojis)
     kapt(bot.Dependencies.daggerKapt)
 
     implementation(project(":core"))
