@@ -1,5 +1,6 @@
 package ca.allanwang.discord.bot.time
 
+import ca.allanwang.discord.bot.firebase.child
 import ca.allanwang.discord.bot.firebase.setValue
 import ca.allanwang.discord.bot.firebase.single
 import ca.allanwang.discord.bot.firebase.singleSnapshot
@@ -22,6 +23,8 @@ class TimeApi @Inject constructor(
         val logger = FluentLogger.forEnclosingClass()
     }
 
+    val dateTimeFormatterNoAmPm = DateTimeFormatter.ofPattern("h:mm")
+
     val dateTimeFormatter = DateTimeFormatter.ofPattern("h:mm a")
 
     val embedColor: Color = Color.decode("#03a5fc")
@@ -29,11 +32,11 @@ class TimeApi @Inject constructor(
     private val timeRef: DatabaseReference
         get() = firebaseDatabase.reference.child("time")
 
-    suspend fun getTime(id: Snowflake): TimeZone? =
-        timeRef.child(id.value).single<String>()?.let { TimeZone.getTimeZone(it) }
+    suspend fun getTime(group: Snowflake, id: Snowflake): TimeZone? =
+        timeRef.child(group).child(id).single<String>()?.let { TimeZone.getTimeZone(it) }
 
-    suspend fun saveTime(id: Snowflake, value: TimeZone): Boolean =
-        timeRef.child(id.value).setValue(value.id)
+    suspend fun saveTime(group: Snowflake, id: Snowflake, value: TimeZone): Boolean =
+        timeRef.child(group).child(id).setValue(value.id)
 
     suspend fun groupTimes(group: Snowflake): List<TimeZone> {
         return timeRef.child(group.value)

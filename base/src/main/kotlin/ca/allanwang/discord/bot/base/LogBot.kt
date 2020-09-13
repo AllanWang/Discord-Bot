@@ -20,7 +20,7 @@ class LogBot @Inject constructor(
     }
 
     override suspend fun Kord.attach() {
-        on<MessageCreateEvent> {
+        onMessage {
             logger.atInfo().log("Message Received: %s", message.content)
             message.data.mentions.let { mentions ->
                 if (mentions.isNotEmpty())

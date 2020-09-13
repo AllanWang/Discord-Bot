@@ -1,9 +1,6 @@
 package ca.allanwang.discord.bot.time
 
-import ca.allanwang.discord.bot.base.CommandHandler
-import ca.allanwang.discord.bot.base.CommandHandlerBot
-import ca.allanwang.discord.bot.base.CommandHandlerEvent
-import ca.allanwang.discord.bot.base.commandBuilder
+import ca.allanwang.discord.bot.base.*
 import ca.allanwang.discord.bot.maps.MapsApi
 import com.gitlab.kordlib.core.behavior.channel.createEmbed
 import com.gitlab.kordlib.rest.builder.message.EmbedBuilder
@@ -38,7 +35,7 @@ class TimeConfigBot @Inject constructor(
     private suspend fun CommandHandlerEvent.getTimezone() {
         logger.atFine().log()
         val authorId = authorId ?: return
-        val timezone = timeApi.getTime(authorId)?.let { TimeZone.getTimeZone(it) }
+        val timezone = timeApi.getTime(event.groupSnowflake(), authorId)
         if (timezone == null) channel.createMessage("No timezone set; use `$command [city]`")
         else channel.createEmbed {
             color = timeApi.embedColor
@@ -98,7 +95,7 @@ class TimeConfigBot @Inject constructor(
             ?: return failure("Failed to set timezone")
         logger.atFine().log("Received %s", result.displayName)
 
-        if (!timeApi.saveTime(authorId, result.id))
+        if (!timeApi.saveTime(event.groupSnowflake(), authorId, result))
             return failure("Failed to save timezone")
 
         channel.createEmbed {

@@ -3,7 +3,6 @@ package ca.allanwang.discord.bot.base
 import ca.allanwang.discord.bot.core.BotFeature
 import com.gitlab.kordlib.core.Kord
 import com.gitlab.kordlib.core.event.message.MessageCreateEvent
-import com.gitlab.kordlib.core.on
 import com.google.common.flogger.FluentLogger
 import dagger.Module
 import dagger.Provides
@@ -31,16 +30,19 @@ abstract class CommandBot(
         if (duplicateKeys.isNotEmpty()) {
             logger.atWarning().log("Duplicate commands found: %s", duplicateKeys)
         }
-        on<MessageCreateEvent> {
-            if (message.author?.isBot == true) return@on
-            val actualMessage = actualMessage() ?: return@on
-            val key = actualMessage.substringBefore(' ')
-            val handler = candidates[key] ?: return@on
-            runCatching {
-                handler.handle(this, actualMessage)
-            }.onFailure {
-                logger.atWarning().withCause(it).log("Failure for %s", handler::class.simpleName)
-            }
+        onMessage {
+            handleCommands(candidates)
+        }
+    }
+
+    private suspend fun MessageCreateEvent.handleCommands(candidates: Map<String, CommandHandler>) {
+        val actualMessage = actualMessage() ?: return
+        val key = actualMessage.substringBefore(' ')
+        val handler = candidates[key] ?: return
+        runCatching {
+            handler.handle(this, actualMessage)
+        }.onFailure {
+            logger.atWarning().withCause(it).log("Failure for %s", handler::class.simpleName)
         }
     }
 }

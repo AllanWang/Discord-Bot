@@ -7,6 +7,7 @@ plugins {
 dependencies {
     implementation(kotlin("stdlib"))
     implementation(project(":core"))
+    implementation(project(":base"))
 }
 
 tasks.withType<KotlinCompile> {

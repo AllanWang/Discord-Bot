@@ -1,10 +1,15 @@
 package ca.allanwang.discord.bot.time
 
+import ca.allanwang.discord.bot.base.*
 import ca.allanwang.discord.bot.core.BotFeature
 import com.gitlab.kordlib.core.Kord
+import com.gitlab.kordlib.core.behavior.channel.createEmbed
 import com.gitlab.kordlib.core.event.message.MessageCreateEvent
-import com.gitlab.kordlib.core.on
 import com.google.common.flogger.FluentLogger
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.util.*
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -30,6 +35,9 @@ class TimeBot @Inject constructor(
                 append(if (pm) "pm" else "am")
             }
         }
+
+        fun toZonedDateTime(zoneId: ZoneId): ZonedDateTime =
+            ZonedDateTime.of(LocalDate.now(zoneId), LocalTime.of(hour + (if (pm == true) 12 else 0), minute), zoneId)
     }
 
     private fun MatchResult.toTimeEntry(): TimeEntry? {
@@ -46,11 +54,72 @@ class TimeBot @Inject constructor(
     }
 
     override suspend fun Kord.attach() {
-        on<MessageCreateEvent> {
-            if (message.author?.isBot == true) return@on
-            val times = timeRegex.findAll(message.content).mapNotNull { it.toTimeEntry() }.toList()
-            if (times.isEmpty()) return@on
-            logger.atInfo().log("Times matched %s", times)
+        onMessage {
+            handleEvent()
+        }
+    }
+
+    private suspend fun MessageCreateEvent.handleEvent() {
+        val authorId = message.author?.id ?: return
+        val times = timeRegex
+            .findAll(message.content)
+            .mapNotNull { it.toTimeEntry() }
+            .distinct()
+            .toList()
+        if (times.isEmpty()) return
+        logger.atInfo().log("Times matched %s", times)
+        val origZoneId =
+            timeApi.getTime(groupSnowflake(), authorId)?.toZoneId() ?: return logger.atInfo().log("No user timezone")
+        val timezones = timeApi.groupTimes(groupSnowflake())
+        if (timezones.size <= 1) return logger.atInfo().log("No multiple group timezones")
+
+        // To avoid spam, we limit auto messages to only occur during mentions
+        if (message.mentionedRoleIds.isNotEmpty() || message.mentionedUserIds.isNotEmpty() || message.mentionsEveryone)
+            createTimezoneMessage(origZoneId, times, timezones)
+    }
+
+    private suspend fun MessageCreateEvent.createTimezoneMessage(
+        origZoneId: ZoneId,
+        times: List<TimeEntry>,
+        timezones: List<TimeZone>
+    ) {
+        message.channel.createEmbed {
+            title = "Timezones"
+
+            color = timeApi.embedColor
+
+            times.forEach { time ->
+
+                val date = time.toZonedDateTime(origZoneId)
+
+                field {
+                    name = buildString {
+                        appendQuote {
+                            append(time.toString())
+                        }
+                    }
+                    inline = true
+                    value = buildString {
+                        timezones.forEach { timezone ->
+                            val zoneId = timezone.toZoneId()
+                            appendOptional(zoneId == origZoneId, this::appendUnderline) {
+                                appendBold {
+                                    append(timezone.displayName)
+                                }
+                            }
+                            append(": ")
+                            append(
+                                date.withZoneSameInstant(zoneId)
+                                    .format(
+                                        if (time.pm == null) timeApi.dateTimeFormatterNoAmPm
+                                        else timeApi.dateTimeFormatter
+                                    )
+                            )
+                            appendLine()
+                        }
+                    }.trim()
+                }
+            }
         }
     }
 }

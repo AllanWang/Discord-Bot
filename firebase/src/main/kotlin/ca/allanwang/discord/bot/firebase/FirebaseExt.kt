@@ -1,5 +1,6 @@
 package ca.allanwang.discord.bot.firebase
 
+import com.gitlab.kordlib.common.entity.Snowflake
 import com.google.common.flogger.FluentLogger
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -20,6 +21,8 @@ import kotlin.coroutines.suspendCoroutine
  */
 
 val _firebase_coroutine_logger: FluentLogger = FluentLogger.forEnclosingClass()
+
+fun DatabaseReference.child(snowflake: Snowflake) = child(snowflake.value)
 
 suspend fun DatabaseReference.singleSnapshot(): DataSnapshot = withContext(Dispatchers.IO) {
     suspendCancellableCoroutine { cont ->
