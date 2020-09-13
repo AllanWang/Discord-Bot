@@ -39,7 +39,7 @@ class TimeBot @Inject constructor(
             append(minute.toString().padStart(2, '0'))
             if (pm != null) {
                 append(' ')
-                append(if (pm) "pm" else "am")
+                append(if (pm) "PM" else "AM")
             }
         }
 
