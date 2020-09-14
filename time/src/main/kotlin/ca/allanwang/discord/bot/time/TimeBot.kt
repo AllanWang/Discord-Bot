@@ -164,6 +164,7 @@ class TimeBot @Inject constructor(
 
     private suspend fun ReactionAddEvent.handleEvent() {
         if (!pendingReactionCache.containsKey(message.id)) return
+        logger.atInfo().log("Receive pending event with emoji %s", emoji.name)
         if (emoji.name != timeApi.reactionEmoji.name) return
         if (getUserOrNull()?.isBot == true) return
         logger.atInfo().log("Received reaction response")

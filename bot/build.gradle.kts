@@ -35,15 +35,19 @@ tasks.withType<KotlinCompile> {
 }
 
 val fatJar = task("fatJar", type = Jar::class) {
-    archiveBaseName.set("${project.name}-fat")
+    archiveBaseName.set("${project.name}-release")
+    archiveVersion.set("")
+    exclude("META-INF/*.RSA", "META-INF/*.SF", "META-INF/*.DSA")
+    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+    with(tasks.jar.get() as CopySpec)
+}
+
+tasks.withType<Jar> {
     manifest {
         attributes["Implementation-Title"] = "Discord Bot Jar"
         attributes["Implementation-Version"] = bot.Versions.botVersion
         attributes["Main-Class"] = "ca.allanwang.discord.bot.Bot"
     }
-    exclude("META-INF/*.RSA", "META-INF/*.SF", "META-INF/*.DSA")
-    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
-    with(tasks.jar.get() as CopySpec)
 }
 
 tasks {
