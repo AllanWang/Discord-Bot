@@ -54,7 +54,7 @@ object FirebaseModule {
     @Provides
     @JvmStatic
     @Singleton
-    fun firebaseDatabase(firebaseApp: FirebaseApp) = FirebaseDatabase.getInstance(firebaseApp)
+    fun firebaseDatabase(firebaseApp: FirebaseApp): FirebaseDatabase = FirebaseDatabase.getInstance(firebaseApp)
 
     @Provides
     @FirebaseRootRef

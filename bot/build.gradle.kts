@@ -36,6 +36,7 @@ tasks.withType<KotlinCompile> {
 
 val fatJar = task("fatJar", type = Jar::class) {
     archiveBaseName.set("${project.name}-fat")
+    archiveVersion.set("")
     manifest {
         attributes["Implementation-Title"] = "Discord Bot Jar"
         attributes["Implementation-Version"] = bot.Versions.botVersion
