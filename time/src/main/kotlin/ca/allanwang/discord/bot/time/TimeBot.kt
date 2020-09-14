@@ -166,8 +166,10 @@ class TimeBot @Inject constructor(
         if (!pendingReactionCache.containsKey(message.id)) return
         if (emoji.name != timeApi.reactionEmoji.name) return
         if (getUserOrNull()?.isBot == true) return
+        logger.atInfo().log("Received reaction response")
         val message = getMessage()
         val info = message.timeBotInfo(message.groupSnowflake(guildId)) ?: return
+        logger.atInfo().log("Sending reaction response message")
         pendingReactionCache.remove(message.id)
         message.deleteReaction(timeApi.reactionEmoji)
         message.createTimezoneMessage(info)

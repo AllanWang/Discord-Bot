@@ -30,10 +30,10 @@ class LogBot @Inject constructor(
     }
 }
 
-@Module(includes = [BotPrefixModule::class])
+@Module
 object LogBotModule {
     @Provides
     @IntoSet
     @Singleton
-    fun prefixBot(bot: LogBot): BotFeature = bot
+    fun bot(bot: LogBot): BotFeature = bot
 }

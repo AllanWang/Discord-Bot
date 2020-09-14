@@ -17,16 +17,14 @@ import javax.inject.Singleton
 
 @Singleton
 class PrefixApi @Inject constructor(
-    @FirebaseRootRef
-    private val rootRef: DatabaseReference
+    @FirebaseRootRef rootRef: DatabaseReference
 ) {
     companion object {
         private const val PREFIX = "prefix"
         private val logger = FluentLogger.forEnclosingClass()
     }
 
-    private val ref: DatabaseReference
-        get() = rootRef.child(PREFIX)
+    private val ref: DatabaseReference = rootRef.child(PREFIX)
 
     suspend fun setPrefix(group: Snowflake, prefix: String): Boolean = ref.child(group.value).setValue(prefix)
 

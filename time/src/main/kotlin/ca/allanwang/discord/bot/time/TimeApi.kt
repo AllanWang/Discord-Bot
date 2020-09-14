@@ -1,9 +1,6 @@
 package ca.allanwang.discord.bot.time
 
-import ca.allanwang.discord.bot.firebase.child
-import ca.allanwang.discord.bot.firebase.setValue
-import ca.allanwang.discord.bot.firebase.single
-import ca.allanwang.discord.bot.firebase.singleSnapshot
+import ca.allanwang.discord.bot.firebase.*
 import com.gitlab.kordlib.common.entity.Snowflake
 import com.gitlab.kordlib.core.entity.ReactionEmoji
 import com.gitlab.kordlib.kordx.emoji.DiscordEmoji
@@ -21,12 +18,15 @@ import javax.inject.Singleton
 
 @Singleton
 class TimeApi @Inject constructor(
-    private val firebaseDatabase: FirebaseDatabase
+    @FirebaseRootRef rootRef: DatabaseReference
 ) {
 
     companion object {
+        private const val TIME = "time"
         val logger = FluentLogger.forEnclosingClass()
     }
+
+    private val ref = rootRef.child(TIME)
 
     val dateTimeFormatterNoAmPm = DateTimeFormatter.ofPattern("h:mm")
 
@@ -38,17 +38,14 @@ class TimeApi @Inject constructor(
 
     val embedColor: Color = Color.decode("#03a5fc")
 
-    private val timeRef: DatabaseReference
-        get() = firebaseDatabase.reference.child("time")
-
     suspend fun getTime(group: Snowflake, id: Snowflake): TimeZone? =
-        timeRef.child(group).child(id).single<String>()?.let { TimeZone.getTimeZone(it) }
+        ref.child(group).child(id).single<String>()?.let { TimeZone.getTimeZone(it) }
 
     suspend fun saveTime(group: Snowflake, id: Snowflake, value: TimeZone): Boolean =
-        timeRef.child(group).child(id).setValue(value.id)
+        ref.child(group).child(id).setValue(value.id)
 
     suspend fun groupTimes(group: Snowflake): List<TimeZone> {
-        return timeRef.child(group.value)
+        return ref.child(group)
             .singleSnapshot().children
             .map { it.getValue(String::class.java) }
             .toSet()

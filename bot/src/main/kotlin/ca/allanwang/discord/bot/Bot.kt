@@ -4,6 +4,7 @@ package ca.allanwang.discord.bot
 
 import ca.allanwang.discord.bot.base.CommandBotModule
 import ca.allanwang.discord.bot.base.PrefixBotModule
+import ca.allanwang.discord.bot.base.StartBotModule
 import ca.allanwang.discord.bot.core.BotFeature
 import ca.allanwang.discord.bot.echo.EchoBotModule
 import ca.allanwang.discord.bot.time.TimeBotModule
@@ -68,6 +69,7 @@ suspend fun main(args: Array<String>) {
 @Component(
     modules = [
         // ca.allanwang.discord.bot.base.LogBotModule::class,
+        StartBotModule::class,
         CommandBotModule::class,
         PrefixBotModule::class,
         TimeBotModule::class,
