@@ -163,12 +163,9 @@ class TimeBot @Inject constructor(
     }
 
     private suspend fun ReactionAddEvent.handleEvent() {
-        logger.atInfo().log("Receive event")
         if (!pendingReactionCache.containsKey(message.id)) return
-        logger.atInfo().log("Receive event in key")
-        logger.atInfo().log("Receive event emojis %s, %s", emoji.name, timeApi.reactionEmoji.name)
+        logger.atInfo().log("Receive pending event with emoji %s", emoji.name)
         if (emoji.name != timeApi.reactionEmoji.name) return
-        logger.atInfo().log("Receive event matches emoji")
         if (getUserOrNull()?.isBot == true) return
         logger.atInfo().log("Received reaction response")
         val message = getMessage()
