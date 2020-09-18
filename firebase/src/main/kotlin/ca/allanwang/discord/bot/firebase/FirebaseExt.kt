@@ -20,7 +20,7 @@ import kotlin.coroutines.suspendCoroutine
  * Referenced https://stackoverflow.com/questions/57834950/how-to-handle-callback-using-kotlin-coroutines
  */
 
-val _firebase_coroutine_logger: FluentLogger = FluentLogger.forEnclosingClass()
+val _firebase_ext_logger: FluentLogger = FluentLogger.forEnclosingClass()
 
 fun DatabaseReference.child(snowflake: Snowflake) = child(snowflake.value)
 
@@ -39,12 +39,7 @@ suspend fun DatabaseReference.singleSnapshot(): DataSnapshot = withContext(Dispa
 }
 
 suspend inline fun <reified T> DatabaseReference.single(): T? = withContext(Dispatchers.IO) {
-    try {
-        singleSnapshot().getValue(T::class.java)
-    } catch (e: Exception) {
-        _firebase_coroutine_logger.atWarning().withCause(e).log("firebase single")
-        null
-    }
+    singleSnapshot().getValueOrNull<T>()
 }
 
 suspend fun DatabaseReference.listenSnapshot(): Flow<DataSnapshot> = withContext(Dispatchers.IO) {
@@ -66,19 +61,21 @@ suspend fun DatabaseReference.listenSnapshot(): Flow<DataSnapshot> = withContext
 
 suspend inline fun <reified T> DatabaseReference.listen(): Flow<T?> = withContext(Dispatchers.IO) {
     listenSnapshot().map {
-        try {
-            it.getValue(T::class.java)
-        } catch (e: Exception) {
-            _firebase_coroutine_logger.atWarning().withCause(e).log("firebase listen")
-            null
-        }
+        it.getValueOrNull<T>()
     }
 }
 
 suspend fun DatabaseReference.setValue(value: Any): Boolean = suspendCoroutine { cont ->
     setValue(value) { error, _ ->
         if (error != null)
-            _firebase_coroutine_logger.atInfo().log("Set failed")
+            _firebase_ext_logger.atInfo().log("Set failed")
         cont.resume(error == null)
     }
+}
+
+inline fun <reified T> DataSnapshot.getValueOrNull(): T? = try {
+    getValue(T::class.java)
+} catch (e: Exception) {
+    _firebase_ext_logger.atWarning().withCause(e).log("get value %s %s", key, T::class.simpleName)
+    null
 }
