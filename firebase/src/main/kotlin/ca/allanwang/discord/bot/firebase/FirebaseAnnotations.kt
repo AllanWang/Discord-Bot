@@ -1,8 +1,8 @@
 package ca.allanwang.discord.bot.firebase
 
-import javax.inject.Named
+import javax.inject.Qualifier
 
-@Named
+@Qualifier
 @MustBeDocumented
 @Retention(AnnotationRetention.RUNTIME)
 annotation class FirebaseRootRef

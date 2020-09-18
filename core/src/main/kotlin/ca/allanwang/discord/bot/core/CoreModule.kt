@@ -7,6 +7,7 @@ import java.io.File
 import java.io.FileInputStream
 import java.util.*
 import javax.inject.Named
+import javax.inject.Qualifier
 
 interface BotFeature {
 
@@ -15,7 +16,7 @@ interface BotFeature {
     suspend fun Kord.attach()
 }
 
-@Named
+@Qualifier
 @MustBeDocumented
 @Retention(AnnotationRetention.RUNTIME)
 annotation class PrivProperties
