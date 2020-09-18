@@ -34,7 +34,7 @@ class TimeApi @Inject constructor(
 
     val reactionEmoji: ReactionEmoji = Emojis.clock3.toReaction()
 
-    val reactionThresholdTime: Long = 10_000
+    val reactionThresholdTime: Long = 5 * 60 * 1000
 
     val embedColor: Color = Color.decode("#03a5fc")
 
