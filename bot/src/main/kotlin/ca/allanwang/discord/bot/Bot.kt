@@ -6,6 +6,7 @@ import ca.allanwang.discord.bot.base.CommandBotModule
 import ca.allanwang.discord.bot.base.PrefixBotModule
 import ca.allanwang.discord.bot.base.StartBotModule
 import ca.allanwang.discord.bot.core.BotFeature
+import ca.allanwang.discord.bot.random.RandomBotModule
 import ca.allanwang.discord.bot.time.TimeBotModule
 import com.gitlab.kordlib.core.Kord
 import com.google.common.flogger.FluentLogger
@@ -70,6 +71,7 @@ suspend fun main(args: Array<String>) {
         StartBotModule::class,
         CommandBotModule::class,
         PrefixBotModule::class,
+        RandomBotModule::class,
         TimeBotModule::class,
 
         // ca.allanwang.discord.bot.base.LogBotModule::class,

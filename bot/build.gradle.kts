@@ -14,6 +14,7 @@ dependencies {
     implementation(project(":firebase"))
     implementation(project(":time"))
     implementation(project(":maps"))
+    implementation(project(":random"))
 
 
     implementation(bot.Dependencies.dagger)
