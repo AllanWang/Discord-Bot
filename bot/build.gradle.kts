@@ -15,6 +15,7 @@ dependencies {
     implementation(project(":time"))
     implementation(project(":maps"))
     implementation(project(":random"))
+    implementation(project(":oust"))
 
 
     implementation(bot.Dependencies.dagger)

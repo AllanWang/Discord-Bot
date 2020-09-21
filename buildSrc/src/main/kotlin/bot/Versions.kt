@@ -43,4 +43,7 @@ object Versions {
 
     // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
     const val junit = "5.6.2"
+
+    // https://github.com/npryce/hamkrest/releases
+    const val hamkrest = "1.8.0.1"
 }

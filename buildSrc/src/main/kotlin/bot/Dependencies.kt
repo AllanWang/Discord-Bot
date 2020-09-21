@@ -30,4 +30,6 @@ object Dependencies {
     const val googleMaps = "com.google.maps:google-maps-services:${Versions.googleMaps}"
 
     fun junit(type: String) = "org.junit.jupiter:junit-jupiter-${type}:${Versions.junit}"
+
+    const val hamkrest = "com.natpryce:hamkrest:${Versions.hamkrest}"
 }
