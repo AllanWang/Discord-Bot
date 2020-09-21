@@ -81,7 +81,7 @@ class TimeBot @Inject constructor(
     private class TimeBotInfo(
         val authorId: Snowflake,
         val times: List<TimeEntry>,
-        val origZoneId: ZoneId,
+        val origTimezone: TimeZone,
         val timezones: List<TimeZone>
     )
 
@@ -90,13 +90,13 @@ class TimeBot @Inject constructor(
         val times = content.findTimes()
         if (times.isEmpty()) return null
         logger.atInfo().log("Times matched %s", times)
-        val origZoneId = timeApi.getTime(groupSnowflake, authorId)?.toZoneId() ?: return null
+        val origTimezone = timeApi.getTime(groupSnowflake, authorId) ?: return null
         val timezones = timeApi.groupTimes(groupSnowflake)
         if (timezones.size <= 1) return null
         return TimeBotInfo(
             authorId = authorId,
             times = times,
-            origZoneId = origZoneId,
+            origTimezone = origTimezone,
             timezones = timezones
         )
     }
@@ -117,9 +117,11 @@ class TimeBot @Inject constructor(
 
             color = timeApi.embedColor
 
+            val origZoneId = info.origTimezone.toZoneId()
+
             info.times.forEach { time ->
 
-                val date = time.toZonedDateTime(info.origZoneId)
+                val date = time.toZonedDateTime(origZoneId)
 
                 field {
                     name = buildString {
@@ -131,7 +133,7 @@ class TimeBot @Inject constructor(
                     value = buildString {
                         info.timezones.forEach { timezone ->
                             val zoneId = timezone.toZoneId()
-                            appendOptional(zoneId == info.origZoneId, this::appendUnderline) {
+                            appendOptional(timezone.rawOffset == info.origTimezone.rawOffset, this::appendUnderline) {
                                 appendBold {
                                     append(timezone.displayName)
                                 }

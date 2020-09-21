@@ -44,9 +44,12 @@ class TimeApi @Inject constructor(
     suspend fun groupTimes(group: Snowflake): List<TimeZone> {
         return ref.child(group)
             .singleSnapshot().children
+            .asSequence()
             .mapNotNull { it.getValueOrNull<String>() }
-            .toSet()
+            .distinct()
             .mapNotNull { TimeZone.getTimeZone(it) }
+            .distinctBy { it.rawOffset }
             .sortedBy { it.rawOffset }
+            .toList()
     }
 }
