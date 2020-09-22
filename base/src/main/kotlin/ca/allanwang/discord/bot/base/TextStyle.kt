@@ -33,6 +33,12 @@ inline fun StringBuilder.appendCodeBlock(block: () -> Unit) {
     append("`")
 }
 
+inline fun StringBuilder.appendBigCodeBlock(block: () -> Unit) {
+    append("```")
+    block()
+    append("```")
+}
+
 inline fun StringBuilder.appendQuote(block: () -> Unit) {
     append("> ")
     block()

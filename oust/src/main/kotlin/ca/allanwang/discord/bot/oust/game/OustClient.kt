@@ -1,17 +1,20 @@
 package ca.allanwang.discord.bot.oust.game
 
-import com.gitlab.kordlib.common.entity.Snowflake
+import ca.allanwang.discord.bot.base.appendBold
+import ca.allanwang.discord.bot.base.appendItalic
 import com.gitlab.kordlib.core.Kord
 import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
 import com.gitlab.kordlib.core.behavior.channel.createEmbed
 import com.gitlab.kordlib.core.entity.ReactionEmoji
-import com.gitlab.kordlib.core.event.message.MessageCreateEvent
 import com.gitlab.kordlib.core.event.message.ReactionAddEvent
+import com.gitlab.kordlib.kordx.emoji.Emojis
+import com.gitlab.kordlib.kordx.emoji.toReaction
 import com.google.common.flogger.FluentLogger
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import java.awt.Color
 import javax.inject.Inject
 
 class OustClient @Inject constructor(
@@ -20,37 +23,52 @@ class OustClient @Inject constructor(
 ) {
 
     companion object {
-
         private val logger = FluentLogger.forEnclosingClass()
 
         val numberReactions: List<ReactionEmoji> = listOf(
-            "\u0031",
-            "\u0032",
-            "\u0033",
-            "\u0034",
-            "\u0035",
-            "\u0036",
-            "\u0037",
-            "\u0038",
-            "\u0039",
-        ).map { ReactionEmoji.Unicode(it) }
+            Emojis.one,
+            Emojis.two,
+            Emojis.three,
+            Emojis.four,
+            Emojis.five,
+            Emojis.six,
+            Emojis.seven,
+            Emojis.eight,
+            Emojis.nine,
+        ).map { it.toReaction() }
+
+        private val embedColor: Color = Color.decode("#DC1E28")
     }
-
-    private val messageCallbacks: MutableList<Callback> = mutableListOf()
-
-    private class Callback(val action: MessageCreateEvent.() -> Boolean)
 
     suspend fun chooseAction(player: OustPlayer, actions: List<OustAction>): OustAction {
         val message = channel.createEmbed {
+            color = embedColor
             title = "${player.info.name}'s Turn"
-            description = buildString {
-                append(if (player.cards.size == 1) "1 card" else "${player.cards.size} cards")
-                append(" - ")
-                append(if (player.coins == 1) "1 coin" else "${player.coins} coins")
+            field {
+                name = "Items"
+                value = buildString {
+                    append(if (player.cards.size == 1) "1 Card" else "${player.cards.size} Cards")
+                    append(" - ")
+                    appendItalic {
+                        append(player.cards.joinToString(" • ") {
+                            if (it.visible) it.value.name else "Unknown"
+                        })
+                    }
+                    appendLine()
+                    append(if (player.coins == 1) "1 Coin" else "${player.coins} Coins")
+                }
             }
-            actions.forEachIndexed { i, action ->
-                field {
-                    name = "${i + 1}: ${action.name}"
+            field {
+                name = "Actions"
+                value = buildString {
+                    actions.forEachIndexed { i, action ->
+                        appendBold {
+                            append(i + 1)
+                        }
+                        append(": ")
+                        append(action.name)
+                        appendLine()
+                    }
                 }
             }
         }

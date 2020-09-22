@@ -9,9 +9,7 @@ class OustController @Inject constructor(
 ) {
 
     companion object {
-
         private val logger = FluentLogger.forEnclosingClass()
-
     }
 
     suspend fun test() {
