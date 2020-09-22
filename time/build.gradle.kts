@@ -21,7 +21,6 @@ dependencies {
     testImplementation(bot.Dependencies.junit("api"))
     testImplementation(bot.Dependencies.junit("params"))
     testRuntimeOnly(bot.Dependencies.junit("engine"))
-
 }
 
 tasks.test {

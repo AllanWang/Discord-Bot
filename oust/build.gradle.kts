@@ -12,6 +12,7 @@ dependencies {
 
     implementation(project(":core"))
     implementation(project(":base"))
+    implementation(project(":firebase"))
 
     testImplementation(bot.Dependencies.flogger("system-backend"))
     testImplementation(bot.Dependencies.hamkrest)
