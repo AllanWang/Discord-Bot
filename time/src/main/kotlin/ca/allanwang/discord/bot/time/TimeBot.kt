@@ -89,7 +89,7 @@ class TimeBot @Inject constructor(
         val authorId = author?.id ?: return null
         val times = content.findTimes()
         if (times.isEmpty()) return null
-        logger.atInfo().log("Times matched %s", times)
+        logger.atInfo().log("Times matched %s - %s", times, authorId.value)
         val origTimezone = timeApi.getTime(groupSnowflake, authorId) ?: return null
         val timezones = timeApi.groupTimes(groupSnowflake)
         if (timezones.size <= 1) return null
