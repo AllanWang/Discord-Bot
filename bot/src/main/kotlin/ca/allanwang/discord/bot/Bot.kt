@@ -2,6 +2,7 @@
 
 package ca.allanwang.discord.bot
 
+import ca.allanwang.discord.bot.base.AdminBotModule
 import ca.allanwang.discord.bot.base.CommandBotModule
 import ca.allanwang.discord.bot.base.PrefixBotModule
 import ca.allanwang.discord.bot.base.StartBotModule
@@ -71,6 +72,7 @@ suspend fun main(args: Array<String>) {
     modules = [
         StartBotModule::class,
         CommandBotModule::class,
+        AdminBotModule::class,
         PrefixBotModule::class,
         RandomBotModule::class,
         TimeBotModule::class,
