@@ -9,6 +9,10 @@ repositories {
     jcenter()
 }
 
+apply(plugin = "ca.allanwang.discord.bot.gradle.plugin")
+
+val pluginGenDir = File(buildDir, "plugingen")
+
 subprojects {
     if (projectDir.name == "buildSrc") {
         return@subprojects
@@ -23,6 +27,14 @@ subprojects {
     repositories {
         jcenter()
         maven(url = "https://dl.bintray.com/kordlib/Kord")
+    }
+
+    sourceSets {
+        main {
+            java {
+                srcDir(pluginGenDir)
+            }
+        }
     }
 
     dependencies {

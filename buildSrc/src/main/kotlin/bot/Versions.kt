@@ -46,4 +46,5 @@ object Versions {
 
     // https://github.com/npryce/hamkrest/releases
     const val hamkrest = "1.8.0.1"
+
 }
