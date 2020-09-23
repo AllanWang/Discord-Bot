@@ -1,6 +1,7 @@
 package ca.allanwang.discord.bot.base
 
-import ca.allanwang.discord.bot.gradle.Build
+import ca.allanwang.discord.bot.core.Build
+import ca.allanwang.discord.bot.core.CoreModule
 import com.gitlab.kordlib.core.behavior.channel.createEmbed
 import com.google.common.flogger.FluentLogger
 import dagger.Module
@@ -12,6 +13,7 @@ import javax.inject.Singleton
 
 @Singleton
 class AdminBot @Inject constructor(
+    private val build: Build
 ) : CommandHandlerBot {
 
     companion object {
@@ -29,7 +31,7 @@ class AdminBot @Inject constructor(
     }
 
     private suspend fun CommandHandlerEvent.buildInfo() {
-        if (!Build.valid) {
+        if (!build.valid) {
             channel.createMessage("Invalid build info; source not built from git repo")
             return
         }
@@ -38,17 +40,17 @@ class AdminBot @Inject constructor(
             title = "Build Info"
             field {
                 name = "Version"
-                value = buildString { appendLink(Build.version, Build.commitUrl) }
+                value = buildString { appendLink(build.version, build.commitUrl) }
             }
             field {
                 name = "Build Time"
-                value = Build.buildTime
+                value = build.buildTime
             }
         }
     }
 }
 
-@Module(includes = [BotPrefixModule::class])
+@Module(includes = [CoreModule::class, BotPrefixModule::class])
 object AdminBotModule {
 
     @Provides

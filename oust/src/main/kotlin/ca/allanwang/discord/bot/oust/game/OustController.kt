@@ -12,6 +12,8 @@ class OustController @Inject constructor(
         private val logger = FluentLogger.forEnclosingClass()
     }
 
+    // private var turn: OustTurn
+
     suspend fun test() {
         val action = chooseAction()
         logger.atInfo().log("Action %s", action)

@@ -1,5 +1,6 @@
 package ca.allanwang.discord.bot.core
 
+import ca.allanwang.discord.bot.gradle.GitBuild
 import com.gitlab.kordlib.core.Kord
 import dagger.Module
 import dagger.Provides
@@ -38,4 +39,8 @@ object CoreModule {
         FileInputStream(file).use { prop.load(it) }
         return prop
     }
+
+    @Provides
+    @JvmStatic
+    fun build(): Build = GitBuild()
 }
