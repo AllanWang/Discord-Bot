@@ -6,18 +6,20 @@ import com.gitlab.kordlib.common.entity.Snowflake
 import com.gitlab.kordlib.core.Kord
 import com.gitlab.kordlib.core.behavior.channel.createEmbed
 import com.gitlab.kordlib.core.entity.Message
+import com.gitlab.kordlib.core.entity.User
 import com.gitlab.kordlib.core.event.message.MessageCreateEvent
 import com.gitlab.kordlib.core.event.message.ReactionAddEvent
-import com.gitlab.kordlib.core.on
 import com.google.common.flogger.FluentLogger
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.util.*
-import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -66,13 +68,8 @@ class TimeBot @Inject constructor(
         return TimeEntry(hour, minute, pm)
     }
 
-    private val pendingReactionCache: ConcurrentHashMap<Snowflake, Long> = ConcurrentHashMap()
-
     override suspend fun Kord.attach() {
         onMessage {
-            handleEvent()
-        }
-        on<ReactionAddEvent> {
             handleEvent()
         }
     }
@@ -95,7 +92,7 @@ class TimeBot @Inject constructor(
         val authorId = author?.id ?: return null
         val times = content.findTimes()
         if (times.isEmpty()) return null
-        logger.atInfo().log("Times matched %s", times)
+        logger.atInfo().log("Times matched %s - %s", times, id.value)
         val origTimezone = timeApi.getTime(groupSnowflake, authorId) ?: return null
         val timezones = timeApi.groupTimes(groupSnowflake)
         if (timezones.size <= 1) return null
@@ -112,12 +109,12 @@ class TimeBot @Inject constructor(
 
         // To avoid spam, we limit auto messages to only occur during mentions
         if (message.mentionedRoleIds.isNotEmpty() || message.mentionedUserIds.isNotEmpty() || message.mentionsEveryone)
-            message.createTimezoneMessage(info)
+            message.createTimezoneMessage(info, user = message.author)
         else
             createTimezoneReaction()
     }
 
-    private suspend fun Message.createTimezoneMessage(info: TimeBotInfo) {
+    private suspend fun Message.createTimezoneMessage(info: TimeBotInfo, user: User?) {
         channel.createEmbed {
             title = "Timezones"
 
@@ -157,30 +154,38 @@ class TimeBot @Inject constructor(
                     }.trim()
                 }
             }
+
+            if (user != null) {
+                footer {
+                    text = "Requested by ${user.tag}"
+                }
+            }
         }
     }
 
     private suspend fun MessageCreateEvent.createTimezoneReaction() {
         message.addReaction(timeApi.reactionEmoji)
-        pendingReactionCache[message.id] = System.currentTimeMillis()
         launch {
-            delay(timeApi.reactionThresholdTime)
-            pendingReactionCache.remove(message.id)
+            withTimeoutOrNull(timeApi.reactionThresholdTime) {
+                kord.events.filterIsInstance<ReactionAddEvent>()
+                    .filter { it.messageId == message.id }
+                    .first { it.handleEvent() }
+            }
             message.deleteOwnReaction(timeApi.reactionEmoji)
+            logger.atInfo().log("Remove listener for message %s", message.id.value)
         }
     }
 
-    private suspend fun ReactionAddEvent.handleEvent() {
-        if (!pendingReactionCache.containsKey(message.id)) return
+    private suspend fun ReactionAddEvent.handleEvent(): Boolean {
+        if (userId == kord.selfId) return false
         logger.atInfo().log("Receive pending event with emoji %s", emoji.name)
-        if (emoji.name != timeApi.reactionEmoji.name) return
-        if (getUserOrNull()?.isBot == true) return
-        logger.atInfo().log("Received reaction response")
+        if (emoji != timeApi.reactionEmoji) return false
+        val user = getUserOrNull()
+        if (user?.isBot == true) return false
         val message = getMessage()
-        val info = message.timeBotInfo(message.groupSnowflake(guildId)) ?: return
+        val info = message.timeBotInfo(message.groupSnowflake(guildId)) ?: return true
         logger.atInfo().log("Sending reaction response message")
-        pendingReactionCache.remove(message.id)
-        message.deleteReaction(timeApi.reactionEmoji)
-        message.createTimezoneMessage(info)
+        message.createTimezoneMessage(info, user = user)
+        return true
     }
 }
