@@ -4,64 +4,58 @@ import ca.allanwang.discord.bot.base.appendItalic
 import com.gitlab.kordlib.core.Kord
 import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
 import com.google.common.flogger.FluentLogger
+import dagger.Module
+import dagger.Provides
+import dagger.Subcomponent
 import java.awt.Color
 import javax.inject.Inject
 
-/**
- * Represents a single turn in the game.
- * Here, we have actions for one player, followed by a confirmation if necessary.
- */
-interface OustTurn {
 
-    val currentPlayer: OustPlayer
+class OustTurnDiscord(
+    override val currentPlayer: OustPlayer
+) : OustTurn {
 
-    sealed class Response<in T> {
-        class Select<T>(val value: T) : Response<T>()
-        object GoBack : Response<Any>()
+    override suspend fun chooseAction(actions: List<OustAction>, canGoBack: Boolean): OustTurn.Response<OustAction> {
+        TODO("not implemented")
     }
 
-    /**
-     * Allow the current player to choose from a list of actions.
-     * [canGoBack] is true if a back button should be shown
-     */
-    suspend fun chooseAction(actions: List<OustAction>, canGoBack: Boolean): Response<OustAction>
+    override suspend fun selectPlayers(allowed: Set<OustPlayer>): OustTurn.Response<OustPlayer> {
+        TODO("not implemented")
+    }
 
-    /**
-     * Select a player from the allowed ids.
-     * TODO() add enum for selection reason (money, kill)
-     */
-    suspend fun selectPlayers(allowed: Set<OustPlayer>): Response<OustPlayer>
+    override suspend fun checkRejection(message: String): OustPlayer? {
+        TODO("not implemented")
+    }
 
-    /**
-     * Check if any user opposes the action.
-     * Returns the first player to reject, or null if all players accept.
-     */
-    suspend fun checkRejection(message: String): OustPlayer?
+    override suspend fun checkIndividualRejection(player: OustPlayer): Boolean {
+        TODO("not implemented")
+    }
 
-    /**
-     * Check with a specific user whether or not the action should be accepted
-     */
-    suspend fun checkIndividualRejection(player: OustPlayer): Boolean
+    override suspend fun discardCard(player: OustPlayer): OustCard {
+        TODO("not implemented")
+    }
 
-    /**
-     * Select card from hand to discard
-     * TODO() not sure if this should return index or card
-     */
-    suspend fun discardCard(player: OustPlayer): OustCard
+    override suspend fun selectNewHand(newCards: List<OustCard>): List<OustCard> {
+        TODO("not implemented")
+    }
 
-    /**
-     * Given new cards, select a new hand with card count matching existing hand.
-     */
-    suspend fun selectNewHand(newCards: List<OustCard>): List<OustCard>
+    override suspend fun showNewHand(cards: List<OustCard>) {
+        TODO("not implemented")
+    }
 
-    suspend fun showNewHand(cards: List<OustCard>)
+    override suspend fun showResult() {
+        TODO("not implemented")
+    }
 
-    /**
-     * Show the final result of the turn.
-     * TODO() add sealed class for all possible results
-     */
-    suspend fun showResult()
+}
 
+@Module
+object OustTurnModule {
+    @Provides
+    @OustScope
+    fun turnFactory(): OustTurn.Factory = object : OustTurn.Factory {
+        override fun get(currentPlayer: OustPlayer): OustTurn = OustTurnDiscord(currentPlayer)
+    }
 }
 
 class OustClient @Inject constructor(

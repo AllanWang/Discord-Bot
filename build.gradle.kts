@@ -29,8 +29,6 @@ subprojects {
         implementation(kotlin("stdlib"))
         implementation(bot.Dependencies.dagger)
         kapt(bot.Dependencies.daggerKapt)
-        implementation(bot.Dependencies.kord)
-        implementation(bot.Dependencies.kordxEmojis)
         implementation(bot.Dependencies.flogger)
         implementation(bot.Dependencies.coroutines)
 

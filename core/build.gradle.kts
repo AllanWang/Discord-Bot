@@ -9,3 +9,8 @@ sourceSets {
         }
     }
 }
+
+dependencies {
+    api(bot.Dependencies.kord)
+    api(bot.Dependencies.kordxEmojis)
+}

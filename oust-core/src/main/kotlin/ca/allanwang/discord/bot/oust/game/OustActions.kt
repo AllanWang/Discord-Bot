@@ -1,35 +1,34 @@
 package ca.allanwang.discord.bot.oust.game
 
-import com.gitlab.kordlib.common.entity.Snowflake
 import kotlin.math.min
 
 sealed class OustMove {
 
     abstract fun OustGame.apply()
 
-    protected operator fun List<OustPlayer>.get(id: Snowflake): OustPlayer = firstOrNull { it.info.id == id }
+    protected operator fun List<OustPlayer>.get(id: String): OustPlayer = firstOrNull { it.info.id == id }
         ?: throw IllegalArgumentException("Could not find player with matching id")
 
-    protected fun OustGame.discardCard(id: Snowflake, cardIndex: Int) {
+    protected fun OustGame.discardCard(id: String, cardIndex: Int) {
         val player = players[id]
         player.cards.removeAt(cardIndex)
     }
 
-    data class Oust(val player: Snowflake, val cardIndex: Int) : OustMove() {
+    data class Oust(val player: String, val cardIndex: Int) : OustMove() {
         override fun OustGame.apply() {
             currentPlayer.spendCoins(OustGame.OUST_COST)
             discardCard(player, cardIndex)
         }
     }
 
-    data class Assassinate(val player: Snowflake, val cardIndex: Int) : OustMove() {
+    data class Assassinate(val player: String, val cardIndex: Int) : OustMove() {
         override fun OustGame.apply() {
             currentPlayer.spendCoins(OustGame.ASSASSINATION_COST)
             discardCard(player, cardIndex)
         }
     }
 
-    data class Steal(val player: Snowflake) : OustMove() {
+    data class Steal(val player: String) : OustMove() {
         override fun OustGame.apply() {
             val otherPlayer = players[player]
             val value = min(otherPlayer.coins, OustGame.STEAL_AMOUNT)
@@ -73,17 +72,26 @@ enum class OustAction(val requiredCoins: Int = 0, val blockable: Boolean = true)
 }
 
 sealed class OustAction2 {
-    data class SelectAction(val id: Snowflake, val action: OustAction)
-    data class Contest(val id: Snowflake, val contesterId: Snowflake, val action: OustAction)
-    data class NoContext(val id: Snowflake, val action: OustAction)
+    data class SelectAction(val id: String, val action: OustAction)
+    data class Contest(val id: String, val contesterId: String, val action: OustAction)
+    data class NoContext(val id: String, val action: OustAction)
 }
 
-sealed class OustReaction {
+sealed class OustRequest {
+    data class SelectAction(val actions: List<OustAction>): OustRequest()
+}
+
+sealed class OustResponse {
     fun validate(game: OustGame): Boolean = true
 
-    data class SelectAction(val player: OustPlayer, val actions: List<OustAction>) : OustReaction()
-    data class SelectPlayer(val player: OustPlayer, val players: List<OustPlayer>) : OustReaction()
-    data class Contest(val player: OustPlayer, val action: OustAction) : OustReaction()
-    data class EndGame(val winner: OustPlayer) : OustReaction()
+    object GoBack : OustResponse()
+    data class SelectedAction(val action: OustAction) : OustResponse()
+    data class SelectPlayer(val players: List<OustPlayer>) : OustResponse()
+    data class Contest(val player: OustPlayer, val action: OustAction) : OustResponse()
+    data class EndGame(val winner: OustPlayer) : OustResponse()
+    data class TurnResponse(val response: OustTurnResponse): OustResponse()
 }
 
+sealed class OustTurnResponse {
+    data class Coup(val player: OustPlayer): OustTurnResponse()
+}

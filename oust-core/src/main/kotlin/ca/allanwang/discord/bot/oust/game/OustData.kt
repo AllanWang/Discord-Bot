@@ -1,9 +1,7 @@
 package ca.allanwang.discord.bot.oust.game
 
-import com.gitlab.kordlib.common.entity.Snowflake
 import java.util.*
 import java.util.concurrent.ThreadLocalRandom
-import kotlin.math.min
 
 data class OustGame(
     var currentPlayerIndex: Int,
@@ -62,7 +60,7 @@ data class OustPlayer(val info: Info, val cards: MutableList<Card>, var coins: I
 
     data class Card(val value: OustCard, var visible: Boolean)
 
-    data class Info(val id: Snowflake, val name: String)
+    data class Info(val id: String, val name: String)
 }
 
 enum class OustCard {

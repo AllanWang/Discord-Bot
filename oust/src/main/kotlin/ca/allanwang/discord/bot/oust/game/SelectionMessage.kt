@@ -77,7 +77,7 @@ class SelectionMessage @Inject constructor(
         }
 
         val index = kord.events.filterIsInstance<ReactionAddEvent>()
-            .filter { it.messageId == message.id && it.user.id == player.info.id }
+            .filter { it.messageId == message.id && it.user.id.value == player.info.id }
             .map { numberReactions.indexOf(it.emoji) }
             .filter { it in actions.indices }
             .first()
