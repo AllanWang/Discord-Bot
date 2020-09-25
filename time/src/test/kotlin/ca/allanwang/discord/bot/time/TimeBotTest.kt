@@ -17,12 +17,12 @@ class TimeBotTest {
     fun regexTest() {
         val regex = TimeBot.timeRegex
 
-        fun assertTime(expected: String, vararg candidates: String) {
+        fun assertTime(expected: String, matchEntire: Boolean = true, vararg candidates: String) {
             candidates.forEach { candidate ->
                 fun fail(throwable: Throwable? = null): Nothing =
-                    fail("Regex test failed with $candidate; expected $expected", throwable)
+                    fail("Regex test failed with '$candidate'; expected $expected", throwable)
 
-                val match = regex.matchEntire(candidate) ?: fail()
+                val match = (if (matchEntire) regex.matchEntire(candidate) else regex.find(candidate)) ?: fail()
                 runCatching {
                     val result = buildString {
                         append(match.groupValues[1].trimStart('0'))
@@ -38,9 +38,10 @@ class TimeBotTest {
             }
         }
 
-        assertTime("8:00 pm", "8pm", "8 PM", "8:00\tPm")
-        assertTime("3:12 am", "3:12am", "3:12", "03:12")
-        assertTime("1:00 am", "1", "1am", "1:00am")
+        assertTime("8:00 pm", matchEntire = true, "8pm", "8 PM", "8:00\tPm")
+        assertTime("3:12 am", matchEntire = true, "3:12am", "3:12", "03:12")
+        assertTime("1:00 am", matchEntire = true, "1", "1am", "1:00am")
+        assertTime("1:00 am", matchEntire = false, " 1 ", "'1'", "\"1\"", "<1>", "_1_")
     }
 
     @Test
@@ -51,7 +52,9 @@ class TimeBotTest {
             "8:0",
             "23:00",
             "1234",
-            "8:pm"
+            "8:pm",
+            "8:000",
+            "a8:00 "
         ).forEach {
             assertFalse(regex.matches(it), message = "Found unexpected match in $it")
         }
