@@ -1,7 +1,6 @@
 package ca.allanwang.discord.bot.oust.game
 
 import ca.allanwang.discord.bot.base.appendBold
-import ca.allanwang.discord.bot.base.appendItalic
 import com.gitlab.kordlib.core.Kord
 import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
 import com.gitlab.kordlib.core.behavior.channel.createMessage
@@ -17,7 +16,6 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import java.awt.Color
 import javax.inject.Inject
 
 class SelectionMessage @Inject constructor(
@@ -45,6 +43,11 @@ class SelectionMessage @Inject constructor(
 
     private var actions: List<String> = emptyList()
     private lateinit var message: Message
+
+    suspend fun <T> selectAction(actions: List<T>, convert: (T) -> String): T {
+        val index = selectAction(actions.map(convert))
+        return actions[index]
+    }
 
     suspend fun selectAction(actions: List<String>): Int {
         check(actions.isNotEmpty()) { "Cannot select actions from empty list" }

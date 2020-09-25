@@ -45,10 +45,10 @@ enum class OustAction(val requiredCoins: Int = 0, val blockable: Boolean = true)
     Steal,
     PayDay(blockable = false),
     BigPayDay,
-    Equalize,
+//    Equalize,
     Shuffle;
 
-    fun isPossible(player: OustPlayer) : Boolean{
+    fun isPossible(player: OustPlayer): Boolean {
         val currentCoins = player.coins
         if (this@OustAction == Oust) return currentCoins >= OustGame.OUST_COST
         if (currentCoins >= OustGame.FORCE_OUST_THRESHOLD) return false
@@ -61,28 +61,32 @@ enum class OustAction(val requiredCoins: Int = 0, val blockable: Boolean = true)
     }
 }
 
+enum class KillType {
+    Assassin, Oust
+}
+
 sealed class OustRequest {
-    data class SelectAction(val actions: List<OustAction>): OustRequest()
+    data class SelectAction(val actions: List<OustAction>) : OustRequest()
+    data class SelectPlayerKill(val players: List<OustPlayer>, val type: KillType) : OustRequest()
+    data class SelectCardsShuffle(val deckCards: List<OustCard>) : OustRequest()
+    data class SelectPlayerSteal(val players: List<OustPlayer>) : OustRequest()
 }
 
 sealed class OustResponse {
-    fun validate(game: OustGame): Boolean = true
-
     object GoBack : OustResponse()
     data class SelectedAction(val action: OustAction) : OustResponse()
-    data class SelectPlayer(val players: List<OustPlayer>) : OustResponse()
-    data class Contest(val player: OustPlayer, val action: OustAction) : OustResponse()
-    data class EndGame(val winner: OustPlayer) : OustResponse()
-    data class TurnResponse(val response: OustTurnResponse): OustResponse()
+    data class TurnResponse(val response: OustTurnResponse) : OustResponse()
 }
 
 sealed class OustTurnResponse {
 
-    data class Oust(val player: OustPlayer): OustTurnResponse()
-
+    data class KillPlayer(val player: OustPlayer, val type: KillType) : OustTurnResponse()
+    object PayDay : OustTurnResponse()
+    object BigPayDay : OustTurnResponse()
+    data class Steal(val player: OustPlayer) : OustTurnResponse()
 }
 
 sealed class OustTurnRebuttal {
     object Allow : OustTurnRebuttal()
-    data class Decline(val player: OustPlayer, val card: OustCard): OustTurnRebuttal()
+    data class Decline(val player: OustPlayer, val card: OustCard) : OustTurnRebuttal()
 }

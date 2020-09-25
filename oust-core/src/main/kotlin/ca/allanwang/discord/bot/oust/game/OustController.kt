@@ -56,7 +56,7 @@ class OustController @Inject constructor(
         while (true) {
             requests.add(request)
             val response = turn.handle(request, canGoBack = requests.size > 1)
-            request = when (val step = getNextRequest(response)) {
+            request = when (val step = getNextRequest(turn, response)) {
                 is TurnStep.GoBack -> {
                     requests.removeLast()
                     requests.last
@@ -67,10 +67,34 @@ class OustController @Inject constructor(
         }
     }
 
-    private fun getNextRequest(response: OustResponse): TurnStep = when (response) {
-        is OustResponse.GoBack -> TurnStep.GoBack
-        is OustResponse.TurnResponse -> TurnStep.TurnResponse(response.response)
-        else -> TODO()
+    private fun OustTurn.otherPlayers() = game.players.filter { it !== currentPlayer && it.cards.isNotEmpty() }
+
+    private fun getNextRequest(turn: OustTurn, response: OustResponse): TurnStep {
+        fun next(request: OustRequest) = TurnStep.NextRequest(request)
+        fun response(response: OustTurnResponse) = TurnStep.TurnResponse(response)
+
+        return when (response) {
+            is OustResponse.GoBack -> TurnStep.GoBack
+            is OustResponse.SelectedAction -> when (response.action) {
+                OustAction.Oust -> next(
+                    OustRequest.SelectPlayerKill(
+                        players = turn.otherPlayers(), type = KillType.Oust
+                    )
+                )
+                OustAction.Assassinate -> next(
+                    OustRequest.SelectPlayerKill(
+                        players = turn.otherPlayers(), type = KillType.Assassin
+                    )
+                )
+                OustAction.Shuffle -> next(
+                    OustRequest.SelectCardsShuffle(deckCards = game.deck.take(2))
+                )
+                OustAction.PayDay -> response(OustTurnResponse.PayDay)
+                OustAction.BigPayDay -> response(OustTurnResponse.BigPayDay)
+                OustAction.Steal -> next(OustRequest.SelectPlayerSteal(turn.otherPlayers()))
+            }
+            is OustResponse.TurnResponse -> response(response.response)
+        }
     }
 
     private sealed class TurnStep {

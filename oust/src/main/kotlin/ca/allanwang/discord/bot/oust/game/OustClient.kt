@@ -21,24 +21,58 @@ class OustTurnDiscord(
         private val embedColor: Color = Color.decode("#DC1E28")
     }
 
-    override suspend fun getStartRequest(): OustRequest {
-        return super.getStartRequest()
-    }
+    private var _selectionMessage: SelectionMessage? = null
+    private val selectionMessage: SelectionMessage
+        get() = _selectionMessage ?: newSelection(currentPlayer)
+            .also { _selectionMessage = it }
 
     override suspend fun act(response: OustTurnResponse) {
         TODO("not implemented")
     }
 
-    override suspend fun handle(request: OustRequest, canGoBack: Boolean): OustResponse {
-        TODO("not implemented")
+    override suspend fun handle(request: OustRequest, canGoBack: Boolean): OustResponse = when (request) {
+        is OustRequest.SelectAction -> {
+            val action = selectionMessage.selectAction(request.actions) { it.name }
+            OustResponse.SelectedAction(action)
+        }
+        is OustRequest.SelectPlayerKill -> {
+            val player = selectionMessage.selectAction(request.players) { it.info.name }
+            OustResponse.TurnResponse(OustTurnResponse.KillPlayer(player, request.type))
+        }
+        is OustRequest.SelectCardsShuffle -> {
+            TODO()
+        }
+        is OustRequest.SelectPlayerSteal -> {
+            val player = selectionMessage.selectAction(request.players) { it.info.name }
+            OustResponse.TurnResponse(OustTurnResponse.Steal(player))
+        }
     }
 
     override suspend fun rebuttal(response: OustTurnResponse): OustTurnRebuttal {
-        TODO("not implemented")
-    }
+        suspend fun rebuttalAll(card: OustCard): OustTurnRebuttal {
+            TODO()
+        }
 
-    private var _selectionMessage: SelectionMessage? = null
-    private val selectionMessage: SelectionMessage get() = _selectionMessage!!
+        suspend fun rebuttal(player: OustPlayer, card: OustCard, vararg otherCards: OustCard): OustTurnRebuttal {
+            TODO()
+        }
+
+        fun allow(): OustTurnRebuttal = OustTurnRebuttal.Allow
+
+        return when (response) {
+            is OustTurnResponse.KillPlayer -> when (response.type) {
+                KillType.Assassin -> rebuttal(response.player, OustCard.BodyGuard)
+                KillType.Oust -> allow()
+            }
+            is OustTurnResponse.PayDay -> allow()
+            is OustTurnResponse.BigPayDay -> rebuttalAll(OustCard.Banker)
+            is OustTurnResponse.Steal -> rebuttal(
+                response.player,
+                OustCard.Thief,
+                OustCard.Equalizer /* TODO verify role */
+            )
+        }
+    }
 
     private fun newSelection(player: OustPlayer): SelectionMessage {
         return SelectionMessage(kord, player, channel, header = {
