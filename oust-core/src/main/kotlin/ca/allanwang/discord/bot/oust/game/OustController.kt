@@ -16,15 +16,40 @@ class OustController @Inject constructor(
     }
 
     suspend fun test() {
+        turn()
+    }
 
+    suspend fun turnLoop() {
+        var finishedGame: FinishedGame?
+        do {
+            turn()
+            finishedGame = finishedGameState()
+        } while (finishedGame == null)
+        TODO("Print ending")
     }
 
     suspend fun turn() {
-        val response = runTurn()
+        val turn = turnFactory.get(game.currentPlayer)
+        val response = runTurn(turn)
+        when (val rebuttal = turn.rebuttal(response)) {
+            is OustTurnRebuttal.Allow -> turn.act(response)
+            is OustTurnRebuttal.Decline -> TODO()
+        }
+        game.currentPlayerIndex = (game.currentPlayerIndex + 1) % game.players.size
     }
 
-    suspend fun runTurn(): OustTurnResponse {
-        val turn = turnFactory.get(game.currentPlayer)
+    data class FinishedGame(val winner: OustPlayer)
+
+    private suspend fun finishedGameState(): FinishedGame? {
+        val remainingPlayers = game.players.filter { it.cards.isNotEmpty() }
+        if (remainingPlayers.isEmpty()) throw IllegalArgumentException("Game has no remaining players")
+        if (remainingPlayers.size > 1) return null
+        return FinishedGame(remainingPlayers.first())
+    }
+
+    private suspend fun isGameFinished(): Boolean = game.players.filter { it.cards.isNotEmpty() }.size <= 1
+
+    suspend fun runTurn(turn: OustTurn): OustTurnResponse {
         val requests: LinkedList<OustRequest> = LinkedList()
 
         var request: OustRequest = turn.getStartRequest()

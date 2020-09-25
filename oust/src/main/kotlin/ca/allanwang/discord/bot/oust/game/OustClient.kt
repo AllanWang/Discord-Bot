@@ -67,8 +67,15 @@ class OustTurnDiscord(
 object OustTurnModule {
     @Provides
     @OustScope
-    fun turnFactory(kord: Kord, channel: MessageChannelBehavior): OustTurn.Factory = object : OustTurn.Factory {
+    fun turnFactory(
+        kord: Kord,
+        channel: MessageChannelBehavior
+    ): OustTurn.Factory = object : OustTurn.Factory {
         override fun get(currentPlayer: OustPlayer): OustTurn =
-            OustTurnDiscord(kord = kord, channel = channel, currentPlayer = currentPlayer)
+            OustTurnDiscord(
+                kord = kord,
+                channel = channel,
+                currentPlayer = currentPlayer
+            )
     }
 }
