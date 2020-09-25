@@ -1,3 +1,3 @@
 dependencies {
-    implementation(project(":oust-core"))
+    api(project(":oust-core"))
 }

@@ -11,7 +11,7 @@ import dagger.Provides
 import dagger.multibindings.IntoSet
 import javax.inject.Singleton
 
-@Module(includes = [FirebaseModule::class])
+@Module(includes = [FirebaseModule::class, OustModule::class])
 object OustBotModule {
 
     @Provides

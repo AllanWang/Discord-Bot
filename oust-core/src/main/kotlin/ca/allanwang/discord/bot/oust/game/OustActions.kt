@@ -39,16 +39,6 @@ sealed class OustMove {
 
 }
 
-fun OustGame.validActions(): List<OustAction> {
-    val currentCoins = currentPlayer.coins
-    if (currentCoins >= OustGame.FORCE_OUST_THRESHOLD) return listOf(OustAction.Oust)
-    return OustAction.values.filter { currentCoins >= it.requiredCoins }
-}
-
-fun OustGame.act(action: OustAction) {
-    
-}
-
 enum class OustAction(val requiredCoins: Int = 0, val blockable: Boolean = true) {
     Oust(requiredCoins = OustGame.OUST_COST, blockable = false),
     Assassinate(requiredCoins = OustGame.ASSASSINATION_COST),
@@ -58,8 +48,8 @@ enum class OustAction(val requiredCoins: Int = 0, val blockable: Boolean = true)
     Equalize,
     Shuffle;
 
-    fun OustGame.isPossible() : Boolean{
-        val currentCoins = currentPlayer.coins
+    fun isPossible(player: OustPlayer) : Boolean{
+        val currentCoins = player.coins
         if (this@OustAction == Oust) return currentCoins >= OustGame.OUST_COST
         if (currentCoins >= OustGame.FORCE_OUST_THRESHOLD) return false
         if (currentCoins < requiredCoins) return false
@@ -69,12 +59,6 @@ enum class OustAction(val requiredCoins: Int = 0, val blockable: Boolean = true)
     companion object {
         val values: List<OustAction> = values().toList()
     }
-}
-
-sealed class OustAction2 {
-    data class SelectAction(val id: String, val action: OustAction)
-    data class Contest(val id: String, val contesterId: String, val action: OustAction)
-    data class NoContext(val id: String, val action: OustAction)
 }
 
 sealed class OustRequest {
@@ -93,5 +77,12 @@ sealed class OustResponse {
 }
 
 sealed class OustTurnResponse {
-    data class Coup(val player: OustPlayer): OustTurnResponse()
+
+    data class Oust(val player: OustPlayer): OustTurnResponse()
+
+}
+
+sealed class OustTurnRebuttal {
+    object Allow : OustTurnRebuttal()
+    data class Decline(val player: OustPlayer, val card: OustCard): OustTurnRebuttal()
 }

@@ -15,56 +15,43 @@ class OustController @Inject constructor(
         private val logger = FluentLogger.forEnclosingClass()
     }
 
-    private var requests: LinkedList<OustRequest> = LinkedList()
-    private var turn: OustTurn = turnFactory.get(game.currentPlayer)
-
     suspend fun test() {
-        val action = chooseAction()
-        logger.atInfo().log("Action %s", action)
+
     }
 
-    suspend fun turnResult(): OustTurnResponse {
-        requests = LinkedList()
-        val firstRequest = OustRequest.SelectAction(emptyList())
-        val firstResponse = turn.handle(firstRequest, canGoBack = false)
-        var step = getNextRequest(firstResponse)
+    suspend fun turn() {
+        val response = runTurn()
+    }
+
+    suspend fun runTurn(): OustTurnResponse {
+        val turn = turnFactory.get(game.currentPlayer)
+        val requests: LinkedList<OustRequest> = LinkedList()
+
+        var request: OustRequest = turn.getStartRequest()
         while (true) {
-            when (step) {
-                is TurnStep.NextRequest -> {
-                    requests.add(step.request)
-                    val response = turn.handle(step.request, canGoBack = true)
-                    step = getNextRequest(response)
+            requests.add(request)
+            val response = turn.handle(request, canGoBack = requests.size > 1)
+            request = when (val step = getNextRequest(response)) {
+                is TurnStep.GoBack -> {
+                    requests.removeLast()
+                    requests.last
                 }
+                is TurnStep.NextRequest -> step.request
                 is TurnStep.TurnResponse -> return step.response
             }
         }
     }
 
     private fun getNextRequest(response: OustResponse): TurnStep = when (response) {
-        is OustResponse.GoBack -> {
-            // TODO verify that only one pop is needed
-            val oldRequest = requests.pop()
-            TurnStep.NextRequest(oldRequest)
-        }
+        is OustResponse.GoBack -> TurnStep.GoBack
         is OustResponse.TurnResponse -> TurnStep.TurnResponse(response.response)
+        else -> TODO()
     }
 
     private sealed class TurnStep {
+        object GoBack : TurnStep()
         class NextRequest(val request: OustRequest) : TurnStep()
         class TurnResponse(val response: OustTurnResponse) : TurnStep()
-    }
-
-    suspend fun chooseAction(): OustTurn.Response<OustAction> {
-        val validActions = game.validActions()
-        if (validActions.size == 1) {
-            // message forced action?
-            return OustTurn.Response.Select(validActions.first())
-        }
-        return handle(turn.chooseAction(validActions, false))
-    }
-
-    private suspend fun handle(response: OustTurn.Response<OustResponse>): OustTurn.Response<OustResponse> {
-        TODO()
     }
 
 }
