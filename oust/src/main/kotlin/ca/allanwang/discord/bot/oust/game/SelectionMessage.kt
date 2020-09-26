@@ -18,6 +18,41 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
+class OustDiscordClient @Inject constructor(
+    private val kord: Kord,
+    private val channel: MessageChannelBehavior,
+) : OustClient {
+
+    override fun createEntry(player: OustPlayer, public: Boolean): OustClient.Entry = Entry(
+        kord = kord, player = player, channel = channel
+    )
+
+    class Entry @Inject constructor(
+        private val kord: Kord,
+        private val player: OustPlayer,
+        private val channel: MessageChannelBehavior
+    ): OustClient.Entry {
+        private val selectionMessage: SelectionMessage
+            get() = _selectionMessage ?: createSelection().also { _selectionMessage = it }
+        private var _selectionMessage: SelectionMessage? = null
+
+        private fun createSelection(): SelectionMessage =
+            SelectionMessage(kord = kord, player = player, channel = channel, header = {})
+
+        override suspend fun selectCards(message: String, count: Int, cards: List<OustCard>): List<OustCard> {
+            TODO("not implemented")
+        }
+
+        override suspend fun selectItem(message: String, items: List<String>): Int {
+            TODO("not implemented")
+        }
+
+        override suspend fun sendMessage(message: String) {
+            TODO("not implemented")
+        }
+    }
+}
+
 class SelectionMessage @Inject constructor(
     private val kord: Kord,
     private val player: OustPlayer,
