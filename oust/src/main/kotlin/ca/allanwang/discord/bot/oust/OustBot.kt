@@ -36,18 +36,22 @@ class OustBot @Inject constructor(
     private suspend fun CommandHandlerEvent.test() {
         logger.atInfo().log("Oust test")
         val game = OustGame.create(
-            generateSequence {
+            (0..2).map {
                 OustPlayer.Info(
                     id = event.message.author!!.id.value,
-                    name = event.message.author!!.username
+                    name = buildString {
+                        append(event.message.author!!.username)
+                        append(' ')
+                        append(it)
+                    }
                 )
-            }.take(3).toList()
+            }
         )
         val component = oustProvider.get()
             .channel(channel)
             .game(game)
             .build()
-        component.controller().test()
+        component.controller().launch()
     }
 
 }

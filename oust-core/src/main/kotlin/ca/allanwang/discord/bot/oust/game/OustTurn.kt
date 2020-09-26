@@ -1,12 +1,6 @@
 package ca.allanwang.discord.bot.oust.game
 
 import com.google.common.flogger.FluentLogger
-import javax.inject.Inject
-import javax.inject.Scope
-
-@Scope
-@Retention(AnnotationRetention.RUNTIME)
-annotation class OustTurnScope
 
 interface OustClient {
     interface Entry {
@@ -14,8 +8,19 @@ interface OustClient {
 
         suspend fun selectItem(message: String, items: List<String>): Int
 
-        suspend fun sendMessage(message: String)
+        suspend fun rebuttalAll(message: String, players: Set<OustPlayer>, card: OustCard): OustTurnRebuttal
+
+        suspend fun rebuttal(
+            message: String,
+            player: OustPlayer,
+            card: OustCard,
+            vararg otherCards: OustCard
+        ): OustTurnRebuttal
+
+        suspend fun finalMessage(message: String)
     }
+
+    suspend fun sendBroadcast(message: String)
 
     fun createEntry(player: OustPlayer, public: Boolean): Entry
 }
@@ -24,8 +29,9 @@ interface OustClient {
  * Represents a single turn in the game.
  * Here, we have actions for one player, followed by a confirmation if necessary.
  */
-class OustTurn @Inject constructor(
+class OustTurn(
     val currentPlayer: OustPlayer,
+    val otherPlayers: List<OustPlayer>,
     private val client: OustClient
 ) {
 
@@ -34,13 +40,12 @@ class OustTurn @Inject constructor(
     }
 
     interface Factory {
-        fun get(currentPlayer: OustPlayer): OustTurn
+        fun get(currentPlayer: OustPlayer, otherPlayers: List<OustPlayer>): OustTurn
     }
 
-    sealed class Response<in T> {
-        class Select<T>(val value: T) : Response<T>()
-        object GoBack : Response<Any>()
-    }
+    private val entry = client.createEntry(currentPlayer, public = true)
+
+    private val OustPlayer.name: String get() = info.name
 
     suspend fun getStartRequest(): OustRequest {
         val actions = OustAction.values.filter { it.isPossible(currentPlayer) }
@@ -48,52 +53,76 @@ class OustTurn @Inject constructor(
         return OustRequest.SelectAction(actions)
     }
 
-    private suspend fun <T> OustClient.Entry.selectAction(message: String, actions: List<T>, convert: (T) -> String): T {
+    private suspend fun <T> OustClient.Entry.selectAction(
+        message: String,
+        actions: List<T>,
+        convert: (T) -> String
+    ): T {
         val index = selectItem(message, actions.map(convert))
         return actions[index]
     }
 
     suspend fun act(response: OustTurnResponse) {
-        TODO("not implemented")
+        when (response) {
+            is OustTurnResponse.SelectCardsShuffle -> {
+
+            }
+            is OustTurnResponse.Steal -> {
+
+            }
+            is OustTurnResponse.BigPayDay -> {
+                currentPlayer.coins += 2
+                entry.finalMessage("Increase coin by 2")
+            }
+            is OustTurnResponse.PayDay -> {
+                currentPlayer.coins += 1
+                entry.finalMessage("Increase coin by 1")
+            }
+            is OustTurnResponse.KillPlayer -> {
+
+            }
+        }
     }
 
-    private val entry = client.createEntry(currentPlayer, public = true)
-
-     suspend fun handle(request: OustRequest, canGoBack: Boolean): OustResponse = when (request) {
+    suspend fun handle(request: OustRequest, canGoBack: Boolean): OustResponse = when (request) {
         is OustRequest.SelectAction -> {
             val action = entry.selectAction("Select an action to perform", request.actions) { it.name }
             OustResponse.SelectedAction(action)
         }
         is OustRequest.SelectPlayerKill -> {
-            val player = entry.selectAction("Select a player to ${request.type.name}", request.players) { it.info.name }
+            val player = entry.selectAction("Select a player to ${request.type.name}", request.players) { it.name }
             OustResponse.TurnResponse(OustTurnResponse.KillPlayer(player, request.type))
         }
         is OustRequest.SelectPlayerSteal -> {
-            val player = entry.selectAction("Select a player to steal from", request.players) { it.info.name }
+            val player = entry.selectAction("Select a player to steal from", request.players) { it.name }
             OustResponse.TurnResponse(OustTurnResponse.Steal(player))
         }
     }
 
-     suspend fun rebuttal(response: OustTurnResponse): OustTurnRebuttal {
-        suspend fun rebuttalAll(card: OustCard): OustTurnRebuttal {
-            TODO()
-        }
-
-        suspend fun rebuttal(player: OustPlayer, card: OustCard, vararg otherCards: OustCard): OustTurnRebuttal {
-            TODO()
-        }
-
+    suspend fun rebuttal(response: OustTurnResponse): OustTurnRebuttal {
         fun allow(): OustTurnRebuttal = OustTurnRebuttal.Allow
 
         return when (response) {
             is OustTurnResponse.KillPlayer -> when (response.type) {
-                KillType.Assassin -> rebuttal(response.player, OustCard.BodyGuard)
+                KillType.Assassin -> entry.rebuttal(
+                    "${currentPlayer.name} would like to assassinate ${response.player.name}",
+                    response.player,
+                    OustCard.BodyGuard
+                )
                 KillType.Oust -> allow()
             }
             is OustTurnResponse.PayDay -> allow()
-            is OustTurnResponse.BigPayDay -> rebuttalAll(OustCard.Banker)
-            is OustTurnResponse.SelectCardsShuffle -> rebuttalAll(OustCard.Equalizer) /* TODO verify role */
-            is OustTurnResponse.Steal -> rebuttal(
+            is OustTurnResponse.BigPayDay -> entry.rebuttalAll(
+                "${currentPlayer.name} would like to collect 2 coins",
+                otherPlayers.toSet(), OustCard.Banker
+            )
+            is OustTurnResponse.SelectCardsShuffle -> entry.rebuttalAll(
+                "${currentPlayer.name} would like to shuffle cards from the deck",
+                otherPlayers.toSet(),
+                OustCard.Equalizer
+            ) /* TODO verify role */
+            is OustTurnResponse.Steal -> entry.rebuttal(
+                "${currentPlayer.name} would like to steal from you",
                 response.player,
                 OustCard.Thief,
                 OustCard.Equalizer /* TODO verify role */

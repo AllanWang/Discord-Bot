@@ -17,6 +17,7 @@ import com.gitlab.kordlib.kordx.emoji.Emojis
 import com.gitlab.kordlib.kordx.emoji.toReaction
 import com.gitlab.kordlib.rest.builder.message.EmbedBuilder
 import com.google.common.flogger.FluentLogger
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
@@ -24,6 +25,7 @@ import java.awt.Color
 import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
 
+@OustScope
 class OustDiscordClient @Inject constructor(
     private val kord: Kord,
     private val channel: MessageChannelBehavior,
@@ -37,32 +39,46 @@ class OustDiscordClient @Inject constructor(
 
     override fun createEntry(player: OustPlayer, public: Boolean): OustClient.Entry = Entry(player = player)
 
+    override suspend fun sendBroadcast(message: String) {
+        channel.createEmbed {
+            color = embedColor
+            title = "Oust"
+            description = message
+        }
+    }
+
+    private val OustPlayer.snowflake: Snowflake get() = Snowflake(info.id)
+
     private inner class Entry(
         private val player: OustPlayer
     ) : OustClient.Entry {
 
-        private val selectionMessage: SelectionMessage =
-            SelectionMessage(kord = kord, player = player, channel = channel, header = {
-                color = embedColor
-                title = "${player.info.name}'s Turn"
-                field {
-                    name = "Items"
-                    value = buildString {
-                        append(if (player.cards.size == 1) "1 Card" else "${player.cards.size} Cards")
-                        append(" - ")
-                        appendItalic {
-                            append(player.cards.joinToString(" • ") {
-                                if (it.visible) it.value.name else "Unknown"
-                            })
-                        }
-                        appendLine()
-                        append(if (player.coins == 1) "1 Coin" else "${player.coins} Coins")
+        private val selectionMessage: SelectionMessage = selectionMessage {
+            title = "${player.info.name}'s Turn"
+            field {
+                name = "Items"
+                value = buildString {
+                    append(if (player.cards.size == 1) "1 Card" else "${player.cards.size} Cards")
+                    append(" - ")
+                    appendItalic {
+                        append(player.cards.joinToString(" • ") {
+                            if (it.visible) it.value.name else "Unknown"
+                        })
                     }
+                    appendLine()
+                    append(if (player.coins == 1) "1 Coin" else "${player.coins} Coins")
                 }
+            }
+        }
+
+        private inline fun selectionMessage(crossinline header: EmbedBuilder.() -> Unit): SelectionMessage =
+            SelectionMessage(kord = kord, channel = channel, header = {
+                color = embedColor
+                header()
             })
 
         override suspend fun selectCards(message: String, count: Int, cards: List<OustCard>): List<OustCard> {
-            return selectionMessage.selectActions(cards.map { it.name }, count) {
+            return selectionMessage.selectActions(player.snowflake, cards.map { it.name }, count) {
                 field {
                     name = "Select Cards"
                     value = message
@@ -71,7 +87,7 @@ class OustDiscordClient @Inject constructor(
         }
 
         override suspend fun selectItem(message: String, items: List<String>): Int {
-            return selectionMessage.selectAction(items) {
+            return selectionMessage.selectAction(player.snowflake, items) {
                 field {
                     name = "Select Items"
                     value = message
@@ -79,7 +95,40 @@ class OustDiscordClient @Inject constructor(
             }
         }
 
-        override suspend fun sendMessage(message: String) {
+        override suspend fun rebuttalAll(message: String, players: Set<OustPlayer>, card: OustCard): OustTurnRebuttal {
+            val selectionMessage = selectionMessage {
+                title = "Rebuttal (${player.info.name})"
+                description = buildString {
+                    append(message)
+                    append("\n\n")
+                    append("Rebuttal ends when one person declines or when everyone accepts")
+                }
+            }
+            val idMap = players.associateBy { it.snowflake }
+            val user =
+                selectionMessage.veto(idMap.keys, acceptText = "Accept", rejectText = "Decline with ${card.name}")
+            return if (user == null) OustTurnRebuttal.Allow else OustTurnRebuttal.Decline(idMap.getValue(user), card)
+        }
+
+        override suspend fun rebuttal(
+            message: String,
+            player: OustPlayer,
+            card: OustCard,
+            vararg otherCards: OustCard
+        ): OustTurnRebuttal {
+            val selectionMessage = selectionMessage {
+                title = "Rebuttal (${player.info.name})"
+                description = message
+            }
+            val cards = listOf(card, *otherCards)
+            val cardActions = cards.map { "Decline with ${it.name}" }
+            val actions = listOf("Accept", *cardActions.toTypedArray())
+            val index = selectionMessage.selectAction(player.snowflake, actions)
+            if (index == 0) return OustTurnRebuttal.Allow
+            return OustTurnRebuttal.Decline(player, cards[index - 1])
+        }
+
+        override suspend fun finalMessage(message: String) {
             channel.createEmbed {
                 color = embedColor
                 description = message
@@ -90,7 +139,6 @@ class OustDiscordClient @Inject constructor(
 
 class SelectionMessage @Inject constructor(
     private val kord: Kord,
-    private val player: OustPlayer,
     private val channel: MessageChannelBehavior,
     private val header: EmbedBuilder.() -> Unit
 ) {
@@ -112,8 +160,6 @@ class SelectionMessage @Inject constructor(
     }
 
     private var _message: Message? = null
-
-    private val OustPlayer.snowflake: Snowflake get() = Snowflake(info.id)
 
     private suspend fun sendMessage(
         title: String,
@@ -145,7 +191,7 @@ class SelectionMessage @Inject constructor(
 
         // Given that list size is at most 10, it's fine to avoid converting to set for checking elements
 
-        val currentReactions = message.reactions.map { it.emoji }
+        val currentReactions = message.reactions.map { it.emoji }.distinct()
 
         val actionsToAdd = numberReactions.subList(0, actions.size)
         actionsToAdd.filter { it !in currentReactions }.forEach {
@@ -159,48 +205,107 @@ class SelectionMessage @Inject constructor(
         return message
     }
 
-    suspend fun selectAction(actions: List<String>, embedBuilder: EmbedBuilder.() -> Unit = {}): Int {
-        check(actions.isNotEmpty()) { "Cannot select actions from empty list" }
+    private object PartialCollector {
+        class PartialCollectionException(message: String? = null) :
+            CancellationException(message ?: "Finished partial collection")
+
+        fun finishCollecting(message: String? = null): Nothing = throw PartialCollectionException(message)
+    }
+
+    private suspend inline fun <T> Flow<T>.collectPartial(crossinline action: suspend PartialCollector.(value: T) -> Unit) {
+        try {
+            collect { PartialCollector.action(it) }
+        } catch (e: PartialCollector.PartialCollectionException) {
+            // ignore
+        }
+    }
+
+    suspend fun veto(
+        userIds: Set<Snowflake>,
+        acceptText: String = "Accept",
+        rejectText: String = "Reject",
+        embedBuilder: EmbedBuilder.() -> Unit = {}
+    ): Snowflake? {
+        check(userIds.isNotEmpty()) { "Cannot veto with empty user list" }
+        val actions = listOf(acceptText, rejectText)
         val message = sendMessage(title = "Actions", actions = actions, embedBuilder = embedBuilder)
 
-        val index = kord.events.mapNotNull { it.convert(actions.indices) }
+        val acceptingUsers: MutableSet<Snowflake> = mutableSetOf()
+        var rejectingUser: Snowflake? = null
+
+        kord.events.mapNotNull { it.convert(userIds, actions.indices) }.collectPartial {
+            if (it.index == 1 && it.add) {
+                rejectingUser = it.userId
+                finishCollecting("Rejected user")
+            }
+            if (it.index == 0) {
+                if (it.add) acceptingUsers.add(it.userId)
+                else acceptingUsers.remove(it.userId)
+            }
+            // todo ("Reset this")
+            if (acceptingUsers.size >= 1) finishCollecting("Done all collection")
+//            if (acceptingUsers.size == userIds.size) finishCollecting("Done all collection")
+        }
+
+        return rejectingUser
+    }
+
+    /**
+     * Allow [userId] to select a single action from [actions]. This is an optimized version of [selectActions],
+     * and returns as soon as one reaction is selected.
+     */
+    suspend fun selectAction(
+        userId: Snowflake,
+        actions: List<String>,
+        embedBuilder: EmbedBuilder.() -> Unit = {}
+    ): Int {
+        check(actions.isNotEmpty()) { "Cannot select actions from empty list" }
+        val message = sendMessage(title = "Actions", actions = actions, embedBuilder = embedBuilder)
+        val userIds = setOf(userId)
+        val index = kord.events.mapNotNull { it.convert(userIds, actions.indices) }
             .first { it.add }.index
         logger.atInfo().log("Selected action %d", index)
 
-        message.deleteReaction(player.snowflake, numberReactions[index])
+        message.deleteReaction(userId, numberReactions[index])
 
         return index
     }
 
-    private data class ReactionEvent(val add: Boolean, val index: Int)
+    private data class ReactionEvent(val add: Boolean, val index: Int, val userId: Snowflake)
 
-    private suspend fun Event.convert(validIndices: IntRange): ReactionEvent? {
+    private suspend fun Event.convert(userIds: Set<Snowflake>, validIndices: IntRange): ReactionEvent? {
         when (this) {
             is ReactionAddEvent -> {
                 if (messageId != message.id) return null
                 if (userId == kord.selfId) return null
                 val index = numberReactions.indexOf(emoji)
                 if (index !in validIndices) return null
-                if (userId.value != player.info.id) {
+                if (userId !in userIds) {
                     // Delete if not from appropriate user
                     message.deleteReaction(userId, emoji)
                     return null
                 }
-                return ReactionEvent(add = true, index = index)
+                return ReactionEvent(add = true, index = index, userId = userId)
             }
             is ReactionRemoveEvent -> {
                 if (messageId != message.id) return null
                 if (userId == kord.selfId) return null
                 val index = numberReactions.indexOf(emoji)
                 if (index !in validIndices) return null
-                if (userId.value != player.info.id) return null
-                return ReactionEvent(add = false, index = index)
+                if (userId !in userIds) return null
+                return ReactionEvent(add = false, index = index, userId = userId)
             }
             else -> return null
         }
     }
 
+    /**
+     * Allows [userId] to select [count] entries from [actions].
+     *
+     * Returns a list of selected indices.
+     */
     suspend fun selectActions(
+        userId: Snowflake,
         actions: List<String>,
         count: Int,
         embedBuilder: EmbedBuilder.() -> Unit = {}
@@ -210,18 +315,25 @@ class SelectionMessage @Inject constructor(
 
         val selection: MutableSet<Int> = mutableSetOf()
 
-        kord.events.mapNotNull { it.convert(actions.indices) }.collect {
+        val userIds = setOf(userId)
+
+        kord.events.mapNotNull { it.convert(userIds, actions.indices) }.collectPartial {
             if (it.add) selection.add(it.index)
             else selection.remove(it.index)
-            if (selection.size == count) throw CancellationException("Done collecting items")
+            if (selection.size == count) finishCollecting("Done collecting items")
         }
 
         val sorted = selection.sorted()
 
-        sorted.forEach { message.deleteReaction(player.snowflake, numberReactions[it]) }
+        sorted.forEach { message.deleteReaction(userId, numberReactions[it]) }
 
         logger.atInfo().log("Selected actions %s", sorted)
         return sorted
+    }
+
+    suspend fun removeReactions() {
+        val message = _message ?: return
+        message.deleteAllReactions()
     }
 
 }

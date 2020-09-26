@@ -4,7 +4,6 @@ import ca.allanwang.discord.bot.core.CoreModule
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
-import javax.inject.Singleton
 
 
 @Module(includes = [CoreModule::class, OustClientModule::class])
@@ -15,9 +14,10 @@ object OustTurnModule {
     fun turnFactory(
         client: OustClient
     ): OustTurn.Factory = object : OustTurn.Factory {
-        override fun get(currentPlayer: OustPlayer): OustTurn =
+        override fun get(currentPlayer: OustPlayer, otherPlayers: List<OustPlayer>): OustTurn =
             OustTurn(
                 currentPlayer = currentPlayer,
+                otherPlayers = otherPlayers,
                 client = client
             )
     }
