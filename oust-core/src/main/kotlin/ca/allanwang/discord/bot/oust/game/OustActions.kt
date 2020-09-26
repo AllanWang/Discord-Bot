@@ -68,7 +68,6 @@ enum class KillType {
 sealed class OustRequest {
     data class SelectAction(val actions: List<OustAction>) : OustRequest()
     data class SelectPlayerKill(val players: List<OustPlayer>, val type: KillType) : OustRequest()
-    data class SelectCardsShuffle(val deckCards: List<OustCard>) : OustRequest()
     data class SelectPlayerSteal(val players: List<OustPlayer>) : OustRequest()
 }
 
@@ -83,6 +82,7 @@ sealed class OustTurnResponse {
     data class KillPlayer(val player: OustPlayer, val type: KillType) : OustTurnResponse()
     object PayDay : OustTurnResponse()
     object BigPayDay : OustTurnResponse()
+    object SelectCardsShuffle : OustTurnResponse()
     data class Steal(val player: OustPlayer) : OustTurnResponse()
 }
 

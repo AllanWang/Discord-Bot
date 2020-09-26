@@ -86,9 +86,7 @@ class OustController @Inject constructor(
                         players = turn.otherPlayers(), type = KillType.Assassin
                     )
                 )
-                OustAction.Shuffle -> next(
-                    OustRequest.SelectCardsShuffle(deckCards = game.deck.take(2))
-                )
+                OustAction.Shuffle -> response(OustTurnResponse.SelectCardsShuffle)
                 OustAction.PayDay -> response(OustTurnResponse.PayDay)
                 OustAction.BigPayDay -> response(OustTurnResponse.BigPayDay)
                 OustAction.Steal -> next(OustRequest.SelectPlayerSteal(turn.otherPlayers()))

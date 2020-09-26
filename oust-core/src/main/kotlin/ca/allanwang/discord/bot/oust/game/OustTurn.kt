@@ -1,5 +1,6 @@
 package ca.allanwang.discord.bot.oust.game
 
+import com.google.common.flogger.FluentLogger
 import javax.inject.Inject
 import javax.inject.Scope
 
@@ -28,6 +29,10 @@ class OustTurn @Inject constructor(
     private val client: OustClient
 ) {
 
+    companion object {
+        private val logger = FluentLogger.forEnclosingClass()
+    }
+
     interface Factory {
         fun get(currentPlayer: OustPlayer): OustTurn
     }
@@ -43,8 +48,8 @@ class OustTurn @Inject constructor(
         return OustRequest.SelectAction(actions)
     }
 
-    suspend fun <T> OustClient.Entry.selectAction(actions: List<T>, convert: (T) -> String): T {
-        val index = selectItem("TODO", actions.map(convert))
+    private suspend fun <T> OustClient.Entry.selectAction(message: String, actions: List<T>, convert: (T) -> String): T {
+        val index = selectItem(message, actions.map(convert))
         return actions[index]
     }
 
@@ -56,18 +61,15 @@ class OustTurn @Inject constructor(
 
      suspend fun handle(request: OustRequest, canGoBack: Boolean): OustResponse = when (request) {
         is OustRequest.SelectAction -> {
-            val action = entry.selectAction(request.actions) { it.name }
+            val action = entry.selectAction("Select an action to perform", request.actions) { it.name }
             OustResponse.SelectedAction(action)
         }
         is OustRequest.SelectPlayerKill -> {
-            val player = entry.selectAction(request.players) { it.info.name }
+            val player = entry.selectAction("Select a player to ${request.type.name}", request.players) { it.info.name }
             OustResponse.TurnResponse(OustTurnResponse.KillPlayer(player, request.type))
         }
-        is OustRequest.SelectCardsShuffle -> {
-            TODO()
-        }
         is OustRequest.SelectPlayerSteal -> {
-            val player = entry.selectAction(request.players) { it.info.name }
+            val player = entry.selectAction("Select a player to steal from", request.players) { it.info.name }
             OustResponse.TurnResponse(OustTurnResponse.Steal(player))
         }
     }
@@ -90,6 +92,7 @@ class OustTurn @Inject constructor(
             }
             is OustTurnResponse.PayDay -> allow()
             is OustTurnResponse.BigPayDay -> rebuttalAll(OustCard.Banker)
+            is OustTurnResponse.SelectCardsShuffle -> rebuttalAll(OustCard.Equalizer) /* TODO verify role */
             is OustTurnResponse.Steal -> rebuttal(
                 response.player,
                 OustCard.Thief,
