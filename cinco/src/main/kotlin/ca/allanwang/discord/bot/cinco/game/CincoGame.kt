@@ -32,22 +32,23 @@ class CincoGame @Inject constructor(
     }
 
     suspend fun start() {
-        logger.atInfo().log("Start")
         val gameJob = Job()
         kord.launch(gameJob) {
             (1..cincoContext.gameRounds).forEach { i ->
-                logger.atInfo().log("Start round %d", i)
+                logger.atFine().log("Start round %d", i)
                 val shortCircuit = async { shortCircuit() }
                 val cincoRound = async { feature.startRound(i) }
                 select<Unit> {
                     shortCircuit.onAwait {
-                        logger.atInfo().log("short circuit %s", it)
                         when (it) {
                             ShortCircuit.Skip -> {
                                 cincoRound.cancel("Requested skip")
                                 feature.skip(i)
                             }
-                            ShortCircuit.End -> gameJob.cancel("Requested end")
+                            ShortCircuit.End -> {
+                                gameJob.cancel("Requested end")
+                                feature.endGame()
+                            }
                         }
                     }
                     cincoRound.onAwait {
@@ -57,23 +58,14 @@ class CincoGame @Inject constructor(
                 }
                 delay(2000)
             }
+            feature.endGame()
         }
-
-        try {
-            gameJob.join()
-        } catch (e: CancellationException) {
-            // ignore
-            logger.atInfo().log("game cancel %s", e.message)
-        }
-        feature.endGame()
     }
 
     private suspend fun shortCircuit(): ShortCircuit {
-        logger.atInfo().log("Subscribe to short circuit %s", Instant.now())
+        logger.atFine().log("Subscribe to short circuit %s", Instant.now())
         return cincoMessageBehavior.playerMessageFlow()
             .mapNotNull {
-                it.member
-                logger.atInfo().log("Message timestamp %s", it.message.timestamp)
                 val message = it.message.content.trim()
                 when {
                     message.equals(skipCommand, ignoreCase = true) -> ShortCircuit.Skip
