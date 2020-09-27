@@ -118,8 +118,7 @@ class CincoBot @Inject constructor(
     private suspend fun CommandHandlerEvent.startVariant(variant: CincoVariant) {
         logger.atInfo().log("Start cinco %s", variant.tag)
 
-//        val participants = getParticipants(variant)
-        val participants = setOf(event.message.author!!)
+        val participants = getParticipants(variant)
 
         logger.atInfo().log("Participants cinco %s: %s", variant, participants)
 

@@ -33,21 +33,27 @@ class CincoAzul @Inject constructor(
     override suspend fun startRound(round: Int) {
         val rnd: Random = ThreadLocalRandom.current().asKotlinRandom()
         val word = wordBank.getWord(rnd)
+        val charList = word.toList().sorted()
         val scrambledWord =
-            generateSequence { word.toList().shuffled(rnd).joinToString("") }
+            generateSequence { charList.shuffled(rnd).joinToString("") }
                 .take(10)
                 .first { it != word }
         roundWords.add(word)
         val entry = withTimeoutOrNull(cincoContext.roundTimeout) {
             cincoMessageBehavior.createCincoEmbed {
-                title = word
-//                title = scrambledWord // TODO revert
+                title = scrambledWord
                 description = variant.description
                 roundProgressFooter(round)
-            }.firstOrNull { it.word == word }
+            }.firstOrNull {
+                /*
+                 * While each round has a specific word in mind,
+                 * I think it's more fair that any valid word should count.
+                 */
+                it.word == word || it.word.toList().sorted() == charList && wordBank.isWord(it.word)
+            }
         }
 
-        roundResult(round = round, word = word, entry = entry, skipped = false)
+        roundResult(round = round, word = entry?.word ?: word, entry = entry, skipped = false)
     }
 
     override suspend fun skip(round: Int) {
