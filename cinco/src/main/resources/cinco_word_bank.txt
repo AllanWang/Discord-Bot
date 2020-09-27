@@ -2922,7 +2922,7 @@ skimp
 bluer
 slake
 dowdy
-penis
+# penis
 brays
 pupas
 egret
@@ -3325,7 +3325,7 @@ smack
 gourd
 bumpy
 radix
-fatty
+# fatty
 borax
 cubit
 cacti
@@ -3525,7 +3525,7 @@ aloes
 louis
 quint
 clunk
-raped
+# raped
 salvo
 diode
 matey
@@ -4497,7 +4497,7 @@ toady
 naiad
 hider
 nuked
-fatso
+# fatso
 sluts
 obits
 narcs
@@ -4808,7 +4808,7 @@ curia
 kebob
 cycad
 talky
-fucks
+# fucks
 tapis
 amide
 dolce
@@ -5068,7 +5068,7 @@ ousel
 umiak
 cuppy
 hames
-shits
+# shits
 azine
 glads
 tacet
@@ -5419,7 +5419,7 @@ hunky
 hoers
 slier
 sicks
-fatly
+# fatly
 delft
 hiver
 himbo

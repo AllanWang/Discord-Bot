@@ -2,9 +2,9 @@ package ca.allanwang.discord.bot.cinco
 
 
 import ca.allanwang.discord.bot.base.*
+import ca.allanwang.discord.bot.cinco.game.CincoContext
 import ca.allanwang.discord.bot.cinco.game.CincoGame
 import ca.allanwang.discord.bot.cinco.game.WordBank
-import ca.allanwang.discord.bot.cinco.game.CincoContext
 import ca.allanwang.discord.bot.cinco.game.features.CincoGameFeatureModule
 import ca.allanwang.discord.bot.cinco.game.features.CincoVariant
 import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
@@ -14,6 +14,7 @@ import com.gitlab.kordlib.core.entity.ReactionEmoji
 import com.gitlab.kordlib.core.entity.User
 import com.gitlab.kordlib.kordx.emoji.Emojis
 import com.gitlab.kordlib.kordx.emoji.toReaction
+import com.gitlab.kordlib.rest.builder.message.EmbedBuilder
 import com.google.common.flogger.FluentLogger
 import dagger.BindsInstance
 import dagger.Module
@@ -22,6 +23,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.toSet
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
+import java.util.concurrent.TimeUnit
 import javax.inject.*
 
 @Singleton
@@ -75,10 +78,16 @@ class CincoBot @Inject constructor(
 
     private suspend fun CommandHandlerEvent.startVariant(variant: CincoVariant) {
         logger.atInfo().log("Start cinco %s", variant.tag)
-        val baseDescription = "React to participate!"
-        val message = channel.createEmbed {
+
+        fun EmbedBuilder.base() {
             color = variant.color
             title = "Cinco ${variant.name}"
+        }
+
+        val baseDescription = "React to participate!"
+
+        val message = channel.createEmbed {
+            base()
             description = baseDescription
         }
         message.addReaction(participationEmoji)
@@ -88,7 +97,7 @@ class CincoBot @Inject constructor(
             message.kord.launch {
                 message.edit {
                     embed {
-                        color = variant.color
+                        base()
                         description = buildString {
                             append(baseDescription)
                             append("\n\n")
@@ -127,7 +136,9 @@ class CincoBot @Inject constructor(
                 )
             )
             .build()
-        component.game().start()
+        withTimeout(TimeUnit.HOURS.toMillis(1)) {
+            component.game().start()
+        }
     }
 }
 
