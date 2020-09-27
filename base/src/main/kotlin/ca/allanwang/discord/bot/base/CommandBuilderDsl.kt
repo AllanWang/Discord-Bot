@@ -1,6 +1,5 @@
 package ca.allanwang.discord.bot.base
 
-import com.gitlab.kordlib.core.event.message.MessageCreateEvent
 import com.google.common.flogger.FluentLogger
 
 @DslMarker
@@ -52,19 +51,19 @@ internal open class CommandBuilderBase : CommandBuilderRootDsl {
 
     val keys: Set<String> get() = children.keys
 
-    suspend fun handle(event: MessageCreateEvent, message: String) {
-        handleImpl(event, message)
+    suspend fun handle(event: CommandHandlerEvent) {
+        handleImpl(event)
     }
 
     override var help: String? = null
 
-    protected open suspend fun handleImpl(event: MessageCreateEvent, message: String): Boolean {
-        val key = message.substringBefore(' ')
+    protected open suspend fun handleImpl(event: CommandHandlerEvent): Boolean {
+        val key = event.message.substringBefore(' ')
         logger.atFine().log("Test key %s in %s", key, keys)
         val argHandler = children[key]
-        val subMessage = if (key == message) "" else message.substringAfter(' ')
+        val subMessage = if (key == event.message) "" else event.message.substringAfter(' ')
         if (argHandler != null) {
-            argHandler.handle(event, subMessage)
+            argHandler.handle(event.copy(message = subMessage))
             return true
         }
         return false
@@ -89,7 +88,7 @@ internal class CommandBuilderRoot(override val types: Set<CommandHandler.Type>) 
     CommandHandler
 
 internal class CommandBuilderArg(
-    val prefix: String, val arg: String
+    val prevCommand: String, val arg: String
 ) : CommandBuilderBase(), CommandBuilderArgDsl {
 
     companion object {
@@ -98,7 +97,7 @@ internal class CommandBuilderArg(
 
     private var action: CommandBuilderAction? = null
 
-    private val command: String = if (prefix.isBlank()) arg else "$prefix $arg"
+    private val command: String = if (prevCommand.isBlank()) arg else "$prevCommand $arg"
 
 //    suspend fun EmbedBuilder.createHelp() {
 //        title = command
@@ -111,16 +110,12 @@ internal class CommandBuilderArg(
 //        }
 //    }
 
-    override suspend fun handleImpl(event: MessageCreateEvent, message: String): Boolean {
-        if (super.handleImpl(event, message)) return true
+    override suspend fun handleImpl(event: CommandHandlerEvent): Boolean {
+        if (super.handleImpl(event)) return true
         val action = action ?: return false
-        val actionEvent = CommandHandlerEvent(
-            command = command,
-            event = event,
-            message = message
-        )
+        val actionEvent = event.copy(command = command)
         if (action.withMessage) action.action(actionEvent)
-        else if (message.isBlank()) action.action(actionEvent)
+        else if (event.message.isBlank()) action.action(actionEvent)
         return true
     }
 

@@ -21,7 +21,9 @@ abstract class CommandBot(
 
     private val handlers = handlers.withType(type)
 
-    abstract suspend fun MessageCreateEvent.actualMessage(): String?
+    data class PrefixedMessage(val prefix: String, val message: String)
+
+    abstract suspend fun MessageCreateEvent.prefixedMessage(): PrefixedMessage?
 
     final override suspend fun Kord.attach() {
         logger.atInfo().log("Loaded $type handlers %s", handlers.map { it::class.simpleName })
@@ -36,11 +38,19 @@ abstract class CommandBot(
     }
 
     private suspend fun MessageCreateEvent.handleCommands(candidates: Map<String, CommandHandler>) {
-        val actualMessage = actualMessage() ?: return
-        val key = actualMessage.substringBefore(' ')
+        val prefixedMessage = prefixedMessage() ?: return
+        val key = prefixedMessage.message.substringBefore(' ')
         val handler = candidates[key] ?: return
         runCatching {
-            handler.handle(this, actualMessage)
+            handler.handle(
+                CommandHandlerEvent(
+                    event = this,
+                    prefix = prefixedMessage.prefix,
+                    command = key,
+                    message = prefixedMessage.message,
+                    origMessage = message.content
+                )
+            )
         }.onFailure {
             logger.atWarning().withCause(it).log("Failure for %s", handler::class.simpleName)
         }
@@ -64,11 +74,11 @@ class BotPrefixGroupFeature @Inject constructor(
         private val logger = FluentLogger.forEnclosingClass()
     }
 
-    override suspend fun MessageCreateEvent.actualMessage(): String? {
+    override suspend fun MessageCreateEvent.prefixedMessage(): PrefixedMessage? {
         val prefix = prefixSupplier.prefix(groupSnowflake())
         if (!message.content.startsWith(prefix)) return null
         logger.atFine().log("Prefix matched")
-        return message.content.substringAfter(prefix)
+        return PrefixedMessage(prefix = prefix, message = message.content.substringAfter(prefix))
     }
 }
 
@@ -86,12 +96,14 @@ class BotMentionGroupFeature @Inject constructor(
      * Discord ids are sent via text via `<@{id}>`.
      * If there is a nickname, an additional `!` will follow `@`
      */
-    private val mentionRegex = Regex("^<@!?${kord.selfId.value}> (.*)$")
+    private val mentionRegex = Regex("^(<@!?${kord.selfId.value}>) (.*)$")
 
-    override suspend fun MessageCreateEvent.actualMessage(): String? {
+    override suspend fun MessageCreateEvent.prefixedMessage(): PrefixedMessage? {
         val match = mentionRegex.find(message.content) ?: return null
         logger.atInfo().log("Bot mention matched")
-        return match.groupValues.getOrNull(1)
+        val prefix = match.groupValues[1]
+        val message = match.groupValues[2].takeIf { it.isNotBlank() } ?: return null
+        return PrefixedMessage(prefix = prefix, message = message)
     }
 }
 
