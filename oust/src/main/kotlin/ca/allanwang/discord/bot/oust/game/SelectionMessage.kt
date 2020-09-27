@@ -89,7 +89,7 @@ class OustDiscordClient @Inject constructor(
         override suspend fun selectItem(message: String, items: List<String>): Int {
             return selectionMessage.selectAction(player.snowflake, items) {
                 field {
-                    name = "Select Items"
+                    name = "Select Action"
                     value = message
                 }
             }
