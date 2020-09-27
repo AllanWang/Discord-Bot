@@ -76,7 +76,7 @@ class CincoAzul @Inject constructor(
                     if (entry == null) {
                         append("No one unscrambled the word.")
                     } else {
-                        appendLine("${entry.player.username} guessed the word")
+                        appendLine("${entry.player.mention} guessed the word")
                         val totalPoints = pointTracker.addPoints(entry.player, 1)
                         append("+1 score, total $totalPoints")
                     }
