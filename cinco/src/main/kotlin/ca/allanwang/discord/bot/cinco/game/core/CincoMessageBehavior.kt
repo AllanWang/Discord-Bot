@@ -3,7 +3,7 @@ package ca.allanwang.discord.bot.cinco.game.core
 import ca.allanwang.discord.bot.base.appendBold
 import ca.allanwang.discord.bot.cinco.CincoPlayers
 import ca.allanwang.discord.bot.cinco.CincoScope
-import ca.allanwang.discord.bot.cinco.game.CincoVariant
+import ca.allanwang.discord.bot.cinco.game.features.CincoVariant
 import com.gitlab.kordlib.common.entity.Snowflake
 import com.gitlab.kordlib.core.Kord
 import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
