@@ -2,6 +2,7 @@ package ca.allanwang.discord.bot.cinco
 
 
 import ca.allanwang.discord.bot.base.*
+import ca.allanwang.discord.bot.cinco.game.CincoContext
 import ca.allanwang.discord.bot.cinco.game.CincoGame
 import ca.allanwang.discord.bot.cinco.game.CincoGameModule
 import ca.allanwang.discord.bot.cinco.game.CincoVariant
@@ -99,7 +100,13 @@ class CincoBot @Inject constructor(
             .channel(channel)
             .variant(CincoVariant.Azul)
             .players(participants)
-            .botPrefix(prefix)
+            .context(
+                CincoContext(
+                    botPrefix = prefix,
+                    gameRounds = 15,
+                    roundTimeout = 15_000L
+                )
+            )
             .build()
         component.game().start()
     }
@@ -136,7 +143,7 @@ interface CincoComponent {
         fun players(@CincoPlayers players: Set<User>): Builder
 
         @BindsInstance
-        fun botPrefix(@BotPrefix botPrefix: String): Builder
+        fun context(context: CincoContext): Builder
 
         fun build(): CincoComponent
     }

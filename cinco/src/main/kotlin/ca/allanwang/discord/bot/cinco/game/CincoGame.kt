@@ -13,3 +13,9 @@ enum class CincoVariant(color: String, val description: String) {
 interface CincoGame {
     suspend fun start()
 }
+
+data class CincoContext(
+    val botPrefix: String,
+    val gameRounds: Int,
+    val roundTimeout: Long
+)
