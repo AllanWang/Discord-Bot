@@ -1,3 +1,4 @@
+# Words taken from https://www-cs-faculty.stanford.edu/~knuth/sgb-words.txt; modifications may be added in the future
 which
 there
 their
