@@ -13,10 +13,6 @@ import javax.inject.Inject
 import javax.inject.Qualifier
 import javax.inject.Singleton
 
-@Qualifier
-@Retention(AnnotationRetention.RUNTIME)
-annotation class BotPrefix
-
 interface BotPrefixSupplier {
     suspend fun prefix(group: Snowflake): String
 }
