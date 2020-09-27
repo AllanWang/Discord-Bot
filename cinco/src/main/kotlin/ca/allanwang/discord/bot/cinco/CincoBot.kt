@@ -84,7 +84,11 @@ class CincoBot @Inject constructor(
             title = "Cinco ${variant.name}"
         }
 
-        val baseDescription = "React to participate!"
+        val baseDescription = buildString {
+            append(variant.description)
+            append("\n\n")
+            append("React to participate!")
+        }
 
         val message = channel.createEmbed {
             base()
