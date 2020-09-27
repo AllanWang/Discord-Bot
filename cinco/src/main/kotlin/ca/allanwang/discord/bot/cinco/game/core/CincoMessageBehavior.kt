@@ -4,7 +4,6 @@ import ca.allanwang.discord.bot.base.appendBold
 import ca.allanwang.discord.bot.cinco.CincoPlayers
 import ca.allanwang.discord.bot.cinco.CincoScope
 import ca.allanwang.discord.bot.cinco.game.features.CincoVariant
-import com.gitlab.kordlib.common.entity.Snowflake
 import com.gitlab.kordlib.core.Kord
 import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
 import com.gitlab.kordlib.core.behavior.channel.createEmbed
@@ -12,10 +11,7 @@ import com.gitlab.kordlib.core.entity.Message
 import com.gitlab.kordlib.core.entity.User
 import com.gitlab.kordlib.core.event.message.MessageCreateEvent
 import com.gitlab.kordlib.rest.builder.message.EmbedBuilder
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.filterIsInstance
-import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.*
 import javax.inject.Inject
 
 @CincoScope
@@ -27,8 +23,6 @@ class CincoMessageBehavior @Inject constructor(
     private val pointTracker: CincoPointTracker
 ) {
 
-    val id: Snowflake = messageChannelBehavior.id
-
     private fun MessageCreateEvent.toCincoEntry(): CincoEntry? {
         val word = message.content
         if (word.length != 5 || word.contains(' ')) return null
@@ -39,13 +33,17 @@ class CincoMessageBehavior @Inject constructor(
 
     suspend fun createCincoEmbed(builder: EmbedBuilder.() -> Unit): Flow<CincoEntry> {
         createEmbed(builder)
-        return kord.events.filterIsInstance<MessageCreateEvent>()
-            .filter { it.message.channelId == messageChannelBehavior.id }
+        return playerMessageFlow()
             .mapNotNull {
                 it.toCincoEntry()
             }
-
     }
+
+    fun playerMessageFlow(): Flow<MessageCreateEvent> =
+        kord.events.drop(1).filterIsInstance<MessageCreateEvent>()
+            .filter { it.message.channelId == messageChannelBehavior.id }
+            .filter { it.message.author?.isBot != true }
+            .filter { it.message.author in players }
 
     suspend fun createEmbed(builder: EmbedBuilder.() -> Unit): Message = messageChannelBehavior.createEmbed {
         color = variant.color

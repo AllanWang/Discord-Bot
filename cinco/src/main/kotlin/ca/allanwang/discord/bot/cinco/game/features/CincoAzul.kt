@@ -9,7 +9,6 @@ import ca.allanwang.discord.bot.cinco.game.core.CincoMessageBehavior
 import ca.allanwang.discord.bot.cinco.game.core.CincoPointTracker
 import com.google.common.flogger.FluentLogger
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.withTimeoutOrNull
 import java.util.concurrent.ThreadLocalRandom
 import javax.inject.Inject
@@ -41,11 +40,11 @@ class CincoAzul @Inject constructor(
         roundWords.add(word)
         val entry = withTimeoutOrNull(cincoContext.roundTimeout) {
             cincoMessageBehavior.createCincoEmbed {
-                title = scrambledWord
+                title = word
+//                title = scrambledWord // TODO revert
                 description = variant.description
                 roundProgressFooter(round)
-            }.onEach { logger.atInfo().log("Entry %s", it) }
-                .firstOrNull { it.word == word }
+            }.firstOrNull { it.word == word }
         }
 
         roundResult(round = round, word = word, entry = entry, skipped = false)

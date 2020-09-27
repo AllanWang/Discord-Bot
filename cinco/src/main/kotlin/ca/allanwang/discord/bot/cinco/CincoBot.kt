@@ -7,6 +7,7 @@ import ca.allanwang.discord.bot.cinco.game.CincoGame
 import ca.allanwang.discord.bot.cinco.game.WordBank
 import ca.allanwang.discord.bot.cinco.game.features.CincoGameFeatureModule
 import ca.allanwang.discord.bot.cinco.game.features.CincoVariant
+import com.gitlab.kordlib.core.Kord
 import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
 import com.gitlab.kordlib.core.behavior.channel.createEmbed
 import com.gitlab.kordlib.core.behavior.edit
@@ -29,6 +30,7 @@ import javax.inject.*
 
 @Singleton
 class CincoBot @Inject constructor(
+    private val kord: Kord,
     private val cincoProvider: Provider<CincoComponent.Builder>,
     private val wordBank: WordBank
 ) : CommandHandlerBot {
@@ -76,9 +78,7 @@ class CincoBot @Inject constructor(
         startVariant(CincoVariant.Azul)
     }
 
-    private suspend fun CommandHandlerEvent.startVariant(variant: CincoVariant) {
-        logger.atInfo().log("Start cinco %s", variant.tag)
-
+    private suspend fun CommandHandlerEvent.getParticipants(variant: CincoVariant): Set<User> {
         fun EmbedBuilder.base() {
             color = variant.color
             title = "Cinco ${variant.name}"
@@ -110,9 +110,17 @@ class CincoBot @Inject constructor(
             }
             delay(1000)
         }
-        val participants = channel.getMessage(message.id).getReactors(participationEmoji)
+       return channel.getMessage(message.id).getReactors(participationEmoji)
             .filter { it.isBot != true }
             .toSet()
+    }
+
+    private suspend fun CommandHandlerEvent.startVariant(variant: CincoVariant) {
+        logger.atInfo().log("Start cinco %s", variant.tag)
+
+//        val participants = getParticipants(variant)
+        val participants = setOf(event.message.author!!)
+
         logger.atInfo().log("Participants cinco %s: %s", variant, participants)
 
         if (participants.isEmpty()) {
@@ -136,8 +144,11 @@ class CincoBot @Inject constructor(
                 )
             )
             .build()
-        withTimeout(TimeUnit.HOURS.toMillis(6)) {
-            component.game().start()
+
+        kord.launch {
+            withTimeout(TimeUnit.HOURS.toMillis(6)) {
+                component.game().start()
+            }
         }
     }
 }
