@@ -11,6 +11,8 @@ import com.google.common.flogger.FluentLogger
 import dagger.BindsInstance
 import dagger.Module
 import dagger.Subcomponent
+import kotlinx.coroutines.withTimeout
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Provider
 import javax.inject.Singleton
@@ -51,7 +53,9 @@ class OustBot @Inject constructor(
             .channel(channel)
             .game(game)
             .build()
-        component.controller().launch()
+        withTimeout(TimeUnit.HOURS.toMillis(6)) {
+            component.controller().launch()
+        }
     }
 
 }

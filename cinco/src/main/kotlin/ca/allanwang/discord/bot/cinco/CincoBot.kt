@@ -136,7 +136,7 @@ class CincoBot @Inject constructor(
                 )
             )
             .build()
-        withTimeout(TimeUnit.HOURS.toMillis(1)) {
+        withTimeout(TimeUnit.HOURS.toMillis(6)) {
             component.game().start()
         }
     }
