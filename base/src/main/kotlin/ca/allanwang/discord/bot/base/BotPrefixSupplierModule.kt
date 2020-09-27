@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicReference
 import javax.inject.Inject
+import javax.inject.Qualifier
 import javax.inject.Singleton
 
 interface BotPrefixSupplier {
