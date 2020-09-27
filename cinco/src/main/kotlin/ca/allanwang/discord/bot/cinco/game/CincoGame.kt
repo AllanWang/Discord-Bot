@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.selects.select
 import java.time.Instant
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 @CincoScope
@@ -31,9 +32,8 @@ class CincoGame @Inject constructor(
         Skip, End
     }
 
-    suspend fun start() {
-        val gameJob = Job()
-        kord.launch(gameJob) {
+    suspend fun play() {
+        withTimeout(TimeUnit.HOURS.toMillis(6)) {
             (1..cincoContext.gameRounds).forEach { i ->
                 logger.atFine().log("Start round %d", i)
                 val shortCircuit = async { shortCircuit() }
@@ -46,8 +46,8 @@ class CincoGame @Inject constructor(
                                 feature.skip(i)
                             }
                             ShortCircuit.End -> {
-                                gameJob.cancel("Requested end")
                                 feature.endGame()
+                                throw CancellationException("Requested end")
                             }
                         }
                     }

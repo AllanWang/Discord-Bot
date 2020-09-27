@@ -7,6 +7,7 @@ import ca.allanwang.discord.bot.cinco.game.CincoGame
 import ca.allanwang.discord.bot.cinco.game.WordBank
 import ca.allanwang.discord.bot.cinco.game.features.CincoGameFeatureModule
 import ca.allanwang.discord.bot.cinco.game.features.CincoVariant
+import com.gitlab.kordlib.common.entity.Snowflake
 import com.gitlab.kordlib.core.Kord
 import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
 import com.gitlab.kordlib.core.behavior.channel.createEmbed
@@ -20,12 +21,12 @@ import com.google.common.flogger.FluentLogger
 import dagger.BindsInstance
 import dagger.Module
 import dagger.Subcomponent
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.toSet
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeout
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.*
 
 @Singleton
@@ -73,7 +74,19 @@ class CincoBot @Inject constructor(
         })
     }
 
+    private val games: MutableMap<Snowflake, Long> = ConcurrentHashMap()
+
+    private suspend fun CommandHandlerEvent.existingGame(): Boolean {
+        if (games.containsKey(event.message.channelId)) {
+            logger.atInfo().log("Skipping as there is an existing game")
+            channel.createMessage("Cinco is already running in this channel")
+            return true
+        }
+        return false
+    }
+
     private suspend fun CommandHandlerEvent.selectVariant() {
+        if (existingGame()) return
         logger.atInfo().log("Select cinco variant")
         startVariant(CincoVariant.Azul)
     }
@@ -114,44 +127,49 @@ class CincoBot @Inject constructor(
             }
             delay(1000)
         }
-       return channel.getMessage(message.id).getReactors(participationEmoji)
+        return channel.getMessage(message.id).getReactors(participationEmoji)
             .filter { it.isBot != true }
             .toSet()
     }
 
     private suspend fun CommandHandlerEvent.startVariant(variant: CincoVariant) {
+        if (existingGame()) return
         logger.atInfo().log("Start cinco %s", variant.tag)
+        games[event.message.channelId] = System.currentTimeMillis()
 
-        val participants = getParticipants(variant)
+        kord.launch(CoroutineExceptionHandler { _, throwable ->
+            logger.atWarning().withCause(throwable).log("Cinco error")
+            games.remove(event.message.channelId)
+        }) {
+            val participants = getParticipants(variant)
 
-        logger.atInfo().log("Participants cinco %s: %s", variant, participants)
+            logger.atInfo().log("Participants cinco %s: %s", variant, participants)
 
-        if (participants.isEmpty()) {
-            channel.createEmbed {
-                color = variant.color
-                title = "Cancelled"
-                description = "No participants; game cancelled"
+            if (participants.isEmpty()) {
+                channel.createEmbed {
+                    color = variant.color
+                    title = "Cancelled"
+                    description = "No participants; game cancelled"
+                }
+                return@launch
             }
-            return
-        }
 
-        val component = cincoProvider.get()
-            .channel(channel)
-            .variant(CincoVariant.Azul)
-            .players(participants)
-            .context(
-                CincoContext(
-                    botPrefix = prefix,
-                    gameRounds = 15,
-                    roundTimeout = 30_000L
+            val component = cincoProvider.get()
+                .channel(channel)
+                .variant(CincoVariant.Azul)
+                .players(participants)
+                .context(
+                    CincoContext(
+                        botPrefix = prefix,
+                        gameRounds = 15,
+                        roundTimeout = 30_000L
+                    )
                 )
-            )
-            .build()
+                .build()
 
-        kord.launch {
-            withTimeout(TimeUnit.HOURS.toMillis(6)) {
-                component.game().start()
-            }
+            component.game().play()
+        }.invokeOnCompletion {
+            games.remove(event.message.channelId)
         }
     }
 }
