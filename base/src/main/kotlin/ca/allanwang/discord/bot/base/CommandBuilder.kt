@@ -5,7 +5,12 @@ import com.gitlab.kordlib.rest.builder.message.EmbedBuilder
 
 typealias CommandHandlerAction = suspend CommandHandlerEvent.() -> Unit
 
-class CommandHandlerEvent(val event: MessageCreateEvent, val command: String, val message: String) {
+class CommandHandlerEvent(
+    val event: MessageCreateEvent,
+    val prefix: String,
+    val command: String,
+    val message: String
+) {
     val channel get() = event.message.channel
     val authorId get() = event.message.author?.id
 

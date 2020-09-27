@@ -1,20 +1,25 @@
 package ca.allanwang.discord.bot.cinco
 
 
-import ca.allanwang.discord.bot.base.CommandHandler
-import ca.allanwang.discord.bot.base.CommandHandlerBot
-import ca.allanwang.discord.bot.base.CommandHandlerEvent
-import ca.allanwang.discord.bot.base.commandBuilder
+import ca.allanwang.discord.bot.base.*
 import ca.allanwang.discord.bot.cinco.game.CincoGame
 import ca.allanwang.discord.bot.cinco.game.CincoGameModule
 import ca.allanwang.discord.bot.cinco.game.CincoVariant
-import com.gitlab.kordlib.common.entity.Snowflake
 import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
+import com.gitlab.kordlib.core.behavior.channel.createEmbed
+import com.gitlab.kordlib.core.behavior.edit
+import com.gitlab.kordlib.core.entity.ReactionEmoji
 import com.gitlab.kordlib.core.entity.User
+import com.gitlab.kordlib.kordx.emoji.Emojis
+import com.gitlab.kordlib.kordx.emoji.toReaction
 import com.google.common.flogger.FluentLogger
 import dagger.BindsInstance
 import dagger.Module
 import dagger.Subcomponent
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.toSet
+import kotlinx.coroutines.launch
 import javax.inject.*
 
 @Singleton
@@ -24,22 +29,77 @@ class CincoBot @Inject constructor(
 
     companion object {
         private val logger = FluentLogger.forEnclosingClass()
+
+        private val participationEmoji: ReactionEmoji = Emojis.whiteCheckMark.toReaction()
     }
 
     override val handler = commandBuilder(CommandHandler.Type.Prefix) {
         arg("cinco") {
             action(withMessage = false) {
-                logger.atInfo().log("cinco")
                 selectVariant()
+            }
+            CincoVariant.values().forEach {
+                arg(it.tag) {
+                    action(withMessage = false) {
+                        startVariant(it)
+                    }
+                }
             }
         }
     }
 
     private suspend fun CommandHandlerEvent.selectVariant() {
+        logger.atInfo().log("Select cinco variant")
+        startVariant(CincoVariant.Azul)
+    }
+
+    private suspend fun CommandHandlerEvent.startVariant(variant: CincoVariant) {
+        logger.atInfo().log("Start cinco %s", variant.tag)
+        val baseDescription = "React to participate!"
+        val message = channel.createEmbed {
+            color = variant.color
+            title = "Cinco ${variant.name}"
+            description = baseDescription
+        }
+        message.addReaction(participationEmoji)
+        val secondsToWait = 15
+        delay((secondsToWait - 10) * 1000L)
+        (10 downTo 1).forEach { countdown ->
+            message.kord.launch {
+                message.edit {
+                    embed {
+                        color = variant.color
+                        description = buildString {
+                            append(baseDescription)
+                            append("\n\n")
+                            appendBold {
+                                append(countdown)
+                            }
+                        }
+                    }
+                }
+            }
+            delay(1000)
+        }
+        val participants = channel.getMessage(message.id).getReactors(participationEmoji)
+            .filter { it.isBot != true }
+            .toSet()
+        logger.atInfo().log("Participants cinco %s: %s", variant, participants)
+
+        if (participants.isEmpty()) {
+            channel.createEmbed {
+                color = variant.color
+                title = "Cancelled"
+                description = "No participants; game cancelled"
+            }
+            return
+        }
+
         val component = cincoProvider.get()
             .channel(channel)
             .variant(CincoVariant.Azul)
-            .players(setOf(event.message.author!!)) // TODO update
+            .players(participants)
+            .botPrefix(prefix)
             .build()
         component.game().start()
     }
@@ -74,6 +134,9 @@ interface CincoComponent {
 
         @BindsInstance
         fun players(@CincoPlayers players: Set<User>): Builder
+
+        @BindsInstance
+        fun botPrefix(@BotPrefix botPrefix: String): Builder
 
         fun build(): CincoComponent
     }

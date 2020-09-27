@@ -1,8 +1,10 @@
 package ca.allanwang.discord.bot.cinco.game.core
 
+import ca.allanwang.discord.bot.base.appendBold
 import ca.allanwang.discord.bot.cinco.CincoPlayers
 import ca.allanwang.discord.bot.cinco.CincoScope
 import ca.allanwang.discord.bot.cinco.game.CincoVariant
+import com.gitlab.kordlib.common.entity.Snowflake
 import com.gitlab.kordlib.core.Kord
 import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
 import com.gitlab.kordlib.core.behavior.channel.createEmbed
@@ -21,8 +23,11 @@ class CincoMessageBehavior @Inject constructor(
     private val kord: Kord,
     private val messageChannelBehavior: MessageChannelBehavior,
     @CincoPlayers private val players: Set<User>,
-    private val variant: CincoVariant
+    private val variant: CincoVariant,
+    private val pointTracker: CincoPointTracker
 ) {
+
+    val id: Snowflake = messageChannelBehavior.id
 
     private fun MessageCreateEvent.toCincoEntry(): CincoEntry? {
         val word = message.content
@@ -45,6 +50,29 @@ class CincoMessageBehavior @Inject constructor(
     suspend fun createEmbed(builder: EmbedBuilder.() -> Unit): Message = messageChannelBehavior.createEmbed {
         color = variant.color
         builder()
+    }
+
+    suspend fun showStandings(builder: EmbedBuilder.() -> Unit) {
+        createEmbed {
+            builder()
+            field {
+                name = "Standings"
+                value = buildString {
+                    pointTracker.getStandings().forEachIndexed { i, entry ->
+                        appendBold {
+                            append(i + 1)
+                            append('.')
+                        }
+                        append(' ')
+                        append(entry.player.mention)
+                        append(": ")
+                        append(entry.points)
+                        append(" pts")
+                        appendLine()
+                    }
+                }
+            }
+        }
     }
 }
 
