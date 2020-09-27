@@ -9,6 +9,15 @@ inline fun StringBuilder.appendOptional(
     else block()
 }
 
+inline fun StringBuilder.appendLink(text: String, url: String) {
+    append("[")
+    append(text)
+    append("]")
+    append("(")
+    append(url)
+    append(")")
+}
+
 inline fun StringBuilder.appendBold(block: () -> Unit) {
     append("**")
     block()
@@ -31,6 +40,12 @@ inline fun StringBuilder.appendCodeBlock(block: () -> Unit) {
     append("`")
     block()
     append("`")
+}
+
+inline fun StringBuilder.appendBigCodeBlock(block: () -> Unit) {
+    append("```")
+    block()
+    append("```")
 }
 
 inline fun StringBuilder.appendQuote(block: () -> Unit) {

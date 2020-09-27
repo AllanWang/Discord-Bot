@@ -31,7 +31,13 @@ class TimeBot @Inject constructor(
     companion object {
         private val logger = FluentLogger.forEnclosingClass()
 
-        val timeRegex = Regex("(1[0-2]|0?[1-9])(?::([0-5][0-9]))?\\s*([AaPp][Mm])?")
+        /**
+         * A time regex should match values of the format
+         * 8am, 9pm, 8:00, 8:00 am
+         *
+         * To avoid matching tags, time values should not be surrounded by alphanumeric characters.
+         */
+        val timeRegex = Regex("(?:^|[^a-zA-Z0-9])(1[0-2]|0?[1-9])(?::([0-5][0-9]))?\\s*([AaPp][Mm])?(?:$|[^a-zA-Z0-9])")
     }
 
     private data class TimeEntry(val hour: Int, val minute: Int, val pm: Boolean?) {

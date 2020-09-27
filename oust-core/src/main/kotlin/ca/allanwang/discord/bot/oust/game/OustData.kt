@@ -1,6 +1,5 @@
 package ca.allanwang.discord.bot.oust.game
 
-import com.gitlab.kordlib.common.entity.Snowflake
 import java.util.*
 import java.util.concurrent.ThreadLocalRandom
 
@@ -14,23 +13,8 @@ data class OustGame(
     val currentPlayer: OustPlayer get() = players[currentPlayerIndex]
 
     fun move(move: OustMove) {
-        when (move) {
-            is OustMove.Oust -> {
-                currentPlayer.spendCoins(OUST_COST)
-                discardCard(move.player, move.cardIndex)
-            }
-            is OustMove.Assassinate -> {
-                currentPlayer.spendCoins(ASSASSINATION_COST)
-                discardCard(move.player, move.cardIndex)
-            }
-        }
+        with(move) { apply() }
         currentPlayerIndex = (currentPlayerIndex + 1) % players.size
-    }
-
-    private fun discardCard(id: Snowflake, cardIndex: Int) {
-        val player = players.firstOrNull { it.info.id == id }
-            ?: throw IllegalArgumentException("Could not find player with matching id")
-        player.cards.removeAt(cardIndex)
     }
 
     companion object {
@@ -41,7 +25,11 @@ data class OustGame(
 
         const val OUST_COST: Int = 7
 
+        const val FORCE_OUST_THRESHOLD: Int = 10
+
         const val ASSASSINATION_COST = 3
+
+        const val STEAL_AMOUNT = 2
 
         fun create(players: List<OustPlayer.Info>): OustGame {
             if (players.size < 3) throw IllegalArgumentException("Oust requires at least 3 players")
@@ -72,7 +60,7 @@ data class OustPlayer(val info: Info, val cards: MutableList<Card>, var coins: I
 
     data class Card(val value: OustCard, var visible: Boolean)
 
-    data class Info(val id: Snowflake, val name: String)
+    data class Info(val id: String, val name: String)
 }
 
 enum class OustCard {
@@ -88,12 +76,4 @@ enum class OustCard {
          */
         val deck: List<OustCard> = values().toList() + values().toList() + values().toList()
     }
-}
-
-sealed class OustMove {
-
-    data class Oust(val player: Snowflake, val cardIndex: Int) : OustMove()
-    data class Assassinate(val player: Snowflake, val cardIndex: Int) : OustMove()
-    data class Steal(val player: Snowflake) : OustMove()
-
 }
