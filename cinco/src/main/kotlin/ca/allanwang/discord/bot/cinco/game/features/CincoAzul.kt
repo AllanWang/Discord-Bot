@@ -45,11 +45,12 @@ class CincoAzul @Inject constructor(
                 description = variant.description
                 roundProgressFooter(round)
             }.firstOrNull {
+                val guess = it.word
                 /*
                  * While each round has a specific word in mind,
                  * I think it's more fair that any valid word should count.
                  */
-                it.word == word || it.word.toList().sorted() == charList && wordBank.isWord(it.word)
+                guess == word || guess.toList().sorted() == charList && wordBank.isWord(guess)
             }
         }
 

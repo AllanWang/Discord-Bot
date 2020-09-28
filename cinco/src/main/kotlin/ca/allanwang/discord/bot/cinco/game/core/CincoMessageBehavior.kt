@@ -12,6 +12,7 @@ import com.gitlab.kordlib.core.entity.User
 import com.gitlab.kordlib.core.event.message.MessageCreateEvent
 import com.gitlab.kordlib.rest.builder.message.EmbedBuilder
 import kotlinx.coroutines.flow.*
+import java.util.*
 import javax.inject.Inject
 
 @CincoScope
@@ -28,7 +29,7 @@ class CincoMessageBehavior @Inject constructor(
         if (word.length != 5 || word.contains(' ')) return null
         val player = message.author
         if (player == null || player !in players) return null
-        return CincoEntry(player = player, word = word)
+        return CincoEntry(player = player, word = word.toLowerCase(Locale.US))
     }
 
     suspend fun createCincoEmbed(builder: EmbedBuilder.() -> Unit): Flow<CincoEntry> {
