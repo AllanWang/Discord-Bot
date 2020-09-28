@@ -8,7 +8,6 @@ import ca.allanwang.discord.bot.cinco.game.WordBank
 import ca.allanwang.discord.bot.cinco.game.features.CincoGameFeatureModule
 import ca.allanwang.discord.bot.cinco.game.features.CincoVariant
 import com.gitlab.kordlib.common.entity.Snowflake
-import com.gitlab.kordlib.core.Kord
 import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
 import com.gitlab.kordlib.core.behavior.channel.createEmbed
 import com.gitlab.kordlib.core.behavior.edit
@@ -22,16 +21,17 @@ import dagger.BindsInstance
 import dagger.Module
 import dagger.Subcomponent
 import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.toSet
 import kotlinx.coroutines.launch
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.*
 
 @Singleton
 class CincoBot @Inject constructor(
-    private val kord: Kord,
     private val cincoProvider: Provider<CincoComponent.Builder>,
     private val wordBank: WordBank
 ) : CommandHandlerBot {
@@ -40,6 +40,16 @@ class CincoBot @Inject constructor(
         private val logger = FluentLogger.forEnclosingClass()
 
         private val participationEmoji: ReactionEmoji = Emojis.whiteCheckMark.toReaction()
+
+        /**
+         * Time to wait while gathering participants
+         */
+        private const val PARTICIPATION_WAIT_TIME_SECONDS = 15
+
+        /**
+         * Seconds remaining to initiate countdown. Must be <= [PARTICIPATION_WAIT_TIME_SECONDS]
+         */
+        private const val PARTICIPATION_WAIT_TIME_INDICATOR_SECONDS = 10
     }
 
     override val handler = commandBuilder(CommandHandler.Type.Prefix) {
@@ -108,24 +118,32 @@ class CincoBot @Inject constructor(
             description = baseDescription
         }
         message.addReaction(participationEmoji)
-        val secondsToWait = 15
-        delay((secondsToWait - 10) * 1000L)
-        (10 downTo 1).forEach { countdown ->
-            message.kord.launch {
-                message.edit {
-                    embed {
-                        base()
-                        description = buildString {
-                            append(baseDescription)
-                            append("\n\n")
-                            appendBold {
-                                append(countdown)
+        delay((PARTICIPATION_WAIT_TIME_SECONDS - PARTICIPATION_WAIT_TIME_INDICATOR_SECONDS) * 1000L)
+        // Countdown display
+        coroutineScope {
+            (PARTICIPATION_WAIT_TIME_INDICATOR_SECONDS downTo 1).forEach { countdown ->
+                launch {
+                    message.edit {
+                        embed {
+                            base()
+                            description = buildString {
+                                append(baseDescription)
+                                append("\n\n")
+                                appendBold {
+                                    append(countdown)
+                                }
                             }
                         }
                     }
                 }
+                delay(1000)
             }
-            delay(1000)
+        }
+        message.edit {
+            embed {
+                base()
+                description = baseDescription
+            }
         }
         return channel.getMessage(message.id).getReactors(participationEmoji)
             .filter { it.isBot != true }
@@ -137,39 +155,41 @@ class CincoBot @Inject constructor(
         logger.atInfo().log("Start cinco %s", variant.tag)
         games[event.message.channelId] = System.currentTimeMillis()
 
-        kord.launch(CoroutineExceptionHandler { _, throwable ->
-            logger.atWarning().withCause(throwable).log("Cinco error")
-            games.remove(event.message.channelId)
-        }) {
-            val participants = getParticipants(variant)
+        coroutineScope {
+            launch(CoroutineExceptionHandler { _, throwable ->
+                logger.atWarning().withCause(throwable).log("Cinco error")
+                games.remove(event.message.channelId)
+            }) {
+                val participants = getParticipants(variant)
 
-            logger.atInfo().log("Participants cinco %s: %s", variant, participants)
+                logger.atInfo().log("Participants cinco %s: %s", variant, participants)
 
-            if (participants.isEmpty()) {
-                channel.createEmbed {
-                    color = variant.color
-                    title = "Cancelled"
-                    description = "No participants; game cancelled"
+                if (participants.isEmpty()) {
+                    channel.createEmbed {
+                        color = variant.color
+                        title = "Cancelled"
+                        description = "No participants; game cancelled"
+                    }
+                    return@launch
                 }
-                return@launch
-            }
 
-            val component = cincoProvider.get()
-                .channel(channel)
-                .variant(CincoVariant.Azul)
-                .players(participants)
-                .context(
-                    CincoContext(
-                        botPrefix = prefix,
-                        gameRounds = 15,
-                        roundTimeout = 30_000L
+                val component = cincoProvider.get()
+                    .channel(channel)
+                    .variant(CincoVariant.Azul)
+                    .players(participants)
+                    .context(
+                        CincoContext(
+                            botPrefix = prefix,
+                            gameRounds = 15,
+                            roundTimeout = 30_000L
+                        )
                     )
-                )
-                .build()
+                    .build()
 
-            component.game().play()
-        }.invokeOnCompletion {
-            games.remove(event.message.channelId)
+                component.game().play()
+            }.invokeOnCompletion {
+                games.remove(event.message.channelId)
+            }
         }
     }
 }
