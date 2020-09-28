@@ -3744,7 +3744,7 @@ troth
 testy
 balky
 crimp
-chink
+# chink
 abets
 splat
 abaci
