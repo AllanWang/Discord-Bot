@@ -166,7 +166,8 @@ class SelectionMessage @Inject constructor(
         actions: List<String>,
         embedBuilder: EmbedBuilder.() -> Unit
     ): Message {
-        val embedContent = EmbedBuilder().apply {
+
+        val embedContent: EmbedBuilder.() -> Unit = {
             header()
             embedBuilder()
             field {
@@ -185,8 +186,8 @@ class SelectionMessage @Inject constructor(
         }
 
         val message =
-            _message?.let { it.edit { embed = embedContent } }
-                ?: channel.createMessage { embed = embedContent }
+            _message?.let { it.edit { embed(embedContent) } }
+                ?: channel.createMessage { embed(embedContent) }
         _message = message
 
         // Given that list size is at most 10, it's fine to avoid converting to set for checking elements
