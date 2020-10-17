@@ -7,6 +7,8 @@ import com.google.common.flogger.FluentLogger
 import dagger.Module
 import dagger.Provides
 import dagger.multibindings.IntoSet
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -41,18 +43,18 @@ abstract class CommandBot(
         val prefixedMessage = prefixedMessage() ?: return
         val key = prefixedMessage.message.substringBefore(' ')
         val handler = candidates[key] ?: return
-        runCatching {
+        kord.launch(CoroutineExceptionHandler { _, throwable ->
+            logger.atWarning().withCause(throwable).log("Failure for %s", handler::class.simpleName)
+        }) {
             handler.handle(
                 CommandHandlerEvent(
-                    event = this,
+                    event = this@handleCommands,
                     prefix = prefixedMessage.prefix,
                     command = key,
                     message = prefixedMessage.message,
                     origMessage = message.content
                 )
             )
-        }.onFailure {
-            logger.atWarning().withCause(it).log("Failure for %s", handler::class.simpleName)
         }
     }
 }
