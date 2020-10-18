@@ -1,9 +1,6 @@
 package ca.allanwang.discord.bot.qotd
 
-import ca.allanwang.discord.bot.firebase.FirebaseRootRef
-import ca.allanwang.discord.bot.firebase.getValueOrNull
-import ca.allanwang.discord.bot.firebase.setValue
-import ca.allanwang.discord.bot.firebase.singleSnapshot
+import ca.allanwang.discord.bot.firebase.*
 import com.gitlab.kordlib.common.entity.Snowflake
 import com.google.common.flogger.FluentLogger
 import com.google.firebase.database.DataSnapshot
@@ -73,6 +70,9 @@ class QotdApi @Inject constructor(
 
     suspend fun statusChannel(group: Snowflake, channel: Snowflake) =
         ref.child(group.value).child(STATUS_CHANNEL).setValue(channel.value)
+
+    suspend fun statusChannel(group: Snowflake): Snowflake? =
+        ref.child(group.value).child(STATUS_CHANNEL).single<String>()?.let { Snowflake(it) }
 
     suspend fun time(group: Snowflake, time: Long?) =
         ref.child(group.value).child(TIME).setValue(time)

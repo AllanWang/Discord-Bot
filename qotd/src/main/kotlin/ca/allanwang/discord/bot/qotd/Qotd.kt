@@ -10,6 +10,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.awt.Color
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -43,6 +44,8 @@ class Qotd @Inject constructor(
 
     private val loopers: ConcurrentHashMap<Snowflake, Job> = ConcurrentHashMap()
 
+    val embedColor = Color.decode("#AB98D2")
+
     suspend fun initLoops() {
         api.coreSnapshotAll().forEach {
             qotd(it.group, it)
@@ -64,6 +67,23 @@ class Qotd @Inject constructor(
         }
     }
 
+    suspend fun status(group: Snowflake): String {
+        return "TODO"
+    }
+
+    suspend fun qotdInit(group: Snowflake, channelBehavior: MessageChannelBehavior) {
+        api.statusChannel(group, channelBehavior.id)
+        channelBehavior.createEmbed {
+            color = embedColor
+            title = "QOTD"
+            description = "Welcome to QOTD! All setup and status updates will be sent to this channel"
+            field {
+                name = "Configurations"
+
+            }
+        }
+    }
+
     suspend fun qotd(group: Snowflake, refCoreSnapshot: QotdApi.CoreSnapshot? = null) {
         val coreSnapshot = refCoreSnapshot ?: api.coreSnapshot(group)
         val qotdTime = coreSnapshot?.time ?: return clearJob(group)
@@ -73,7 +93,7 @@ class Qotd @Inject constructor(
             qotdTime < now - TIME_THRESHOLD -> return clearJob(group)
             // Okay to launch request
             qotdTime < now + TIME_THRESHOLD -> {
-                val newQotdTime = qotdNow(coreSnapshot, mutate = true) ?: return clearJob(group)
+                val newQotdTime = qotdNow(coreSnapshot) ?: return clearJob(group)
                 if (newQotdTime > now + TIME_THRESHOLD) setJob(group) {
                     delay(newQotdTime - now)
                     qotd(group)
@@ -95,15 +115,18 @@ class Qotd @Inject constructor(
      *
      * Based on how the next question is fetched, this will match the next QOTD if there are no modifications.
      */
-    suspend fun qotdSample(channelBehavior: MessageChannelBehavior, group: Snowflake) {
+    suspend fun qotdSample(
+        channelBehavior: MessageChannelBehavior,
+        group: Snowflake,
+        question: String = "Hello! This is a sample question"
+    ) {
         suspend fun fail(message: String) {
             channelBehavior.createMessage(message)
         }
 
-        val coreSnapshot = api.coreSnapshot(group) ?: return fail("Could not get QOTD formatter")
+        val coreSnapshot = api.coreSnapshot(group) ?: return fail("Could not get QOTD formatter; make sure to use `qotd init` to start the setup")
         if (coreSnapshot.statusChannel != channelBehavior.id) return fail("Cannot send sample qotd here; please go to<#${coreSnapshot.statusChannel}>")
         val formatSnapshot = api.formatSnapshot(group) ?: return fail("Could not get QOTD formatter")
-        val question = api.getQuestion(group, delete = false) ?: return fail("Could not get QOTD question")
         channelBehavior.createQotd(formatSnapshot, question)
     }
 
@@ -131,6 +154,7 @@ class Qotd @Inject constructor(
 
     private suspend fun MessageChannelBehavior.createQotd(formatSnapshot: QotdApi.FormatSnapshot, question: String) {
         createEmbed {
+            color = embedColor
             title = "QOTD"
             image = formatSnapshot.image
 
@@ -139,8 +163,10 @@ class Qotd @Inject constructor(
             description = buildString {
                 if (formatSnapshot.template == null) {
                     append(question)
-                    append("\n\n")
-                    append(roleMention)
+                    if (roleMention.isNotEmpty()) {
+                        append("\n\n")
+                        append(roleMention)
+                    }
                 } else {
                     append(
                         formatSnapshot.template
