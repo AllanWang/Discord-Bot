@@ -1,5 +1,6 @@
 package ca.allanwang.discord.bot.base
 
+import com.gitlab.kordlib.core.Kord
 import com.gitlab.kordlib.core.event.message.MessageCreateEvent
 import com.gitlab.kordlib.rest.builder.message.EmbedBuilder
 
@@ -38,6 +39,7 @@ interface CommandHandler {
 }
 
 interface CommandHandlerBot {
+    suspend fun Kord.attach(): Unit = Unit
     val handler: CommandHandler
 }
 
