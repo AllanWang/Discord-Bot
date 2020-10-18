@@ -20,7 +20,7 @@ class TimeApi @Inject constructor(
 
     companion object {
         private const val TIME = "time"
-        val logger = FluentLogger.forEnclosingClass()
+        private val logger = FluentLogger.forEnclosingClass()
     }
 
     private val ref = rootRef.child(TIME)

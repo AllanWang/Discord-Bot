@@ -10,6 +10,7 @@ import javax.inject.Singleton
 
 @Singleton
 class QotdBot @Inject constructor(
+    private val qotd: Qotd
 ) : CommandHandlerBot {
 
     companion object {
@@ -17,7 +18,7 @@ class QotdBot @Inject constructor(
     }
 
     override suspend fun Kord.attach() {
-
+        qotd.initLoops()
     }
 
     override val handler = commandBuilder(CommandHandler.Type.Prefix) {
