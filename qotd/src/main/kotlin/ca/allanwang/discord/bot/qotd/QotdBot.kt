@@ -90,6 +90,7 @@ class QotdBot @Inject constructor(
             return
         }
         api.statusChannel(guildId, channel.id)
+        statusChannelCache.removeCache(guildId)
 
         channel.createQotd {
             description = "Welcome to QOTD! All setup and status updates will be sent to this channel"
