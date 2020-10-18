@@ -99,17 +99,25 @@ class QotdApi @Inject constructor(
      */
 
     suspend fun addQuestion(group: Snowflake, question: String) =
-        questionRef.child(group.value).child(QUESTIONS).child(UUID.randomUUID().toString()).setValue(question)
+        questionRef.child(group.value).child(UUID.randomUUID().toString()).setValue(question)
 
     suspend fun removeQuestion(group: Snowflake, questionKey: String) =
-        questionRef.child(group.value).child(QUESTIONS).child(questionKey).setValue(null)
+        questionRef.child(group.value).child(questionKey).setValue(null)
 
     suspend fun getQuestion(group: Snowflake, delete: Boolean = true): String? {
-        val snapshot = ref.child(group.value).child(QUESTIONS).orderByKey().limitToFirst(1).singleSnapshot()
+        val snapshot = questionRef.child(group.value).orderByKey().limitToFirst(1).singleSnapshot()
         val questionSnapshot = snapshot.children.firstOrNull()
         val question = questionSnapshot?.getValueOrNull<String>() ?: return null
         if (delete) removeQuestion(group, questionSnapshot.key)
         return question
+    }
+
+    suspend fun questions(group: Snowflake): Map<String, String> {
+        val snapshot = questionRef.child(group.value).singleSnapshot()
+        return snapshot.children.mapNotNull {
+            val value = it.getValueOrNull<String>() ?: return@mapNotNull null
+            it.key to value
+        }.toMap()
     }
 
     suspend fun coreSnapshot(group: Snowflake): CoreSnapshot? =

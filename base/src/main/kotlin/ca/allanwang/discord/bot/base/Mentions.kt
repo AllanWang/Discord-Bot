@@ -1,10 +1,11 @@
 package ca.allanwang.discord.bot.base
 
 import com.gitlab.kordlib.common.entity.Snowflake
+import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class MentionRegex {
+class Mentions @Inject constructor() {
     val channelMentionRegex = Regex("<#([0-9]+)>")
     fun channelMention(snowflake: Snowflake) = "<#${snowflake.value}>"
 

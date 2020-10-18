@@ -1,6 +1,6 @@
 package ca.allanwang.discord.bot.qotd
 
-import ca.allanwang.discord.bot.base.MentionRegex
+import ca.allanwang.discord.bot.base.Mentions
 import com.gitlab.kordlib.common.entity.Snowflake
 import com.gitlab.kordlib.core.Kord
 import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
@@ -19,7 +19,7 @@ import javax.inject.Singleton
 @Singleton
 class Qotd @Inject constructor(
     private val kord: Kord,
-    private val mentionRegex: MentionRegex,
+    private val mentions: Mentions,
     private val api: QotdApi
 ) {
 
@@ -158,7 +158,7 @@ class Qotd @Inject constructor(
             title = "QOTD"
             image = formatSnapshot.image
 
-            val roleMention = formatSnapshot.roleMention?.let { mentionRegex.roleMention(it) } ?: ""
+            val roleMention = formatSnapshot.roleMention?.let { mentions.roleMention(it) } ?: ""
 
             description = buildString {
                 if (formatSnapshot.template == null) {
