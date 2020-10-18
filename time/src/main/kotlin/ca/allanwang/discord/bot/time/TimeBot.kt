@@ -92,7 +92,7 @@ class TimeBot @Inject constructor(
         val authorId = author?.id ?: return null
         val times = content.findTimes()
         if (times.isEmpty()) return null
-        logger.atInfo().log("Times matched %s - %s", times, id.value)
+        logger.atFine().log("Times matched %s - %s", times, id.value)
         val origTimezone = timeApi.getTime(groupSnowflake, authorId) ?: return null
         val timezones = timeApi.groupTimes(groupSnowflake)
         if (timezones.size <= 1) return null
@@ -172,19 +172,19 @@ class TimeBot @Inject constructor(
                     .first { it.handleEvent() }
             }
             message.deleteOwnReaction(timeApi.reactionEmoji)
-            logger.atInfo().log("Remove listener for message %s", message.id.value)
+            logger.atFine().log("Remove listener for message %s", message.id.value)
         }
     }
 
     private suspend fun ReactionAddEvent.handleEvent(): Boolean {
         if (userId == kord.selfId) return false
-        logger.atInfo().log("Receive pending event with emoji %s", emoji.name)
+        logger.atFine().log("Receive pending event with emoji %s", emoji.name)
         if (emoji != timeApi.reactionEmoji) return false
         val user = getUserOrNull()
         if (user?.isBot == true) return false
         val message = getMessage()
         val info = message.timeBotInfo(message.groupSnowflake(guildId)) ?: return true
-        logger.atInfo().log("Sending reaction response message")
+        logger.atFine().log("Sending reaction response message")
         message.createTimezoneMessage(info, user = user)
         return true
     }
