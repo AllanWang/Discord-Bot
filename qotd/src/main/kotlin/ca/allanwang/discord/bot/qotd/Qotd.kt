@@ -1,5 +1,6 @@
 package ca.allanwang.discord.bot.qotd
 
+import ca.allanwang.discord.bot.base.MentionRegex
 import com.gitlab.kordlib.common.entity.Snowflake
 import com.gitlab.kordlib.core.Kord
 import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
@@ -18,6 +19,7 @@ import javax.inject.Singleton
 @Singleton
 class Qotd @Inject constructor(
     private val kord: Kord,
+    private val mentionRegex: MentionRegex,
     private val api: QotdApi
 ) {
 
@@ -124,8 +126,6 @@ class Qotd @Inject constructor(
             channelBehavior.createMessage(message)
         }
 
-        val coreSnapshot = api.coreSnapshot(group) ?: return fail("Could not get QOTD formatter; make sure to use `qotd init` to start the setup")
-        if (coreSnapshot.statusChannel != channelBehavior.id) return fail("Cannot send sample qotd here; please go to<#${coreSnapshot.statusChannel}>")
         val formatSnapshot = api.formatSnapshot(group) ?: return fail("Could not get QOTD formatter")
         channelBehavior.createQotd(formatSnapshot, question)
     }
@@ -158,7 +158,7 @@ class Qotd @Inject constructor(
             title = "QOTD"
             image = formatSnapshot.image
 
-            val roleMention = formatSnapshot.roleMention?.let { "<@&$it>" } ?: ""
+            val roleMention = formatSnapshot.roleMention?.let { mentionRegex.roleMention(it) } ?: ""
 
             description = buildString {
                 if (formatSnapshot.template == null) {

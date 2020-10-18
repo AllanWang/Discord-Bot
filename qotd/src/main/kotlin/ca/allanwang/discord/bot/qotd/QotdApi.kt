@@ -6,6 +6,7 @@ import com.google.common.flogger.FluentLogger
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseReference
 import java.util.*
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -141,7 +142,7 @@ class QotdApi @Inject constructor(
             group = group,
             image = image,
             template = template,
-            timeInterval = timeInterval,
+            timeInterval = timeInterval ?: TimeUnit.DAYS.toMillis(1), // Default to one day
             roleMention = roleMention,
         )
     }
