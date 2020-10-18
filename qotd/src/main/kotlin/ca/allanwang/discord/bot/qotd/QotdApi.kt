@@ -19,6 +19,7 @@ class QotdApi @Inject constructor(
         private const val QOTD = "qotd"
 
         // High level categories
+        private const val CORE = "core"
         private const val FORMAT = "format"
         private const val QUESTIONS = "questions"
 
@@ -58,9 +59,16 @@ class QotdApi @Inject constructor(
         val timeInterval: Long?,
     )
 
-    private val ref = rootRef.child(QOTD)
-    private val formatRef = ref.child(FORMAT)
-    private val questionRef = ref.child(QUESTIONS)
+    private val ref: DatabaseReference
+    private val formatRef: DatabaseReference
+    private val questionRef: DatabaseReference
+
+    init {
+        val qotdRef = rootRef.child(QOTD)
+        ref = qotdRef.child(CORE)
+        formatRef = qotdRef.child(FORMAT)
+        questionRef = qotdRef.child(QUESTIONS)
+    }
 
     /*
      * Ref based fields which dictates whether qotd should occur
