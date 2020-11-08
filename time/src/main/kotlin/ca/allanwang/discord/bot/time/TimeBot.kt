@@ -40,7 +40,7 @@ class TimeBot @Inject constructor(
         val timeRegex = Regex("(?:^|[^a-zA-Z0-9])(1[0-2]|0?[1-9])(?::([0-5][0-9]))?\\s*([AaPp][Mm])?(?:$|[^a-zA-Z0-9])")
     }
 
-    private data class TimeEntry(val hour: Int, val minute: Int, val pm: Boolean?) {
+    internal data class TimeEntry(val hour: Int, val minute: Int, val pm: Boolean?) {
         override fun toString(): String = buildString {
             append(hour)
             append(':')
@@ -51,8 +51,15 @@ class TimeBot @Inject constructor(
             }
         }
 
+        val hour24: Int
+            get() = when {
+                hour == 12 -> if (pm == false) 0 else 12
+                pm == true -> hour + 12
+                else -> hour
+            }
+
         fun toZonedDateTime(zoneId: ZoneId): ZonedDateTime =
-            ZonedDateTime.of(LocalDate.now(zoneId), LocalTime.of(hour + (if (pm == true) 12 else 0), minute), zoneId)
+            ZonedDateTime.of(LocalDate.now(zoneId), LocalTime.of(hour24, minute), zoneId)
     }
 
     private fun MatchResult.toTimeEntry(): TimeEntry? {
