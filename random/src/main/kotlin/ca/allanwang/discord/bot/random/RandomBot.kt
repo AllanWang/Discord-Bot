@@ -22,9 +22,21 @@ class RandomBot @Inject constructor(
 
         private inline val rnd: Random get() = ThreadLocalRandom.current()
 
-        private val rangeRegex = Regex("^\\s*(\\d+)[\\s-]+(\\d+)\\s*$")
+        private val rangeRegex = Regex("^\\s*(\\d+)(?:[\\s-]+(\\d+))?\\s*$")
 
         private val embedColor = Color.decode("#EEB501")
+
+        /**
+         * Extract start and end range from input.
+         * If only one number is provided, we assume the roll is 1 to the number.
+         */
+        fun rollRange(input: String): Pair<Int, Int>? {
+            val match = rangeRegex.find(input) ?: return null
+            val first = match.groupValues[1].toInt()
+            val second = match.groupValues[2].toIntOrNull()
+            return if (second == null) 1 to first
+            else first to second
+        }
     }
 
     override val handler = commandBuilder(CommandHandler.Type.Prefix) {
@@ -39,8 +51,7 @@ class RandomBot @Inject constructor(
         }
         arg("roll") {
             action(withMessage = true) {
-                val range = rangeRegex.find(message)?.let { it.groupValues[1].toInt() to it.groupValues[2].toInt() }
-                    ?: 1 to 6
+                val range = rollRange(message) ?: 1 to 6
                 roll(range.first, range.second)
             }
         }
