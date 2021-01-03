@@ -45,6 +45,7 @@ class Qotd @Inject constructor(
         }
 
         internal fun newTime(core: QotdApi.CoreSnapshot): Long? {
+            if (!core.isReady) return null
             // Should never be null given constraints
             val time = core.time ?: return null
             val timeInterval = core.timeInterval
@@ -99,7 +100,8 @@ class Qotd @Inject constructor(
 
     suspend fun qotd(group: Snowflake, refCoreSnapshot: QotdApi.CoreSnapshot? = null) {
         val core = refCoreSnapshot ?: api.coreSnapshot(group)
-        val qotdTime = core?.time ?: return clearJob(group)
+        if (core?.isReady != true) return clearJob(group)
+        val qotdTime = core.time ?: return clearJob(group)
         val now = System.currentTimeMillis()
         // Within threshold of expected qotd; send now
         if (abs(qotdTime - now) < TIME_THRESHOLD) {
@@ -133,21 +135,24 @@ class Qotd @Inject constructor(
     }
 
     /**
-     * Attempts to send a QOTD instantly
+     * Attempts to send a QOTD instantly.
+     * Return true if successful.
      */
-    private suspend fun qotdNow(core: QotdApi.CoreSnapshot) {
-        val channel = core.outputChannel ?: return
+    suspend fun qotdNow(core: QotdApi.CoreSnapshot): Boolean {
+        val channel = core.outputChannel ?: return false
         val question = api.getQuestion(core.group)
         if (question == null) {
             kord.unsafe.guildMessageChannel(core.group, core.statusChannel).createMessage("No more questions for QOTD.")
-            return
+            return false
         }
         val format = api.formatSnapshot(core.group)
-        try {
+        return try {
             kord.unsafe.guildMessageChannel(core.group, channel).createQotd(format, question)
+            true
         } catch (e: RestRequestException) {
             logger.atSevere().withCause(e).log("Could not send QOTD")
             kord.unsafe.guildMessageChannel(core.group, core.statusChannel).createMessage("Could not send QOTD")
+            false
         }
     }
 

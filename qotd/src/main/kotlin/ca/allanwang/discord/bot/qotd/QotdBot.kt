@@ -68,6 +68,11 @@ class QotdBot @Inject constructor(
                     addQuestion()
                 }
             }
+            arg("now") {
+                action(withMessage = false) {
+                    now()
+                }
+            }
             configCommands()
         }
     }
@@ -88,6 +93,11 @@ class QotdBot @Inject constructor(
             arg(REMOVE_KEY) { action(withMessage = false) { template(remove = true) } }
             action(withMessage = true) {
                 template()
+            }
+        }
+        arg("time") {
+            action(withMessage = true) {
+                time()
             }
         }
         arg("timeInterval") {
@@ -168,6 +178,7 @@ class QotdBot @Inject constructor(
                 appendCommand("status", "View QOTD status")
                 appendCommand("questions", "Shows current question pool.")
                 appendCommand("sample", "Shows a sample QOTD with all the configurations.")
+                appendCommand("now", "Send a real QOTD now.")
             }.trim()
         }
 
@@ -238,8 +249,28 @@ class QotdBot @Inject constructor(
         qotd.qotdSample(channel, guildId)
     }
 
-    private suspend fun CommandHandlerEvent.channel() {
+    private suspend fun CommandHandlerEvent.now() {
         val guildId = statusGuildId() ?: return
+        val core = api.coreSnapshot(guildId)
+        if (core == null) {
+            channel.createEmbed {
+                description = "QOTD not set up"
+                commandFields(prefix)
+            }
+            return
+        }
+        if (!qotd.qotdNow(core)) {
+            channel.createMessage("Failed to send QOTD.")
+        }
+    }
+
+    private suspend fun CommandHandlerEvent.channel(remove: Boolean = false) {
+        val guildId = statusGuildId() ?: return
+        if (remove) {
+            api.outputChannel(guildId, null)
+            channel.createMessage("Removed channel and disabled QOTD")
+            return
+        }
         val mentionedChannel =
             mentions.channelMentionRegex.find(message)
                 ?.groupValues?.get(1)
@@ -320,8 +351,8 @@ class QotdBot @Inject constructor(
         }
         val time = timeEntry.toZonedDateTime(origTimezone.toZoneId())
         api.time(guildId, time.toEpochSecond())
-        qotd.qotd(guildId)
         channel.createMessage("Saved time and started QOTD.")
+        qotd.qotd(guildId)
     }
 
     private suspend fun CommandHandlerEvent.timeInterval() {

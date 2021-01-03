@@ -42,7 +42,9 @@ class QotdApi @Inject constructor(
         val outputChannel: Snowflake?,
         val timeInterval: Long,
         val time: Long?,
-    )
+    ) {
+        val isReady: Boolean get() = outputChannel != null && time != null
+    }
 
     data class FormatSnapshot(
         val group: Snowflake,
