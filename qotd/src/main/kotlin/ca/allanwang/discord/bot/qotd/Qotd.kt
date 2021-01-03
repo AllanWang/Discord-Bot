@@ -24,8 +24,7 @@ class Qotd @Inject constructor(
 ) {
 
     companion object {
-        private const val QUESTION_PLACEHOLDER = "\$question\$"
-        private const val MENTION_PLACEHOLDER = "\$mention\$"
+        internal const val QUESTION_PLACEHOLDER = "\$question\$"
 
         /**
          * Max time difference in milliseconds between expected qotd request time and current time
@@ -73,19 +72,6 @@ class Qotd @Inject constructor(
         return "TODO"
     }
 
-    suspend fun qotdInit(group: Snowflake, channelBehavior: MessageChannelBehavior) {
-        api.statusChannel(group, channelBehavior.id)
-        channelBehavior.createEmbed {
-            color = embedColor
-            title = "QOTD"
-            description = "Welcome to QOTD! All setup and status updates will be sent to this channel"
-            field {
-                name = "Configurations"
-
-            }
-        }
-    }
-
     suspend fun qotd(group: Snowflake, refCoreSnapshot: QotdApi.CoreSnapshot? = null) {
         val coreSnapshot = refCoreSnapshot ?: api.coreSnapshot(group)
         val qotdTime = coreSnapshot?.time ?: return clearJob(group)
@@ -127,7 +113,7 @@ class Qotd @Inject constructor(
         }
 
         val formatSnapshot = api.formatSnapshot(group) ?: return fail("Could not get QOTD formatter")
-        channelBehavior.createQotd(formatSnapshot, question)
+        channelBehavior.createQotd(formatSnapshot.copy(roleMention = null), question)
     }
 
     private suspend fun qotdNow(data: QotdApi.CoreSnapshot): Long? {
@@ -152,29 +138,28 @@ class Qotd @Inject constructor(
         return newTime
     }
 
-    private suspend fun MessageChannelBehavior.createQotd(formatSnapshot: QotdApi.FormatSnapshot, question: String) {
+    fun isValidTemplate(template: String): Boolean {
+        return template.contains(QUESTION_PLACEHOLDER)
+    }
+
+    private suspend fun MessageChannelBehavior.createQotd(
+        formatSnapshot: QotdApi.FormatSnapshot,
+        question: String
+    ) {
         createEmbed {
             color = embedColor
             title = "QOTD"
             image = formatSnapshot.image
 
-            val roleMention = formatSnapshot.roleMention?.let { mentions.roleMention(it) } ?: ""
-
             description = buildString {
                 if (formatSnapshot.template == null) {
                     append(question)
-                    if (roleMention.isNotEmpty()) {
-                        append("\n\n")
-                        append(roleMention)
-                    }
                 } else {
-                    append(
-                        formatSnapshot.template
-                            .replace(QUESTION_PLACEHOLDER, question)
-                            .replace(MENTION_PLACEHOLDER, roleMention)
-                    )
+                    append(formatSnapshot.template.replace(QUESTION_PLACEHOLDER, question))
                 }
             }
         }
+        val roleMention = formatSnapshot.roleMention?.let { mentions.roleMention(it) } ?: return
+        createMessage(roleMention)
     }
 }

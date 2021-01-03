@@ -5,7 +5,6 @@ import dev.kord.common.entity.Snowflake
 import dev.kord.core.entity.Message
 import dev.kord.core.event.message.ReactionAddEvent
 import com.gitlab.kordlib.kordx.emoji.Emojis
-import com.gitlab.kordlib.kordx.emoji.toReaction
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first

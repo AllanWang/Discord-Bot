@@ -5,6 +5,7 @@ import dev.kord.common.entity.Snowflake
 import com.google.common.flogger.FluentLogger
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseReference
+import java.time.ZonedDateTime
 import java.util.*
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -30,6 +31,8 @@ class QotdApi @Inject constructor(
         private const val ROLE_MENTION = "role_mention"
         private const val TIME = "time"
         private const val TIME_INTERVAL = "time_interval"
+
+        internal val DEFAULT_TIME_INTERVAL: Long = TimeUnit.DAYS.toMillis(1)
 
         private val logger = FluentLogger.forEnclosingClass()
     }
@@ -81,13 +84,13 @@ class QotdApi @Inject constructor(
         ref.child(group.asString).child(STATUS_CHANNEL).setValue(channel.value)
 
     suspend fun statusChannel(group: Snowflake): Snowflake? =
-        ref.child(group.asString).child(STATUS_CHANNEL).single<String>()?.let { Snowflake(it) }
+        ref.child(group.asString).child(STATUS_CHANNEL).single<Long>()?.let { Snowflake(it) }
 
     suspend fun time(group: Snowflake, time: Long?) =
         ref.child(group.asString).child(TIME).setValue(time)
 
     /*
-     * Format ref based fields which dictate how the messsage is formatted and sent
+     * Format ref based fields which dictate how the message is formatted and sent
      */
 
     suspend fun image(group: Snowflake, url: String?) =
@@ -99,8 +102,8 @@ class QotdApi @Inject constructor(
     suspend fun timeInterval(group: Snowflake, timeInterval: Long?) =
         formatRef.child(group.asString).child(TIME_INTERVAL).setValue(timeInterval)
 
-    suspend fun roleMention(group: Snowflake, roleMention: String?) =
-        formatRef.child(group.asString).child(ROLE_MENTION).setValue(roleMention)
+    suspend fun roleMention(group: Snowflake, roleMention: Snowflake?) =
+        formatRef.child(group.asString).child(ROLE_MENTION).setValue(roleMention?.value)
 
     /*
      * Question ref based fields for questions
@@ -135,9 +138,9 @@ class QotdApi @Inject constructor(
         ref.singleSnapshot().children.mapNotNull { it.coreSnapshot(Snowflake(it.key)) }.toSet()
 
     private suspend fun DataSnapshot.coreSnapshot(group: Snowflake): CoreSnapshot? {
-        val statusChannel = child(STATUS_CHANNEL).getValueOrNull<String>()?.let { Snowflake(it) } ?: return null
+        val statusChannel = child(STATUS_CHANNEL).getValueOrNull<Long>()?.let { Snowflake(it) } ?: return null
         val time = child(TIME).getValueOrNull<Long>()
-        val outputChannel = child(OUTPUT_CHANNEL).getValueOrNull<String>()?.let { Snowflake(it) }
+        val outputChannel = child(OUTPUT_CHANNEL).getValueOrNull<Long>()?.let { Snowflake(it) }
         return CoreSnapshot(
             group = group,
             time = time,
@@ -149,16 +152,16 @@ class QotdApi @Inject constructor(
     suspend fun formatSnapshot(group: Snowflake): FormatSnapshot? =
         formatRef.child(group.asString).singleSnapshot().formatSnapshot(group)
 
-    private suspend fun DataSnapshot.formatSnapshot(group: Snowflake): FormatSnapshot? {
+    private suspend fun DataSnapshot.formatSnapshot(group: Snowflake): FormatSnapshot {
         val image = child(IMAGE).getValueOrNull<String>()
         val template = child(TEMPLATE).getValueOrNull<String>()
         val timeInterval = child(TIME_INTERVAL).getValueOrNull<Long>()
-        val roleMention = child(ROLE_MENTION).getValueOrNull<String>()?.let { Snowflake(it) }
+        val roleMention = child(ROLE_MENTION).getValueOrNull<Long>()?.let { Snowflake(it) }
         return FormatSnapshot(
             group = group,
             image = image,
             template = template,
-            timeInterval = timeInterval ?: TimeUnit.DAYS.toMillis(1), // Default to one day
+            timeInterval = timeInterval ?: DEFAULT_TIME_INTERVAL,
             roleMention = roleMention,
         )
     }

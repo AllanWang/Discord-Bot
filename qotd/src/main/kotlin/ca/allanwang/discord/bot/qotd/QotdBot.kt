@@ -2,12 +2,14 @@ package ca.allanwang.discord.bot.qotd
 
 import ca.allanwang.discord.bot.base.*
 import ca.allanwang.discord.bot.firebase.FirebaseCache
+import com.google.common.flogger.FluentLogger
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.Kord
 import dev.kord.core.behavior.channel.MessageChannelBehavior
 import dev.kord.core.behavior.channel.createEmbed
 import dev.kord.rest.builder.message.EmbedBuilder
-import com.google.common.flogger.FluentLogger
+import java.time.format.DateTimeFormatter
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -20,6 +22,8 @@ class QotdBot @Inject constructor(
 
     companion object {
         private val logger = FluentLogger.forEnclosingClass()
+
+        private const val REMOVE_KEY = "remove"
     }
 
     private val statusChannelCache: FirebaseCache<Snowflake, Snowflake?> =
@@ -41,6 +45,11 @@ class QotdBot @Inject constructor(
             arg("help") {
                 action(withMessage = false) {
                     help()
+                }
+            }
+            arg("status") {
+                action(withMessage = false) {
+                    status()
                 }
             }
             arg("sample") {
@@ -68,6 +77,29 @@ class QotdBot @Inject constructor(
                 channel()
             }
         }
+        arg("image") {
+            arg(REMOVE_KEY) { action(withMessage = false) { image(remove = true) } }
+            action(withMessage = true) {
+                image()
+            }
+        }
+        arg("template") {
+            arg(REMOVE_KEY) { action(withMessage = false) { template(remove = true) } }
+            action(withMessage = true) {
+                template()
+            }
+        }
+        arg("timeInterval") {
+            action(withMessage = true) {
+                timeInterval()
+            }
+        }
+        arg("roleMention") {
+            arg(REMOVE_KEY) { action(withMessage = false) { roleMention(remove = true) } }
+            action(withMessage = true) {
+                roleMention()
+            }
+        }
     }
 
     /**
@@ -87,6 +119,10 @@ class QotdBot @Inject constructor(
         val guildId = event.guildId
         if (guildId == null) {
             channel.createMessage("QOTD must be used in a server")
+            return
+        }
+        if (event.member?.isOwner() != true) {
+            channel.createMessage("Only server admins can setup QOTD")
             return
         }
         api.statusChannel(guildId, channel.id)
@@ -128,6 +164,7 @@ class QotdBot @Inject constructor(
                     "addQuestion [question]",
                     "Adds a new question for QOTD. If the question pool isn't empty, a random one will be used for a QOTD. Every question is deleted after one use."
                 )
+                appendCommand("status", "View QOTD status")
                 appendCommand("questions", "Shows current question pool.")
                 appendCommand("sample", "Shows a sample QOTD with all the configurations.")
             }.trim()
@@ -141,8 +178,65 @@ class QotdBot @Inject constructor(
                     "time",
                     "Set a time when QOTD will start its questions. Please make sure you've set your timezone (see `${prefix}timezone help`)."
                 )
-                appendCommand("timeInterval", "Set how wait time between QOTD messages.")
+                appendCommand("timeInterval", "Set number of hours to wait between QOTD messages.")
+                appendCommand("image", "Provide image url to attach to question. Send `remove` to remove image.")
+                appendCommand("roleMention", "Add role to mention with each QOTD. Send `remove` to remove mentions.")
+                appendCommand("template", "Add a template for QOTD. Send `remove` to remove template.")
 
+            }.trim()
+        }
+
+        templateFormat()
+    }
+
+    private fun EmbedBuilder.templateFormat() {
+        field {
+            name = "Template Format"
+            value = buildString {
+                append("Add any text here, along with ")
+                appendCodeBlock { append(Qotd.QUESTION_PLACEHOLDER) }
+                appendLine(".")
+                appendCodeBlock { append(Qotd.QUESTION_PLACEHOLDER) }
+                append(" will be replaced by the selected question.")
+            }.trim()
+        }
+    }
+
+    private suspend fun CommandHandlerEvent.status() {
+        val guildId = statusGuildId() ?: return
+        val coreSnapshot = api.coreSnapshot(guildId)
+        if (coreSnapshot == null) {
+            channel.createEmbed {
+                description = "QOTD not set up"
+                commandFields(prefix)
+            }
+            return
+        }
+        val questionCount = api.questions(guildId).size
+        val formatSnapshot = api.formatSnapshot(guildId)
+        channel.createQotd {
+            description = buildString {
+                if (questionCount == 1) append("1 question")
+                else append("$questionCount questions")
+                appendLine()
+                formatSnapshot?.roleMention.let { roleMention ->
+                    if (roleMention != null) append("Mentions ${mentions.roleMention(roleMention)}")
+                    else append("No mentions")
+                }
+                appendLine()
+                coreSnapshot.time?.let {
+                    val now = System.currentTimeMillis()
+                    if (it < now) null
+                    else (TimeUnit.MILLISECONDS.toHours(it - now))
+                }.let { hoursRemaining ->
+                    val msg = when (hoursRemaining) {
+                        null -> "No QOTD planned"
+                        1L -> "Next QOTD in 1 hour"
+                        else -> "Next QOTD in $hoursRemaining hours"
+                    }
+                    append(msg)
+                    appendLine()
+                }
             }.trim()
         }
     }
@@ -161,10 +255,91 @@ class QotdBot @Inject constructor(
                 ?.let { Snowflake(it) }
         if (mentionedChannel == null) {
             channel.createMessage("Please mention a channel after the command")
-        } else {
-            api.outputChannel(guildId, mentionedChannel)
-            channel.createMessage("Future QOTDs will be sent to ${mentions.channelMention(mentionedChannel)}")
+            return
         }
+        api.outputChannel(guildId, mentionedChannel)
+        channel.createMessage("Future QOTDs will be sent to ${mentions.channelMention(mentionedChannel)}")
+    }
+
+    private suspend fun CommandHandlerEvent.image(remove: Boolean = false) {
+        val guildId = statusGuildId() ?: return
+        if (remove) {
+            api.image(guildId, null)
+            channel.createMessage("Removed image in QOTD")
+            return
+        }
+        val url = message.trim()
+        // We will use discord's message as a way of verifying image integrity
+        try {
+            channel.createQotd {
+                image = url
+                description = "Added image"
+            }
+        } catch (e: IllegalStateException) {
+            channel.createMessage("Please supply a valid image url.")
+            return
+        }
+        api.image(guildId, url)
+    }
+
+    private suspend fun CommandHandlerEvent.template(remove: Boolean = false) {
+        val guildId = statusGuildId() ?: return
+        if (remove) {
+            api.template(guildId, null)
+            channel.createMessage("Removed template in QOTD")
+            return
+        }
+        if (!qotd.isValidTemplate(message)) {
+            channel.createQotd {
+                description = "Invalid template"
+                templateFormat()
+            }
+            return
+        }
+        api.template(guildId, message)
+        channel.createMessage(buildString {
+            append("Template saved. Use ")
+            appendCodeBlock {
+                append(prefix)
+                append("qotd sample")
+            }
+            append(" to view a sample output.")
+        })
+    }
+
+    private suspend fun CommandHandlerEvent.time() {
+        val guildId = statusGuildId() ?: return
+
+    }
+
+    private suspend fun CommandHandlerEvent.timeInterval() {
+        val guildId = statusGuildId() ?: return
+        val hours = message.trim().toLongOrNull()
+        if (hours == null || hours < 1) {
+            channel.createMessage("Please provide a number representing how many hours to wait between questions.")
+            return
+        }
+        api.timeInterval(guildId, TimeUnit.HOURS.toMillis(hours))
+        channel.createMessage("QOTD will send every ${if (hours == 1L) "hour" else "$hours hours"}")
+    }
+
+    private suspend fun CommandHandlerEvent.roleMention(remove: Boolean = false) {
+        val guildId = statusGuildId() ?: return
+        if (remove) {
+            api.roleMention(guildId, null)
+            channel.createMessage("Removed role mention in QOTD")
+            return
+        }
+        val roleMention = mentions.roleMentionRegex.find(message)
+            ?.groupValues?.get(1)
+            ?.takeIf { it.isNotEmpty() }
+            ?.let { Snowflake(it) }
+        if (roleMention == null) {
+            channel.createMessage("Please mention a role after the command")
+            return
+        }
+        api.roleMention(guildId, roleMention)
+        channel.createMessage("Role mention saved.")
     }
 
     private suspend fun CommandHandlerEvent.questions() {
@@ -195,6 +370,8 @@ class QotdBot @Inject constructor(
         if (confirmed) {
             api.addQuestion(guildId, message)
             channel.createMessage("Added question.")
+        } else {
+            channel.createMessage("Request cancelled.")
         }
     }
 
