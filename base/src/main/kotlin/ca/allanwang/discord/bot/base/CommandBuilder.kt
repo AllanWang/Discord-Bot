@@ -1,8 +1,8 @@
 package ca.allanwang.discord.bot.base
 
-import com.gitlab.kordlib.core.Kord
-import com.gitlab.kordlib.core.event.message.MessageCreateEvent
-import com.gitlab.kordlib.rest.builder.message.EmbedBuilder
+import dev.kord.core.Kord
+import dev.kord.core.event.message.MessageCreateEvent
+import dev.kord.rest.builder.message.EmbedBuilder
 
 typealias CommandHandlerAction = suspend CommandHandlerEvent.() -> Unit
 

@@ -2,8 +2,8 @@ package ca.allanwang.discord.bot.time
 
 import ca.allanwang.discord.bot.base.*
 import ca.allanwang.discord.bot.maps.MapsApi
-import com.gitlab.kordlib.core.behavior.channel.createEmbed
-import com.gitlab.kordlib.rest.builder.message.EmbedBuilder
+import dev.kord.core.behavior.channel.createEmbed
+import dev.kord.rest.builder.message.EmbedBuilder
 import com.google.common.flogger.FluentLogger
 import com.google.maps.model.AddressType
 import com.google.maps.model.GeocodingResult

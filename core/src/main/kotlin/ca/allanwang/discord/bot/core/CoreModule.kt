@@ -1,9 +1,9 @@
 package ca.allanwang.discord.bot.core
 
 import ca.allanwang.discord.bot.gradle.GitBuild
-import com.gitlab.kordlib.core.Kord
 import dagger.Module
 import dagger.Provides
+import dev.kord.core.Kord
 import java.io.File
 import java.io.FileInputStream
 import java.util.*

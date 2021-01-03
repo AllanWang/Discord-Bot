@@ -1,8 +1,8 @@
 package ca.allanwang.discord.bot.base
 
 import ca.allanwang.discord.bot.core.BotFeature
-import com.gitlab.kordlib.core.Kord
-import com.gitlab.kordlib.core.event.message.MessageCreateEvent
+import dev.kord.core.Kord
+import dev.kord.core.event.message.MessageCreateEvent
 import com.google.common.flogger.FluentLogger
 import dagger.Module
 import dagger.Provides
@@ -98,7 +98,7 @@ class BotMentionGroupFeature @Inject constructor(
      * Discord ids are sent via text via `<@{id}>`.
      * If there is a nickname, an additional `!` will follow `@`
      */
-    private val mentionRegex = Regex("^(<@!?${kord.selfId.value}>) (.*)$")
+    private val mentionRegex = Regex("^(<@!?${kord.selfId.asString}>) (.*)$")
 
     override suspend fun MessageCreateEvent.prefixedMessage(): PrefixedMessage? {
         val match = mentionRegex.find(message.content) ?: return null

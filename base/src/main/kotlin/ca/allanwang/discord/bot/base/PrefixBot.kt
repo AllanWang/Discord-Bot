@@ -3,12 +3,12 @@ package ca.allanwang.discord.bot.base
 import ca.allanwang.discord.bot.firebase.FirebaseRootRef
 import ca.allanwang.discord.bot.firebase.listenSnapshot
 import ca.allanwang.discord.bot.firebase.setValue
-import com.gitlab.kordlib.common.entity.Snowflake
 import com.google.common.flogger.FluentLogger
 import com.google.firebase.database.DatabaseReference
 import dagger.Module
 import dagger.Provides
 import dagger.multibindings.IntoSet
+import dev.kord.common.entity.Snowflake
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
@@ -26,7 +26,7 @@ class PrefixApi @Inject constructor(
 
     private val ref: DatabaseReference = rootRef.child(PREFIX)
 
-    suspend fun setPrefix(group: Snowflake, prefix: String): Boolean = ref.child(group.value).setValue(prefix)
+    suspend fun setPrefix(group: Snowflake, prefix: String): Boolean = ref.child(group.asString).setValue(prefix)
 
     suspend fun listen(): Flow<Map<Snowflake, String>> = ref.listenSnapshot().filterNotNull().map { snapshot ->
         snapshot.children
@@ -42,7 +42,8 @@ class PrefixApi @Inject constructor(
 
 @Singleton
 class PrefixBot @Inject constructor(
-    private val prefixApi: PrefixApi
+    private val prefixApi: PrefixApi,
+    private val botPrefixSupplier: BotPrefixSupplier,
 ) : CommandHandlerBot {
 
     companion object {
@@ -53,15 +54,23 @@ class PrefixBot @Inject constructor(
     override val handler = commandBuilder(CommandHandler.Type.Prefix, CommandHandler.Type.Mention) {
         arg("prefix") {
             action(withMessage = true) {
-                if (whitespaceRegex.matches(message)) {
-                    channel.createMessage("Prefix `$message` cannot contain whitespace")
-                    return@action
-                }
-                logger.atInfo().log("Prefix set to %s", message)
-                prefixApi.setPrefix(event.groupSnowflake(), message)
-                channel.createMessage("Set prefix to `$message`")
+                prefix()
             }
         }
+    }
+
+    private suspend fun CommandHandlerEvent.prefix() {
+        if (message.isBlank()) {
+            channel.createMessage("Prefix is ${botPrefixSupplier.prefix(event.groupSnowflake())}")
+            return
+        }
+        if (whitespaceRegex.containsMatchIn(message)) {
+            channel.createMessage("Prefix `$message` cannot contain whitespace")
+            return
+        }
+        logger.atInfo().log("Prefix set to %s", message)
+        prefixApi.setPrefix(event.groupSnowflake(), message)
+        channel.createMessage("Set prefix to `$message`")
     }
 }
 

@@ -60,4 +60,11 @@ class TimeBotTest {
         }
     }
 
+    @Test
+    fun timeEntryTest() {
+        assertEquals(0, TimeBot.TimeEntry(hour = 12, minute = 59, pm = false).hour24, "12:59pm = 0:59")
+        assertEquals(12, TimeBot.TimeEntry(hour = 12, minute = 59, pm = null).hour24, "12:59 = 12:59 (pm)")
+        assertEquals(12, TimeBot.TimeEntry(hour = 12, minute = 59, pm = true).hour24, "12:59pm = 12:59")
+    }
+
 }

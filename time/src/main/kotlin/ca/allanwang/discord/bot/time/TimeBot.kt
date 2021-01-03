@@ -2,14 +2,15 @@ package ca.allanwang.discord.bot.time
 
 import ca.allanwang.discord.bot.base.*
 import ca.allanwang.discord.bot.core.BotFeature
-import com.gitlab.kordlib.common.entity.Snowflake
-import com.gitlab.kordlib.core.Kord
-import com.gitlab.kordlib.core.behavior.channel.createEmbed
-import com.gitlab.kordlib.core.entity.Message
-import com.gitlab.kordlib.core.entity.User
-import com.gitlab.kordlib.core.event.message.MessageCreateEvent
-import com.gitlab.kordlib.core.event.message.ReactionAddEvent
+import dev.kord.common.entity.Snowflake
+import dev.kord.core.Kord
+import dev.kord.core.behavior.channel.createEmbed
+import dev.kord.core.entity.Message
+import dev.kord.core.entity.User
+import dev.kord.core.event.message.MessageCreateEvent
+import dev.kord.core.event.message.ReactionAddEvent
 import com.google.common.flogger.FluentLogger
+import dev.kord.common.entity.MessageType
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
@@ -40,7 +41,7 @@ class TimeBot @Inject constructor(
         val timeRegex = Regex("(?:^|[^a-zA-Z0-9])(1[0-2]|0?[1-9])(?::([0-5][0-9]))?\\s*([AaPp][Mm])?(?:$|[^a-zA-Z0-9])")
     }
 
-    private data class TimeEntry(val hour: Int, val minute: Int, val pm: Boolean?) {
+    internal data class TimeEntry(val hour: Int, val minute: Int, val pm: Boolean?) {
         override fun toString(): String = buildString {
             append(hour)
             append(':')
@@ -51,8 +52,15 @@ class TimeBot @Inject constructor(
             }
         }
 
+        val hour24: Int
+            get() = when {
+                hour == 12 -> if (pm == false) 0 else 12
+                pm == true -> hour + 12
+                else -> hour
+            }
+
         fun toZonedDateTime(zoneId: ZoneId): ZonedDateTime =
-            ZonedDateTime.of(LocalDate.now(zoneId), LocalTime.of(hour + (if (pm == true) 12 else 0), minute), zoneId)
+            ZonedDateTime.of(LocalDate.now(zoneId), LocalTime.of(hour24, minute), zoneId)
     }
 
     private fun MatchResult.toTimeEntry(): TimeEntry? {
@@ -92,7 +100,7 @@ class TimeBot @Inject constructor(
         val authorId = author?.id ?: return null
         val times = content.findTimes()
         if (times.isEmpty()) return null
-        logger.atFine().log("Times matched %s - %s", times, id.value)
+        logger.atFine().log("Times matched %s - %d", times, id.value)
         val origTimezone = timeApi.getTime(groupSnowflake, authorId) ?: return null
         val timezones = timeApi.groupTimes(groupSnowflake)
         if (timezones.size <= 1) return null
@@ -108,11 +116,18 @@ class TimeBot @Inject constructor(
         val info = message.timeBotInfo(groupSnowflake()) ?: return
 
         // To avoid spam, we limit auto messages to only occur during mentions
-        if (message.mentionedRoleIds.isNotEmpty() || message.mentionedUserIds.isNotEmpty() || message.mentionsEveryone)
+        if (message.hasMention)
             message.createTimezoneMessage(info, user = message.author)
         else
             createTimezoneReaction()
     }
+
+    private val Message.hasMention: Boolean
+        get() {
+            // Do not accept user mentions if from replies
+            if (mentionedUserIds.isNotEmpty()) return type != MessageType.Reply
+            return mentionedRoleIds.isNotEmpty() || mentionsEveryone
+        }
 
     private suspend fun Message.createTimezoneMessage(info: TimeBotInfo, user: User?) {
         channel.createEmbed {
@@ -172,7 +187,7 @@ class TimeBot @Inject constructor(
                     .first { it.handleEvent() }
             }
             message.deleteOwnReaction(timeApi.reactionEmoji)
-            logger.atFine().log("Remove listener for message %s", message.id.value)
+            logger.atFine().log("Remove listener for message %d", message.id.value)
         }
     }
 
