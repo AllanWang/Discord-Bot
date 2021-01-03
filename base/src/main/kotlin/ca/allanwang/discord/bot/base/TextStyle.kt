@@ -56,5 +56,6 @@ inline fun StringBuilder.appendQuote(block: () -> Unit) {
 /**
  * Basic plural support.
  */
-inline fun StringBuilder.appendPlural(count: Int, single: String, plural: String = "${single}s") =
+inline fun StringBuilder.appendPlural(count: Int, single: String, plural: String = "${single}s") {
     append(if (count == 1) "1 $single" else "$count $plural")
+}

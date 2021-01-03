@@ -237,7 +237,7 @@ class QotdBot @Inject constructor(
                     }
                     appendLine()
                     append("Repeat every ")
-                    append(timeIntervalHours, "hour")
+                    appendPlural(timeIntervalHours.toInt(), "hour")
                     appendLine()
                 }.trim()
             }
