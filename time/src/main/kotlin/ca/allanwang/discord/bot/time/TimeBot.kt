@@ -10,6 +10,7 @@ import dev.kord.core.entity.User
 import dev.kord.core.event.message.MessageCreateEvent
 import dev.kord.core.event.message.ReactionAddEvent
 import com.google.common.flogger.FluentLogger
+import dev.kord.common.entity.MessageType
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
@@ -115,11 +116,18 @@ class TimeBot @Inject constructor(
         val info = message.timeBotInfo(groupSnowflake()) ?: return
 
         // To avoid spam, we limit auto messages to only occur during mentions
-        if (message.mentionedRoleIds.isNotEmpty() || message.mentionedUserIds.isNotEmpty() || message.mentionsEveryone)
+        if (message.hasMention)
             message.createTimezoneMessage(info, user = message.author)
         else
             createTimezoneReaction()
     }
+
+    private val Message.hasMention: Boolean
+        get() {
+            // Do not accept user mentions if from replies
+            if (mentionedUserIds.isNotEmpty()) return type != MessageType.Reply
+            return mentionedRoleIds.isNotEmpty() || mentionsEveryone
+        }
 
     private suspend fun Message.createTimezoneMessage(info: TimeBotInfo, user: User?) {
         channel.createEmbed {
