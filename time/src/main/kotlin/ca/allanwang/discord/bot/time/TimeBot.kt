@@ -16,10 +16,6 @@ import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
-import java.time.LocalDate
-import java.time.LocalTime
-import java.time.ZoneId
-import java.time.ZonedDateTime
 import java.util.*
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -31,49 +27,6 @@ class TimeBot @Inject constructor(
 
     companion object {
         private val logger = FluentLogger.forEnclosingClass()
-
-        /**
-         * A time regex should match values of the format
-         * 8am, 9pm, 8:00, 8:00 am
-         *
-         * To avoid matching tags, time values should not be surrounded by alphanumeric characters.
-         */
-        val timeRegex = Regex("(?:^|[^a-zA-Z0-9])(1[0-2]|0?[1-9])(?::([0-5][0-9]))?\\s*([AaPp][Mm])?(?:$|[^a-zA-Z0-9])")
-    }
-
-    internal data class TimeEntry(val hour: Int, val minute: Int, val pm: Boolean?) {
-        override fun toString(): String = buildString {
-            append(hour)
-            append(':')
-            append(minute.toString().padStart(2, '0'))
-            if (pm != null) {
-                append(' ')
-                append(if (pm) "PM" else "AM")
-            }
-        }
-
-        val hour24: Int
-            get() = when {
-                hour == 12 -> if (pm == false) 0 else 12
-                pm == true -> hour + 12
-                else -> hour
-            }
-
-        fun toZonedDateTime(zoneId: ZoneId): ZonedDateTime =
-            ZonedDateTime.of(LocalDate.now(zoneId), LocalTime.of(hour24, minute), zoneId)
-    }
-
-    private fun MatchResult.toTimeEntry(): TimeEntry? {
-        // Disallow general numbers as timestamps
-        if (groupValues[2].isEmpty() && groupValues[3].isEmpty()) return null
-        val hour = groupValues[1].toInt()
-        val minute = groupValues[2].toIntOrNull() ?: 0
-        val pm = when (groupValues[3].toLowerCase(Locale.US)) {
-            "am" -> false
-            "pm" -> true
-            else -> null
-        }
-        return TimeEntry(hour, minute, pm)
     }
 
     override suspend fun Kord.attach() {
@@ -82,23 +35,16 @@ class TimeBot @Inject constructor(
         }
     }
 
-    private fun String.findTimes(): List<TimeEntry> =
-        timeRegex
-            .findAll(this)
-            .mapNotNull { it.toTimeEntry() }
-            .distinct()
-            .toList()
-
     private class TimeBotInfo(
         val authorId: Snowflake,
-        val times: List<TimeEntry>,
+        val times: List<TimeApi.TimeEntry>,
         val origTimezone: TimeZone,
         val timezones: List<TimeZone>
     )
 
     private suspend fun Message.timeBotInfo(groupSnowflake: Snowflake): TimeBotInfo? {
         val authorId = author?.id ?: return null
-        val times = content.findTimes()
+        val times = timeApi.findTimes(content)
         if (times.isEmpty()) return null
         logger.atFine().log("Times matched %s - %d", times, id.value)
         val origTimezone = timeApi.getTime(groupSnowflake, authorId) ?: return null

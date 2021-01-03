@@ -2,13 +2,13 @@ package ca.allanwang.discord.bot.qotd
 
 import ca.allanwang.discord.bot.base.*
 import ca.allanwang.discord.bot.firebase.FirebaseCache
+import ca.allanwang.discord.bot.time.TimeApi
 import com.google.common.flogger.FluentLogger
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.Kord
 import dev.kord.core.behavior.channel.MessageChannelBehavior
 import dev.kord.core.behavior.channel.createEmbed
 import dev.kord.rest.builder.message.EmbedBuilder
-import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -17,7 +17,8 @@ import javax.inject.Singleton
 class QotdBot @Inject constructor(
     private val mentions: Mentions,
     private val qotd: Qotd,
-    private val api: QotdApi
+    private val api: QotdApi,
+    private val timeApi: TimeApi
 ) : CommandHandlerBot {
 
     companion object {
@@ -308,8 +309,28 @@ class QotdBot @Inject constructor(
     }
 
     private suspend fun CommandHandlerEvent.time() {
+        val authorId = authorId ?: return
         val guildId = statusGuildId() ?: return
-
+        val timeEntry = timeApi.findTimes(message).firstOrNull()
+        if (timeEntry == null) {
+            channel.createMessage("Please specify a time to send QOTDs.")
+            return
+        }
+        val origTimezone = timeApi.getTime(guildId, authorId)
+        if (origTimezone == null) {
+            channel.createMessage(buildString {
+                append("Timezone not specified, please use ")
+                appendCodeBlock {
+                    append(prefix)
+                    append("timezone")
+                }
+            })
+            return
+        }
+        val time = timeEntry.toZonedDateTime(origTimezone.toZoneId())
+        api.time(guildId, time.toEpochSecond())
+        qotd.qotd(guildId)
+        channel.createMessage("Saved time and started QOTD.")
     }
 
     private suspend fun CommandHandlerEvent.timeInterval() {

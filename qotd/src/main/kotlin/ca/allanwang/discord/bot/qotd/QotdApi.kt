@@ -48,7 +48,7 @@ class QotdApi @Inject constructor(
         val group: Snowflake,
         val image: String?,
         val template: String?,
-        val timeInterval: Long?,
+        val timeInterval: Long,
         val roleMention: Snowflake?
     )
 
@@ -149,7 +149,7 @@ class QotdApi @Inject constructor(
         )
     }
 
-    suspend fun formatSnapshot(group: Snowflake): FormatSnapshot? =
+    suspend fun formatSnapshot(group: Snowflake): FormatSnapshot =
         formatRef.child(group.asString).singleSnapshot().formatSnapshot(group)
 
     private suspend fun DataSnapshot.formatSnapshot(group: Snowflake): FormatSnapshot {

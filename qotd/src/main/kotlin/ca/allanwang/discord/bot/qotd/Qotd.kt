@@ -41,6 +41,13 @@ class Qotd @Inject constructor(
             val cyclesPassed = (now - qotdTime) / timeInterval + 1
             return qotdTime + cyclesPassed * timeInterval
         }
+
+        internal fun newTime(core: QotdApi.CoreSnapshot, format: QotdApi.FormatSnapshot): Long? {
+            // Should never be null given constraints
+            val time = core.time ?: return null
+            val timeInterval = format.timeInterval
+            return newTime(time, System.currentTimeMillis(), timeInterval)
+        }
     }
 
     private val loopers: ConcurrentHashMap<Snowflake, Job> = ConcurrentHashMap()
@@ -108,33 +115,29 @@ class Qotd @Inject constructor(
         group: Snowflake,
         question: String = "Hello! This is a sample question"
     ) {
-        suspend fun fail(message: String) {
-            channelBehavior.createMessage(message)
-        }
-
-        val formatSnapshot = api.formatSnapshot(group) ?: return fail("Could not get QOTD formatter")
+        val formatSnapshot = api.formatSnapshot(group)
         channelBehavior.createQotd(formatSnapshot.copy(roleMention = null), question)
     }
 
-    private suspend fun qotdNow(data: QotdApi.CoreSnapshot): Long? {
-        val formatSnapshot = api.formatSnapshot(data.group) ?: return null
-        val question = api.getQuestion(data.group) ?: return null
-        val channel = data.outputChannel ?: return null
+    /**
+     * Attempts to send a QOTD instantly
+     */
+    private suspend fun qotdNow(core: QotdApi.CoreSnapshot): Long? {
+        val formatSnapshot = api.formatSnapshot(core.group)
+        val question = api.getQuestion(core.group) ?: return null
+        val channel = core.outputChannel ?: return null
         try {
-            kord.unsafe.guildMessageChannel(data.group, channel).createQotd(formatSnapshot, question)
+            kord.unsafe.guildMessageChannel(core.group, channel).createQotd(formatSnapshot, question)
         } catch (e: RestRequestException) {
             logger.atSevere().withCause(e).log("Could not send qotd")
-            kord.unsafe.guildMessageChannel(data.group, data.statusChannel).createMessage("Could not send QOTD")
+            kord.unsafe.guildMessageChannel(core.group, core.statusChannel).createMessage("Could not send QOTD")
             return null
         }
         // Should never be null given constraints
-        val time = data.time ?: return null
-        val timeInterval = formatSnapshot.timeInterval ?: return run {
-            logger.atWarning().log("No more timeinterval for %s", data.group.value)
-            null
-        }
+        val time = core.time ?: return null
+        val timeInterval = formatSnapshot.timeInterval
         val newTime = newTime(time, System.currentTimeMillis(), timeInterval)
-        api.time(data.group, newTime)
+        api.time(core.group, newTime)
         return newTime
     }
 

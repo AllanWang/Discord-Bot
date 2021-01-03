@@ -5,7 +5,7 @@ import org.junit.jupiter.api.fail
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 
-class TimeBotTest {
+class TimeApiTest {
 
     /**
      * Basic test to verify regex validity.
@@ -15,7 +15,7 @@ class TimeBotTest {
      */
     @Test
     fun regexTest() {
-        val regex = TimeBot.timeRegex
+        val regex = TimeApi.timeRegex
 
         fun assertTime(expected: String, matchEntire: Boolean = true, vararg candidates: String) {
             candidates.forEach { candidate ->
@@ -46,7 +46,7 @@ class TimeBotTest {
 
     @Test
     fun badRegexTest() {
-        val regex = TimeBot.timeRegex
+        val regex = TimeApi.timeRegex
 
         listOf(
             "8:0",
@@ -62,9 +62,9 @@ class TimeBotTest {
 
     @Test
     fun timeEntryTest() {
-        assertEquals(0, TimeBot.TimeEntry(hour = 12, minute = 59, pm = false).hour24, "12:59pm = 0:59")
-        assertEquals(12, TimeBot.TimeEntry(hour = 12, minute = 59, pm = null).hour24, "12:59 = 12:59 (pm)")
-        assertEquals(12, TimeBot.TimeEntry(hour = 12, minute = 59, pm = true).hour24, "12:59pm = 12:59")
+        assertEquals(0, TimeApi.TimeEntry(hour = 12, minute = 59, pm = false).hour24, "12:59pm = 0:59")
+        assertEquals(12, TimeApi.TimeEntry(hour = 12, minute = 59, pm = null).hour24, "12:59 = 12:59 (pm)")
+        assertEquals(12, TimeApi.TimeEntry(hour = 12, minute = 59, pm = true).hour24, "12:59pm = 12:59")
     }
 
 }
