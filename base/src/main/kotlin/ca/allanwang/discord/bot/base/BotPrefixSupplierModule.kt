@@ -23,7 +23,7 @@ class BotPrefixSupplierImpl @Inject constructor(
 ) : BotPrefixSupplier {
 
     companion object {
-        internal const val DEFAULT_PREFIX = "!"
+        private const val DEFAULT_PREFIX = "!"
         private val logger = FluentLogger.forEnclosingClass()
     }
 
