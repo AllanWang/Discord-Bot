@@ -2,13 +2,13 @@ package ca.allanwang.discord.bot.time
 
 import ca.allanwang.discord.bot.base.*
 import ca.allanwang.discord.bot.core.BotFeature
-import com.gitlab.kordlib.common.entity.Snowflake
-import com.gitlab.kordlib.core.Kord
-import com.gitlab.kordlib.core.behavior.channel.createEmbed
-import com.gitlab.kordlib.core.entity.Message
-import com.gitlab.kordlib.core.entity.User
-import com.gitlab.kordlib.core.event.message.MessageCreateEvent
-import com.gitlab.kordlib.core.event.message.ReactionAddEvent
+import dev.kord.common.entity.Snowflake
+import dev.kord.core.Kord
+import dev.kord.core.behavior.channel.createEmbed
+import dev.kord.core.entity.Message
+import dev.kord.core.entity.User
+import dev.kord.core.event.message.MessageCreateEvent
+import dev.kord.core.event.message.ReactionAddEvent
 import com.google.common.flogger.FluentLogger
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterIsInstance
@@ -99,7 +99,7 @@ class TimeBot @Inject constructor(
         val authorId = author?.id ?: return null
         val times = content.findTimes()
         if (times.isEmpty()) return null
-        logger.atInfo().log("Times matched %s - %s", times, id.value)
+        logger.atInfo().log("Times matched %s - %d", times, id.value)
         val origTimezone = timeApi.getTime(groupSnowflake, authorId) ?: return null
         val timezones = timeApi.groupTimes(groupSnowflake)
         if (timezones.size <= 1) return null
@@ -179,7 +179,7 @@ class TimeBot @Inject constructor(
                     .first { it.handleEvent() }
             }
             message.deleteOwnReaction(timeApi.reactionEmoji)
-            logger.atInfo().log("Remove listener for message %s", message.id.value)
+            logger.atInfo().log("Remove listener for message %d", message.id.value)
         }
     }
 

@@ -1,10 +1,10 @@
 package ca.allanwang.discord.bot.base
 
-import com.gitlab.kordlib.common.entity.Snowflake
-import com.gitlab.kordlib.core.Kord
-import com.gitlab.kordlib.core.entity.Message
-import com.gitlab.kordlib.core.event.message.MessageCreateEvent
-import com.gitlab.kordlib.core.on
+import dev.kord.common.entity.Snowflake
+import dev.kord.core.Kord
+import dev.kord.core.entity.Message
+import dev.kord.core.event.message.MessageCreateEvent
+import dev.kord.core.on
 
 /**
  * Gets snowflake for server or channel for DMs

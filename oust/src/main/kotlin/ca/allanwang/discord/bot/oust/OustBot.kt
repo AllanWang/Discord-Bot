@@ -5,8 +5,8 @@ import ca.allanwang.discord.bot.base.CommandHandlerBot
 import ca.allanwang.discord.bot.base.CommandHandlerEvent
 import ca.allanwang.discord.bot.base.commandBuilder
 import ca.allanwang.discord.bot.oust.game.*
-import com.gitlab.kordlib.core.Kord
-import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
+import dev.kord.core.Kord
+import dev.kord.core.behavior.channel.MessageChannelBehavior
 import com.google.common.flogger.FluentLogger
 import dagger.BindsInstance
 import dagger.Module
@@ -40,7 +40,7 @@ class OustBot @Inject constructor(
         val game = OustGame.create(
             (0..2).map {
                 OustPlayer.Info(
-                    id = event.message.author!!.id.value,
+                    id = event.message.author!!.id.asString,
                     name = buildString {
                         append(event.message.author!!.username)
                         append(' ')

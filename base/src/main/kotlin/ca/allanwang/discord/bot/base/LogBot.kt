@@ -1,9 +1,9 @@
 package ca.allanwang.discord.bot.base
 
 import ca.allanwang.discord.bot.core.BotFeature
-import com.gitlab.kordlib.core.Kord
-import com.gitlab.kordlib.core.event.message.MessageCreateEvent
-import com.gitlab.kordlib.core.on
+import dev.kord.core.Kord
+import dev.kord.core.event.message.MessageCreateEvent
+import dev.kord.core.on
 import com.google.common.flogger.FluentLogger
 import dagger.Module
 import dagger.Provides

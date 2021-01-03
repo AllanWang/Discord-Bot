@@ -1,7 +1,7 @@
 package ca.allanwang.discord.bot.cinco.game.features
 
 import ca.allanwang.discord.bot.cinco.game.CincoContext
-import com.gitlab.kordlib.rest.builder.message.EmbedBuilder
+import dev.kord.rest.builder.message.EmbedBuilder
 
 interface CincoGameFeature {
     val cincoContext: CincoContext

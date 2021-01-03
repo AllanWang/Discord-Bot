@@ -1,13 +1,13 @@
 package ca.allanwang.discord.bot.time
 
+import ca.allanwang.discord.bot.base.toReaction
 import ca.allanwang.discord.bot.firebase.*
-import com.gitlab.kordlib.common.entity.Snowflake
-import com.gitlab.kordlib.core.entity.ReactionEmoji
 import com.gitlab.kordlib.kordx.emoji.Emojis
-import com.gitlab.kordlib.kordx.emoji.toReaction
+import dev.kord.common.entity.Snowflake
+import dev.kord.core.entity.ReactionEmoji
 import com.google.common.flogger.FluentLogger
 import com.google.firebase.database.DatabaseReference
-import java.awt.Color
+import dev.kord.common.Color
 import java.time.format.DateTimeFormatter
 import java.util.*
 import javax.inject.Inject
@@ -33,7 +33,7 @@ class TimeApi @Inject constructor(
 
     val reactionThresholdTime: Long = 5 * 60 * 1000
 
-    val embedColor: Color = Color.decode("#03a5fc")
+    val embedColor: Color = Color(0xFF03a5fc.toInt())
 
     suspend fun getTime(group: Snowflake, id: Snowflake): TimeZone? =
         ref.child(group).child(id).single<String>()?.let { TimeZone.getTimeZone(it) }

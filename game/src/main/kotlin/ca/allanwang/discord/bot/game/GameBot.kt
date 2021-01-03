@@ -1,9 +1,9 @@
 package ca.allanwang.discord.bot.game
 
 import ca.allanwang.discord.bot.base.onMessage
-import com.gitlab.kordlib.core.Kord
-import com.gitlab.kordlib.core.behavior.channel.createEmbed
-import com.gitlab.kordlib.core.event.message.MessageCreateEvent
+import dev.kord.core.Kord
+import dev.kord.core.behavior.channel.createEmbed
+import dev.kord.core.event.message.MessageCreateEvent
 import com.google.common.flogger.FluentLogger
 
 suspend fun Kord.gameBot() {

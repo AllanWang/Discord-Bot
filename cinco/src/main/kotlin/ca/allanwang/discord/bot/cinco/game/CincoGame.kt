@@ -3,7 +3,7 @@ package ca.allanwang.discord.bot.cinco.game
 import ca.allanwang.discord.bot.cinco.CincoScope
 import ca.allanwang.discord.bot.cinco.game.core.CincoMessageBehavior
 import ca.allanwang.discord.bot.cinco.game.features.CincoGameFeature
-import com.gitlab.kordlib.core.Kord
+import dev.kord.core.Kord
 import com.google.common.flogger.FluentLogger
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first

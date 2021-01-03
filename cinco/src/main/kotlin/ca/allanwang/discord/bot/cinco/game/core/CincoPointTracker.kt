@@ -2,7 +2,7 @@ package ca.allanwang.discord.bot.cinco.game.core
 
 import ca.allanwang.discord.bot.cinco.CincoPlayers
 import ca.allanwang.discord.bot.cinco.CincoScope
-import com.gitlab.kordlib.core.entity.User
+import dev.kord.core.entity.User
 import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 

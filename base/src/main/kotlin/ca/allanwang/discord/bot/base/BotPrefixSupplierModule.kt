@@ -1,8 +1,8 @@
 package ca.allanwang.discord.bot.base
 
 import ca.allanwang.discord.bot.firebase.FirebaseModule
-import com.gitlab.kordlib.common.entity.Snowflake
-import com.gitlab.kordlib.core.Kord
+import dev.kord.common.entity.Snowflake
+import dev.kord.core.Kord
 import com.google.common.flogger.FluentLogger
 import dagger.Binds
 import dagger.Module
