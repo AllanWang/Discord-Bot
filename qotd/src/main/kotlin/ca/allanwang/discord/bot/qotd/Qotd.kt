@@ -1,17 +1,17 @@
 package ca.allanwang.discord.bot.qotd
 
 import ca.allanwang.discord.bot.base.Mentions
-import com.gitlab.kordlib.common.entity.Snowflake
-import com.gitlab.kordlib.core.Kord
-import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
-import com.gitlab.kordlib.core.behavior.channel.createEmbed
-import com.gitlab.kordlib.rest.request.RestRequestException
 import com.google.common.flogger.FluentLogger
+import dev.kord.common.Color
+import dev.kord.common.entity.Snowflake
+import dev.kord.core.Kord
+import dev.kord.core.behavior.channel.MessageChannelBehavior
+import dev.kord.core.behavior.channel.createEmbed
+import dev.kord.rest.request.RestRequestException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.awt.Color
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -46,7 +46,7 @@ class Qotd @Inject constructor(
 
     private val loopers: ConcurrentHashMap<Snowflake, Job> = ConcurrentHashMap()
 
-    val embedColor = Color.decode("#AB98D2")
+    val embedColor = Color(0xFFAB98D2.toInt())
 
     suspend fun initLoops() {
         api.coreSnapshotAll().forEach {

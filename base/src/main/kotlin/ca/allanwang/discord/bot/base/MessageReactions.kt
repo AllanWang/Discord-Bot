@@ -1,9 +1,9 @@
 package ca.allanwang.discord.bot.base
 
 import ca.allanwang.discord.bot.core.withTimeout
-import com.gitlab.kordlib.common.entity.Snowflake
-import com.gitlab.kordlib.core.entity.Message
-import com.gitlab.kordlib.core.event.message.ReactionAddEvent
+import dev.kord.common.entity.Snowflake
+import dev.kord.core.entity.Message
+import dev.kord.core.event.message.ReactionAddEvent
 import com.gitlab.kordlib.kordx.emoji.Emojis
 import com.gitlab.kordlib.kordx.emoji.toReaction
 import kotlinx.coroutines.flow.filter

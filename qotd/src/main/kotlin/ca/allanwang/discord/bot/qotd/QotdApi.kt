@@ -1,7 +1,7 @@
 package ca.allanwang.discord.bot.qotd
 
 import ca.allanwang.discord.bot.firebase.*
-import com.gitlab.kordlib.common.entity.Snowflake
+import dev.kord.common.entity.Snowflake
 import com.google.common.flogger.FluentLogger
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseReference
@@ -75,45 +75,45 @@ class QotdApi @Inject constructor(
      */
 
     suspend fun outputChannel(group: Snowflake, channel: Snowflake?) =
-        ref.child(group.value).child(OUTPUT_CHANNEL).setValue(channel?.value)
+        ref.child(group.asString).child(OUTPUT_CHANNEL).setValue(channel?.value)
 
     suspend fun statusChannel(group: Snowflake, channel: Snowflake) =
-        ref.child(group.value).child(STATUS_CHANNEL).setValue(channel.value)
+        ref.child(group.asString).child(STATUS_CHANNEL).setValue(channel.value)
 
     suspend fun statusChannel(group: Snowflake): Snowflake? =
-        ref.child(group.value).child(STATUS_CHANNEL).single<String>()?.let { Snowflake(it) }
+        ref.child(group.asString).child(STATUS_CHANNEL).single<String>()?.let { Snowflake(it) }
 
     suspend fun time(group: Snowflake, time: Long?) =
-        ref.child(group.value).child(TIME).setValue(time)
+        ref.child(group.asString).child(TIME).setValue(time)
 
     /*
      * Format ref based fields which dictate how the messsage is formatted and sent
      */
 
     suspend fun image(group: Snowflake, url: String?) =
-        formatRef.child(group.value).child(IMAGE).setValue(url)
+        formatRef.child(group.asString).child(IMAGE).setValue(url)
 
     suspend fun template(group: Snowflake, template: String?) =
-        formatRef.child(group.value).child(TEMPLATE).setValue(template)
+        formatRef.child(group.asString).child(TEMPLATE).setValue(template)
 
     suspend fun timeInterval(group: Snowflake, timeInterval: Long?) =
-        formatRef.child(group.value).child(TIME_INTERVAL).setValue(timeInterval)
+        formatRef.child(group.asString).child(TIME_INTERVAL).setValue(timeInterval)
 
     suspend fun roleMention(group: Snowflake, roleMention: String?) =
-        formatRef.child(group.value).child(ROLE_MENTION).setValue(roleMention)
+        formatRef.child(group.asString).child(ROLE_MENTION).setValue(roleMention)
 
     /*
      * Question ref based fields for questions
      */
 
     suspend fun addQuestion(group: Snowflake, question: String) =
-        questionRef.child(group.value).child(UUID.randomUUID().toString()).setValue(question)
+        questionRef.child(group.asString).child(UUID.randomUUID().toString()).setValue(question)
 
     suspend fun removeQuestion(group: Snowflake, questionKey: String) =
-        questionRef.child(group.value).child(questionKey).setValue(null)
+        questionRef.child(group.asString).child(questionKey).setValue(null)
 
     suspend fun getQuestion(group: Snowflake, delete: Boolean = true): String? {
-        val snapshot = questionRef.child(group.value).orderByKey().limitToFirst(1).singleSnapshot()
+        val snapshot = questionRef.child(group.asString).orderByKey().limitToFirst(1).singleSnapshot()
         val questionSnapshot = snapshot.children.firstOrNull()
         val question = questionSnapshot?.getValueOrNull<String>() ?: return null
         if (delete) removeQuestion(group, questionSnapshot.key)
@@ -121,7 +121,7 @@ class QotdApi @Inject constructor(
     }
 
     suspend fun questions(group: Snowflake): Map<String, String> {
-        val snapshot = questionRef.child(group.value).singleSnapshot()
+        val snapshot = questionRef.child(group.asString).singleSnapshot()
         return snapshot.children.mapNotNull {
             val value = it.getValueOrNull<String>() ?: return@mapNotNull null
             it.key to value
@@ -129,7 +129,7 @@ class QotdApi @Inject constructor(
     }
 
     suspend fun coreSnapshot(group: Snowflake): CoreSnapshot? =
-        ref.child(group.value).singleSnapshot().coreSnapshot(group)
+        ref.child(group.asString).singleSnapshot().coreSnapshot(group)
 
     suspend fun coreSnapshotAll(): Set<CoreSnapshot> =
         ref.singleSnapshot().children.mapNotNull { it.coreSnapshot(Snowflake(it.key)) }.toSet()
@@ -147,7 +147,7 @@ class QotdApi @Inject constructor(
     }
 
     suspend fun formatSnapshot(group: Snowflake): FormatSnapshot? =
-        formatRef.child(group.value).singleSnapshot().formatSnapshot(group)
+        formatRef.child(group.asString).singleSnapshot().formatSnapshot(group)
 
     private suspend fun DataSnapshot.formatSnapshot(group: Snowflake): FormatSnapshot? {
         val image = child(IMAGE).getValueOrNull<String>()

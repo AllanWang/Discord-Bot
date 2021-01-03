@@ -1,6 +1,6 @@
 package ca.allanwang.discord.bot.base
 
-import com.gitlab.kordlib.common.entity.Snowflake
+import dev.kord.common.entity.Snowflake
 import javax.inject.Inject
 import javax.inject.Singleton
 

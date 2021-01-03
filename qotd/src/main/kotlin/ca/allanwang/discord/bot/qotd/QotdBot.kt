@@ -2,11 +2,11 @@ package ca.allanwang.discord.bot.qotd
 
 import ca.allanwang.discord.bot.base.*
 import ca.allanwang.discord.bot.firebase.FirebaseCache
-import com.gitlab.kordlib.common.entity.Snowflake
-import com.gitlab.kordlib.core.Kord
-import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
-import com.gitlab.kordlib.core.behavior.channel.createEmbed
-import com.gitlab.kordlib.rest.builder.message.EmbedBuilder
+import dev.kord.common.entity.Snowflake
+import dev.kord.core.Kord
+import dev.kord.core.behavior.channel.MessageChannelBehavior
+import dev.kord.core.behavior.channel.createEmbed
+import dev.kord.rest.builder.message.EmbedBuilder
 import com.google.common.flogger.FluentLogger
 import javax.inject.Inject
 import javax.inject.Singleton
