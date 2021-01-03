@@ -2,7 +2,7 @@ package ca.allanwang.discord.bot.base
 
 import ca.allanwang.discord.bot.core.CoreModule
 import ca.allanwang.discord.bot.firebase.FirebaseModule
-import com.gitlab.kordlib.core.event.message.MessageCreateEvent
+import dev.kord.core.event.message.MessageCreateEvent
 import dagger.Subcomponent
 import javax.inject.Scope
 

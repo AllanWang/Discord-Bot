@@ -1,11 +1,11 @@
 package ca.allanwang.discord.bot.cinco.game.features
 
-import java.awt.Color
+import dev.kord.common.Color
 import java.util.*
 
-enum class CincoVariant(color: String, val description: String) {
-    Azul(color = "#0063C6", description = "Unscramble the word");
+enum class CincoVariant(color: Int, val description: String) {
+    Azul(color = 0xFF0063C6.toInt(), description = "Unscramble the word");
 
     val tag: String = name.toLowerCase(Locale.US)
-    val color: Color = Color.decode(color)
+    val color = Color(color)
 }

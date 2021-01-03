@@ -2,12 +2,12 @@ package ca.allanwang.discord.bot.base
 
 import ca.allanwang.discord.bot.core.Build
 import ca.allanwang.discord.bot.core.CoreModule
-import com.gitlab.kordlib.core.behavior.channel.createEmbed
+import dev.kord.core.behavior.channel.createEmbed
 import com.google.common.flogger.FluentLogger
 import dagger.Module
 import dagger.Provides
 import dagger.multibindings.IntoSet
-import java.awt.Color
+import dev.kord.common.Color
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -19,7 +19,7 @@ class AdminBot @Inject constructor(
     companion object {
         private val logger = FluentLogger.forEnclosingClass()
 
-        private val embedColor: Color = Color.decode("#4DB6C1")
+        private val embedColor: Color = Color(0xFF4DB6C1.toInt())
     }
 
     override val handler = commandBuilder(CommandHandler.Type.Mention) {

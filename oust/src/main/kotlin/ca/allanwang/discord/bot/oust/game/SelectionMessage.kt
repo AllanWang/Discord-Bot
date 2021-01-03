@@ -2,26 +2,26 @@ package ca.allanwang.discord.bot.oust.game
 
 import ca.allanwang.discord.bot.base.appendBold
 import ca.allanwang.discord.bot.base.appendItalic
-import com.gitlab.kordlib.common.entity.Snowflake
-import com.gitlab.kordlib.core.Kord
-import com.gitlab.kordlib.core.behavior.channel.MessageChannelBehavior
-import com.gitlab.kordlib.core.behavior.channel.createEmbed
-import com.gitlab.kordlib.core.behavior.channel.createMessage
-import com.gitlab.kordlib.core.behavior.edit
-import com.gitlab.kordlib.core.entity.Message
-import com.gitlab.kordlib.core.entity.ReactionEmoji
-import com.gitlab.kordlib.core.event.Event
-import com.gitlab.kordlib.core.event.message.ReactionAddEvent
-import com.gitlab.kordlib.core.event.message.ReactionRemoveEvent
+import ca.allanwang.discord.bot.base.toReaction
 import com.gitlab.kordlib.kordx.emoji.Emojis
-import com.gitlab.kordlib.kordx.emoji.toReaction
-import com.gitlab.kordlib.rest.builder.message.EmbedBuilder
+import dev.kord.common.entity.Snowflake
+import dev.kord.core.Kord
+import dev.kord.core.behavior.channel.MessageChannelBehavior
+import dev.kord.core.behavior.channel.createEmbed
+import dev.kord.core.behavior.channel.createMessage
+import dev.kord.core.behavior.edit
+import dev.kord.core.entity.Message
+import dev.kord.core.entity.ReactionEmoji
+import dev.kord.core.event.Event
+import dev.kord.core.event.message.ReactionAddEvent
+import dev.kord.core.event.message.ReactionRemoveEvent
+import dev.kord.rest.builder.message.EmbedBuilder
 import com.google.common.flogger.FluentLogger
+import dev.kord.common.Color
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
-import java.awt.Color
 import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -34,7 +34,7 @@ class OustDiscordClient @Inject constructor(
     companion object {
         private val logger = FluentLogger.forEnclosingClass()
 
-        private val embedColor: Color = Color.decode("#DC1E28")
+        private val embedColor: Color = Color(0xFFDC1E28.toInt())
     }
 
     override fun createEntry(player: OustPlayer, public: Boolean): OustClient.Entry = Entry(player = player)

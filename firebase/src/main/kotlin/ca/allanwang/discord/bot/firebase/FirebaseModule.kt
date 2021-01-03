@@ -1,7 +1,7 @@
 package ca.allanwang.discord.bot.firebase
 
 import ca.allanwang.discord.bot.core.PrivProperties
-import com.gitlab.kordlib.core.Kord
+import dev.kord.core.Kord
 import com.google.auth.oauth2.GoogleCredentials
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
@@ -59,5 +59,5 @@ object FirebaseModule {
     @Provides
     @FirebaseRootRef
     @JvmStatic
-    fun firebaseRootRef(firebaseDatabase: FirebaseDatabase, kord: Kord): DatabaseReference = firebaseDatabase.reference.child(kord.selfId.value)
+    fun firebaseRootRef(firebaseDatabase: FirebaseDatabase, kord: Kord): DatabaseReference = firebaseDatabase.reference.child(kord.selfId.asString)
 }

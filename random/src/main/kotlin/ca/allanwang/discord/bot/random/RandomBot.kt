@@ -4,9 +4,9 @@ import ca.allanwang.discord.bot.base.CommandHandler
 import ca.allanwang.discord.bot.base.CommandHandlerBot
 import ca.allanwang.discord.bot.base.CommandHandlerEvent
 import ca.allanwang.discord.bot.base.commandBuilder
-import com.gitlab.kordlib.core.behavior.channel.createEmbed
+import dev.kord.core.behavior.channel.createEmbed
 import com.google.common.flogger.FluentLogger
-import java.awt.Color
+import dev.kord.common.Color
 import java.util.*
 import java.util.concurrent.ThreadLocalRandom
 import javax.inject.Inject
@@ -24,7 +24,7 @@ class RandomBot @Inject constructor(
 
         private val rangeRegex = Regex("^\\s*(\\d+)(?:[\\s-]+(\\d+))?\\s*$")
 
-        private val embedColor = Color.decode("#EEB501")
+        private val embedColor = Color(0xFFEEB501.toInt())
 
         /**
          * Extract start and end range from input.

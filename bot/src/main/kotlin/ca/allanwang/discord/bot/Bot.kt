@@ -11,7 +11,7 @@ import ca.allanwang.discord.bot.core.BotFeature
 import ca.allanwang.discord.bot.oust.OustBotModule
 import ca.allanwang.discord.bot.random.RandomBotModule
 import ca.allanwang.discord.bot.time.TimeBotModule
-import com.gitlab.kordlib.core.Kord
+import dev.kord.core.Kord
 import com.google.common.flogger.FluentLogger
 import dagger.BindsInstance
 import dagger.Component
