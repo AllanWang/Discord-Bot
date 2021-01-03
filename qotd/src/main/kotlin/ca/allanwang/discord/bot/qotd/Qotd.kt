@@ -13,8 +13,10 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.math.abs
 
 @Singleton
 class Qotd @Inject constructor(
@@ -42,10 +44,10 @@ class Qotd @Inject constructor(
             return qotdTime + cyclesPassed * timeInterval
         }
 
-        internal fun newTime(core: QotdApi.CoreSnapshot, format: QotdApi.FormatSnapshot): Long? {
+        internal fun newTime(core: QotdApi.CoreSnapshot): Long? {
             // Should never be null given constraints
             val time = core.time ?: return null
-            val timeInterval = format.timeInterval
+            val timeInterval = core.timeInterval
             return newTime(time, System.currentTimeMillis(), timeInterval)
         }
     }
@@ -75,33 +77,44 @@ class Qotd @Inject constructor(
         }
     }
 
-    suspend fun status(group: Snowflake): String {
-        return "TODO"
+    data class Status(
+        val questionCount: Int,
+        val hoursRemaining: Long?,
+        val timeIntervalHours: Long
+    )
+
+    suspend fun status(group: Snowflake): Status? {
+        val core = api.coreSnapshot(group) ?: return null
+        val questionCount = api.questions(group).size
+        val hoursRemaining = newTime(core)?.let {
+            TimeUnit.MILLISECONDS.toHours(it - System.currentTimeMillis())
+        }
+        val timeIntervalHours = TimeUnit.MILLISECONDS.toHours(core.timeInterval)
+        return Status(
+            questionCount = questionCount,
+            hoursRemaining = hoursRemaining,
+            timeIntervalHours = timeIntervalHours
+        )
     }
 
     suspend fun qotd(group: Snowflake, refCoreSnapshot: QotdApi.CoreSnapshot? = null) {
-        val coreSnapshot = refCoreSnapshot ?: api.coreSnapshot(group)
-        val qotdTime = coreSnapshot?.time ?: return clearJob(group)
+        val core = refCoreSnapshot ?: api.coreSnapshot(group)
+        val qotdTime = core?.time ?: return clearJob(group)
         val now = System.currentTimeMillis()
-        when {
-            // Too much time has passed
-            qotdTime < now - TIME_THRESHOLD -> return clearJob(group)
-            // Okay to launch request
-            qotdTime < now + TIME_THRESHOLD -> {
-                val newQotdTime = qotdNow(coreSnapshot) ?: return clearJob(group)
-                if (newQotdTime > now + TIME_THRESHOLD) setJob(group) {
-                    delay(newQotdTime - now)
-                    qotd(group)
-                }
-                return
-            }
-            // Pending request too far into the future
-            else -> {
-                setJob(group) {
-                    delay(qotdTime - now)
-                    qotd(group)
-                }
-            }
+        // Within threshold of expected qotd; send now
+        if (abs(qotdTime - now) < TIME_THRESHOLD) {
+            qotdNow(core)
+        }
+        // Check for new qotd time
+        val newQotdTime = when {
+            qotdTime > now + TIME_THRESHOLD -> qotdTime
+            else -> newTime(core)
+        } ?: return
+        // Update time and queue
+        api.time(group, newQotdTime)
+        setJob(group) {
+            delay(newQotdTime - now)
+            qotd(group)
         }
     }
 
@@ -122,23 +135,20 @@ class Qotd @Inject constructor(
     /**
      * Attempts to send a QOTD instantly
      */
-    private suspend fun qotdNow(core: QotdApi.CoreSnapshot): Long? {
-        val formatSnapshot = api.formatSnapshot(core.group)
-        val question = api.getQuestion(core.group) ?: return null
-        val channel = core.outputChannel ?: return null
-        try {
-            kord.unsafe.guildMessageChannel(core.group, channel).createQotd(formatSnapshot, question)
-        } catch (e: RestRequestException) {
-            logger.atSevere().withCause(e).log("Could not send qotd")
-            kord.unsafe.guildMessageChannel(core.group, core.statusChannel).createMessage("Could not send QOTD")
-            return null
+    private suspend fun qotdNow(core: QotdApi.CoreSnapshot) {
+        val channel = core.outputChannel ?: return
+        val question = api.getQuestion(core.group)
+        if (question == null) {
+            kord.unsafe.guildMessageChannel(core.group, core.statusChannel).createMessage("No more questions for QOTD.")
+            return
         }
-        // Should never be null given constraints
-        val time = core.time ?: return null
-        val timeInterval = formatSnapshot.timeInterval
-        val newTime = newTime(time, System.currentTimeMillis(), timeInterval)
-        api.time(core.group, newTime)
-        return newTime
+        val format = api.formatSnapshot(core.group)
+        try {
+            kord.unsafe.guildMessageChannel(core.group, channel).createQotd(format, question)
+        } catch (e: RestRequestException) {
+            logger.atSevere().withCause(e).log("Could not send QOTD")
+            kord.unsafe.guildMessageChannel(core.group, core.statusChannel).createMessage("Could not send QOTD")
+        }
     }
 
     fun isValidTemplate(template: String): Boolean {

@@ -205,40 +205,31 @@ class QotdBot @Inject constructor(
 
     private suspend fun CommandHandlerEvent.status() {
         val guildId = statusGuildId() ?: return
-        val coreSnapshot = api.coreSnapshot(guildId)
-        if (coreSnapshot == null) {
+        val status = qotd.status(guildId)
+        if (status == null) {
             channel.createEmbed {
                 description = "QOTD not set up"
                 commandFields(prefix)
             }
             return
         }
-        val questionCount = api.questions(guildId).size
-        val formatSnapshot = api.formatSnapshot(guildId)
-        channel.createQotd {
-            description = buildString {
-                if (questionCount == 1) append("1 question")
-                else append("$questionCount questions")
-                appendLine()
-                formatSnapshot?.roleMention.let { roleMention ->
-                    if (roleMention != null) append("Mentions ${mentions.roleMention(roleMention)}")
-                    else append("No mentions")
-                }
-                appendLine()
-                coreSnapshot.time?.let {
-                    val now = System.currentTimeMillis()
-                    if (it < now) null
-                    else (TimeUnit.MILLISECONDS.toHours(it - now))
-                }.let { hoursRemaining ->
-                    val msg = when (hoursRemaining) {
-                        null -> "No QOTD planned"
-                        1L -> "Next QOTD in 1 hour"
-                        else -> "Next QOTD in $hoursRemaining hours"
-                    }
-                    append(msg)
+        with(status) {
+            channel.createQotd {
+                description = buildString {
+                    appendPlural(questionCount, "question")
                     appendLine()
-                }
-            }.trim()
+                    if (hoursRemaining == null) {
+                        append("No QOTD planned")
+                    } else {
+                        append("Next QOTD in ")
+                        appendPlural(hoursRemaining.toInt(), "hour")
+                    }
+                    appendLine()
+                    append("Repeat every ")
+                    append(timeIntervalHours, "hour")
+                    appendLine()
+                }.trim()
+            }
         }
     }
 
@@ -341,7 +332,11 @@ class QotdBot @Inject constructor(
             return
         }
         api.timeInterval(guildId, TimeUnit.HOURS.toMillis(hours))
-        channel.createMessage("QOTD will send every ${if (hours == 1L) "hour" else "$hours hours"}")
+        channel.createMessage(buildString {
+            append("QOTD will send every ")
+            appendPlural(hours.toInt(), "hour")
+            append(".")
+        })
     }
 
     private suspend fun CommandHandlerEvent.roleMention(remove: Boolean = false) {
