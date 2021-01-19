@@ -9,6 +9,7 @@ import ca.allanwang.discord.bot.base.StartBotModule
 import ca.allanwang.discord.bot.cinco.CincoBotModule
 import ca.allanwang.discord.bot.core.BotFeature
 import ca.allanwang.discord.bot.oust.OustBotModule
+import ca.allanwang.discord.bot.qotd.QotdBotModule
 import ca.allanwang.discord.bot.random.RandomBotModule
 import ca.allanwang.discord.bot.time.TimeBotModule
 import dev.kord.core.Kord
@@ -79,6 +80,7 @@ suspend fun main(args: Array<String>) {
         TimeBotModule::class,
         OustBotModule::class,
         CincoBotModule::class,
+        QotdBotModule::class,
 
         // ca.allanwang.discord.bot.base.LogBotModule::class,
         // ca.allanwang.discord.bot.echo.EchoBotModule::class,

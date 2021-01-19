@@ -2,6 +2,7 @@ package ca.allanwang.discord.bot.oust.game
 
 import ca.allanwang.discord.bot.base.appendBold
 import ca.allanwang.discord.bot.base.appendItalic
+import ca.allanwang.discord.bot.base.appendPlural
 import ca.allanwang.discord.bot.base.toReaction
 import com.gitlab.kordlib.kordx.emoji.Emojis
 import dev.kord.common.entity.Snowflake
@@ -58,7 +59,7 @@ class OustDiscordClient @Inject constructor(
             field {
                 name = "Items"
                 value = buildString {
-                    append(if (player.cards.size == 1) "1 Card" else "${player.cards.size} Cards")
+                    appendPlural(player.cards.size, "Card")
                     append(" - ")
                     appendItalic {
                         append(player.cards.joinToString(" • ") {
@@ -66,7 +67,7 @@ class OustDiscordClient @Inject constructor(
                         })
                     }
                     appendLine()
-                    append(if (player.coins == 1) "1 Coin" else "${player.coins} Coins")
+                    appendPlural(player.coins, "Coin")
                 }
             }
         }

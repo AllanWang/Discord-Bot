@@ -2,10 +2,7 @@ package ca.allanwang.discord.bot.firebase
 
 import dev.kord.common.entity.Snowflake
 import com.google.common.flogger.FluentLogger
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -65,7 +62,7 @@ suspend inline fun <reified T> DatabaseReference.listen(): Flow<T?> = withContex
     }
 }
 
-suspend fun DatabaseReference.setValue(value: Any): Boolean = suspendCoroutine { cont ->
+suspend fun DatabaseReference.setValue(value: Any?): Boolean = suspendCoroutine { cont ->
     setValue(value) { error, _ ->
         if (error != null)
             _firebase_ext_logger.atInfo().log("Set failed")
@@ -78,4 +75,18 @@ inline fun <reified T> DataSnapshot.getValueOrNull(): T? = try {
 } catch (e: Exception) {
     _firebase_ext_logger.atWarning().withCause(e).log("get value %s %s", key, T::class.simpleName)
     null
+}
+
+suspend fun Query.singleSnapshot(): DataSnapshot = withContext(Dispatchers.IO) {
+    suspendCancellableCoroutine { cont ->
+        addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                cont.resume(snapshot)
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                cont.cancel(error.toException())
+            }
+        })
+    }
 }

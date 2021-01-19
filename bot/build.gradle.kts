@@ -6,6 +6,7 @@ dependencies {
     implementation(project(":random"))
     implementation(project(":oust"))
     implementation(project(":cinco"))
+    implementation(project(":qotd"))
 
     implementation(bot.Dependencies.slf4j("simple"))
 //    implementation(bot.Dependencies.flogger("slf4j-backend"))

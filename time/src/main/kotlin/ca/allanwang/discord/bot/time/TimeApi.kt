@@ -8,6 +8,10 @@ import dev.kord.core.entity.ReactionEmoji
 import com.google.common.flogger.FluentLogger
 import com.google.firebase.database.DatabaseReference
 import dev.kord.common.Color
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 import javax.inject.Inject
@@ -20,7 +24,15 @@ class TimeApi @Inject constructor(
 
     companion object {
         private const val TIME = "time"
-        val logger = FluentLogger.forEnclosingClass()
+        private val logger = FluentLogger.forEnclosingClass()
+
+        /**
+         * A time regex should match values of the format
+         * 8am, 9pm, 8:00, 8:00 am
+         *
+         * To avoid matching tags, time values should not be surrounded by alphanumeric characters.
+         */
+        val timeRegex = Regex("(?:^|[^a-zA-Z0-9])(1[0-2]|0?[1-9])(?::([0-5][0-9]))?\\s*([AaPp][Mm])?(?:$|[^a-zA-Z0-9])")
     }
 
     private val ref = rootRef.child(TIME)
@@ -52,4 +64,46 @@ class TimeApi @Inject constructor(
             .sortedBy { it.rawOffset }
             .toList()
     }
+
+    data class TimeEntry(val hour: Int, val minute: Int, val pm: Boolean?) {
+        override fun toString(): String = buildString {
+            append(hour)
+            append(':')
+            append(minute.toString().padStart(2, '0'))
+            if (pm != null) {
+                append(' ')
+                append(if (pm) "PM" else "AM")
+            }
+        }
+
+        val hour24: Int
+            get() = when {
+                hour == 12 -> if (pm == false) 0 else 12
+                pm == true -> hour + 12
+                else -> hour
+            }
+
+        fun toZonedDateTime(zoneId: ZoneId): ZonedDateTime =
+            ZonedDateTime.of(LocalDate.now(zoneId), LocalTime.of(hour24, minute), zoneId)
+    }
+
+    private fun MatchResult.toTimeEntry(): TimeEntry? {
+        // Disallow general numbers as timestamps
+        if (groupValues[2].isEmpty() && groupValues[3].isEmpty()) return null
+        val hour = groupValues[1].toInt()
+        val minute = groupValues[2].toIntOrNull() ?: 0
+        val pm = when (groupValues[3].toLowerCase(Locale.US)) {
+            "am" -> false
+            "pm" -> true
+            else -> null
+        }
+        return TimeEntry(hour, minute, pm)
+    }
+
+    fun findTimes(message: CharSequence): List<TimeEntry> =
+        timeRegex
+            .findAll(message)
+            .mapNotNull { it.toTimeEntry() }
+            .distinct()
+            .toList()
 }

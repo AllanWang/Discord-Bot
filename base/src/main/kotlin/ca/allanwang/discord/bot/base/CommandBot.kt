@@ -29,7 +29,7 @@ abstract class CommandBot(
 
     final override suspend fun Kord.attach() {
         logger.atInfo().log("Loaded $type handlers %s", handlers.map { it::class.simpleName })
-        val candidates = handlers.candidates()
+        val candidates = handlers.onEach { with(it) { attach() } }.candidates()
         val duplicateKeys = handlers.duplicateKeys()
         if (duplicateKeys.isNotEmpty()) {
             logger.atWarning().log("Duplicate commands found: %s", duplicateKeys)

@@ -1,6 +1,5 @@
 package ca.allanwang.discord.bot.cinco
 
-
 import ca.allanwang.discord.bot.base.*
 import ca.allanwang.discord.bot.cinco.game.CincoContext
 import ca.allanwang.discord.bot.cinco.game.CincoGame

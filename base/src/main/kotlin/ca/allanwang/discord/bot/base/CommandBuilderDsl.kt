@@ -1,6 +1,7 @@
 package ca.allanwang.discord.bot.base
 
 import com.google.common.flogger.FluentLogger
+import java.util.*
 
 @DslMarker
 @Target(AnnotationTarget.CLASS)
@@ -60,7 +61,7 @@ internal open class CommandBuilderBase : CommandBuilderRootDsl {
     protected open suspend fun handleImpl(event: CommandHandlerEvent): Boolean {
         val key = event.message.substringBefore(' ')
         logger.atFine().log("Test key %s in %s", key, keys)
-        val argHandler = children[key]
+        val argHandler = children[key.toLowerCase(Locale.US)]
         val subMessage = if (key == event.message) "" else event.message.substringAfter(' ')
         if (argHandler != null) {
             argHandler.handle(event.copy(message = subMessage))
@@ -75,7 +76,7 @@ internal open class CommandBuilderBase : CommandBuilderRootDsl {
             block()
             finish()
         }
-        children[builder.arg] = builder
+        children[builder.arg.toLowerCase(Locale.US)] = builder
     }
 
     internal fun finish() {
@@ -125,7 +126,7 @@ internal class CommandBuilderArg(
             block()
             finish()
         }
-        children[builder.arg] = builder
+        children[builder.arg.toLowerCase(Locale.US)] = builder
     }
 
     override fun action(
