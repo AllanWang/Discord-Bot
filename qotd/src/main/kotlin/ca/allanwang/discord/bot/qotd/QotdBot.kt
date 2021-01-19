@@ -9,6 +9,7 @@ import dev.kord.core.Kord
 import dev.kord.core.behavior.channel.MessageChannelBehavior
 import dev.kord.core.behavior.channel.createEmbed
 import dev.kord.rest.builder.message.EmbedBuilder
+import java.time.Instant
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -84,6 +85,7 @@ class QotdBot @Inject constructor(
 
     private fun CommandBuilderRootDsl.configCommands() {
         arg("channel") {
+            arg(REMOVE_KEY) { action(withMessage = false) { channel(remove = true) } }
             action(withMessage = true) {
                 channel()
             }
@@ -101,6 +103,7 @@ class QotdBot @Inject constructor(
             }
         }
         arg("time") {
+            arg(REMOVE_KEY) { action(withMessage = false) { time(remove = true) } }
             action(withMessage = true) {
                 time()
             }
@@ -190,10 +193,13 @@ class QotdBot @Inject constructor(
         field {
             name = "Configuration Commands"
             value = buildString {
-                appendCommand("channel", "Set the channel where QOTD will send messages for everyone to see.")
+                appendCommand(
+                    "channel",
+                    "Set the channel where QOTD will send messages for everyone to see. Send `remove` to disable QOTD."
+                )
                 appendCommand(
                     "time",
-                    "Set a time when QOTD will start its questions. Please make sure you've set your timezone (see `${prefix}timezone help`)."
+                    "Set a time when QOTD will start its questions. Please make sure you've set your timezone (see `${prefix}timezone help`). Send `remove` to disable QOTD."
                 )
                 appendCommand("timeInterval", "Set number of hours to wait between QOTD messages.")
                 appendCommand("image", "Provide image url to attach to question. Send `remove` to remove image.")
@@ -244,6 +250,7 @@ class QotdBot @Inject constructor(
                     append("Repeats every ")
                     appendPlural(timeIntervalHours.toInt(), "hour")
                     appendLine()
+                    timestamp = qotdTime?.let { Instant.ofEpochMilli(it) }
                 }.trim()
             }
         }
@@ -274,6 +281,7 @@ class QotdBot @Inject constructor(
         if (remove) {
             api.outputChannel(guildId, null)
             channel.createMessage("Removed channel and disabled QOTD")
+            qotd.qotd(guildId)
             return
         }
         val mentionedChannel =
@@ -287,6 +295,7 @@ class QotdBot @Inject constructor(
         }
         api.outputChannel(guildId, mentionedChannel)
         channel.createMessage("Future QOTDs will be sent to ${mentions.channelMention(mentionedChannel)}")
+        qotd.qotd(guildId)
     }
 
     private suspend fun CommandHandlerEvent.image(remove: Boolean = false) {
@@ -335,9 +344,14 @@ class QotdBot @Inject constructor(
         })
     }
 
-    private suspend fun CommandHandlerEvent.time() {
+    private suspend fun CommandHandlerEvent.time(remove: Boolean = false) {
         val authorId = authorId ?: return
         val guildId = statusGuildId() ?: return
+        if (remove) {
+            api.time(guildId, null)
+            channel.createMessage("Removed time and disabled QOTD")
+            qotd.qotd(guildId)
+        }
         val timeEntry = timeApi.findTimes(message).firstOrNull()
         if (timeEntry == null) {
             channel.createMessage("Please specify a time to send QOTDs.")

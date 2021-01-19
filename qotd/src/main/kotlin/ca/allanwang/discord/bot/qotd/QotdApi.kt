@@ -114,7 +114,7 @@ class QotdApi @Inject constructor(
         val question = questionSnapshot?.getValueOrNull<String>() ?: return null
         if (delete) {
             removeQuestion(group, questionSnapshot.key)
-            questionArchiveRef.push().setValue(question)
+            questionArchiveRef.child(group.asString).push().setValue(question)
         }
         return question
     }

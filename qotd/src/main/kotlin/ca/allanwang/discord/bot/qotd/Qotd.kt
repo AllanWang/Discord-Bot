@@ -81,6 +81,7 @@ class Qotd @Inject constructor(
 
     data class Status(
         val questionCount: Int,
+        val qotdTime: Long?,
         val hoursRemaining: Long?,
         val timeIntervalHours: Long
     )
@@ -88,12 +89,14 @@ class Qotd @Inject constructor(
     suspend fun status(group: Snowflake): Status? {
         val core = api.coreSnapshot(group) ?: return null
         val questionCount = api.questions(group).size
-        val hoursRemaining = newTime(core)?.let {
+        val qotdTime = newTime(core)
+        val hoursRemaining = qotdTime?.let {
             TimeUnit.MILLISECONDS.toHours(it - System.currentTimeMillis())
         }
         val timeIntervalHours = TimeUnit.MILLISECONDS.toHours(core.timeInterval)
         return Status(
             questionCount = questionCount,
+            qotdTime = qotdTime,
             hoursRemaining = hoursRemaining,
             timeIntervalHours = timeIntervalHours
         )
