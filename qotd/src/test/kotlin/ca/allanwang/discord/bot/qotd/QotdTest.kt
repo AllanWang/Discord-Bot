@@ -25,4 +25,5 @@ class QotdTest {
     fun timeTest_qotdBefore() {
         assertThat(Qotd.newTime(11_500, 20_200, 6_000), equalTo(23_500))
     }
+
 }

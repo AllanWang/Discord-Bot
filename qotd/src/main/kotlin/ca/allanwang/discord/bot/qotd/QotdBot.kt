@@ -10,6 +10,7 @@ import dev.kord.core.behavior.channel.MessageChannelBehavior
 import dev.kord.core.behavior.channel.createEmbed
 import dev.kord.rest.builder.message.EmbedBuilder
 import java.time.Instant
+import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -351,6 +352,7 @@ class QotdBot @Inject constructor(
             api.time(guildId, null)
             channel.createMessage("Removed time and disabled QOTD")
             qotd.qotd(guildId)
+            return
         }
         val timeEntry = timeApi.findTimes(message).firstOrNull()
         if (timeEntry == null) {
@@ -369,7 +371,7 @@ class QotdBot @Inject constructor(
             return
         }
         val time = timeEntry.toZonedDateTime(origTimezone.toZoneId())
-        api.time(guildId, time.toEpochSecond())
+        api.time(guildId, time.toEpochSecond() * 1000)
         channel.createMessage("Saved time and started QOTD.")
         qotd.qotd(guildId)
     }
