@@ -68,6 +68,11 @@ class QotdBot @Inject constructor(
                     addQuestion()
                 }
             }
+            arg("deleteQuestion") {
+                action(withMessage = true) {
+                    deleteQuestion()
+                }
+            }
             arg("now") {
                 action(withMessage = false) {
                     now()
@@ -389,17 +394,22 @@ class QotdBot @Inject constructor(
         channel.createMessage("Role mention saved.")
     }
 
-    private suspend fun CommandHandlerEvent.questions() {
+    private suspend fun CommandHandlerEvent.questions(showKey: Boolean = false) {
         val guildId = statusGuildId() ?: return
         val questions = api.questions(guildId)
         channel.createQotd {
             description =
                 if (questions.isEmpty()) "No questions found"
                 else buildString {
-                    questions.values.forEachIndexed { index, q ->
+                    questions.entries.forEachIndexed { index, (key, q) ->
                         appendBold {
-                            append(index + 1)
-                            append('.')
+                            if (showKey) {
+                                append(key)
+                                append(':')
+                            } else {
+                                append(index + 1)
+                                append('.')
+                            }
                         }
                         append(' ')
                         append(q)
@@ -407,6 +417,23 @@ class QotdBot @Inject constructor(
                     }
                 }.trim()
         }
+    }
+
+    private suspend fun CommandHandlerEvent.deleteQuestion() {
+        val guildId = statusGuildId() ?: return
+        if (message.isBlank()) {
+            questions(showKey = true)
+            channel.createMessage(buildString {
+                append("Delete a question via ")
+                appendCodeBlock {
+                    append(prefix)
+                    append("qotd deleteQuestion [key]")
+                }
+            })
+            return
+        }
+        val result = api.removeQuestion(guildId, message)
+        channel.createMessage(if (result) "Deleted $message" else "Deletion failed")
     }
 
     private suspend fun CommandHandlerEvent.addQuestion() {

@@ -22,6 +22,7 @@ class QotdApi @Inject constructor(
         private const val CORE = "core"
         private const val FORMAT = "format"
         private const val QUESTIONS = "questions"
+        private const val QUESTIONS_ARCHIVE = "questions_archive"
 
         private const val IMAGE = "image"
         private const val TEMPLATE = "template"
@@ -56,12 +57,14 @@ class QotdApi @Inject constructor(
     private val ref: DatabaseReference
     private val formatRef: DatabaseReference
     private val questionRef: DatabaseReference
+    private val questionArchiveRef: DatabaseReference
 
     init {
         val qotdRef = rootRef.child(QOTD)
         ref = qotdRef.child(CORE)
         formatRef = qotdRef.child(FORMAT)
         questionRef = qotdRef.child(QUESTIONS)
+        questionArchiveRef = qotdRef.child(QUESTIONS_ARCHIVE)
     }
 
     /*
@@ -100,7 +103,7 @@ class QotdApi @Inject constructor(
      */
 
     suspend fun addQuestion(group: Snowflake, question: String) =
-        questionRef.child(group.asString).child(UUID.randomUUID().toString()).setValue(question)
+        questionRef.child(group.asString).push().setValue(question)
 
     suspend fun removeQuestion(group: Snowflake, questionKey: String) =
         questionRef.child(group.asString).child(questionKey).setValue(null)
@@ -109,7 +112,10 @@ class QotdApi @Inject constructor(
         val snapshot = questionRef.child(group.asString).orderByKey().limitToFirst(1).singleSnapshot()
         val questionSnapshot = snapshot.children.firstOrNull()
         val question = questionSnapshot?.getValueOrNull<String>() ?: return null
-        if (delete) removeQuestion(group, questionSnapshot.key)
+        if (delete) {
+            removeQuestion(group, questionSnapshot.key)
+            questionArchiveRef.push().setValue(question)
+        }
         return question
     }
 

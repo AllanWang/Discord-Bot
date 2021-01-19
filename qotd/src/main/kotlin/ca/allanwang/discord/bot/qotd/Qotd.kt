@@ -40,8 +40,9 @@ class Qotd @Inject constructor(
          * Time is guaranteed to be after [now] by at most [timeInterval]
          */
         internal fun newTime(qotdTime: Long, now: Long, timeInterval: Long): Long {
-            val cyclesPassed = (now - qotdTime) / timeInterval + 1
-            return qotdTime + cyclesPassed * timeInterval
+            val cyclesPassed = (now - qotdTime) / timeInterval
+            val newTime = qotdTime + cyclesPassed * timeInterval
+            return if (newTime < now + TIME_THRESHOLD) newTime + timeInterval else newTime
         }
 
         internal fun newTime(core: QotdApi.CoreSnapshot): Long? {
