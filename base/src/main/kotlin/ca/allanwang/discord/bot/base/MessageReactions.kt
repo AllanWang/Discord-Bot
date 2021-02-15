@@ -18,6 +18,7 @@ suspend fun Message.confirmationReaction(user: Snowflake? = null): Boolean {
     addReaction(positive)
     addReaction(negative)
     return kord.events.filterIsInstance<ReactionAddEvent>()
+        .filter { it.userId != kord.selfId }
         .run { if (user == null) this else filter { it.userId == user } }
         .mapNotNull {
             when (it.emoji) {
@@ -48,7 +49,7 @@ suspend fun MessageChannelBehavior.paginatedMessage(
     fun EmbedBuilder.pageEmbed(index: Int) {
         description = descriptions[index]
         footer {
-            text = "$index/${descriptions.size}"
+            text = "${index + 1}/${descriptions.size}"
         }
     }
 
@@ -56,7 +57,11 @@ suspend fun MessageChannelBehavior.paginatedMessage(
         pageEmbed(currentIndex)
     }
 
+    message.addReaction(left)
+    message.addReaction(right)
+
     kord.events.filterIsInstance<ReactionAddEvent>()
+        .filter { it.userId != kord.selfId }
         .filter { it.emoji == left || it.emoji == right }
         .withTimeout(TimeUnit.MINUTES.toMillis(1))
         .collect {

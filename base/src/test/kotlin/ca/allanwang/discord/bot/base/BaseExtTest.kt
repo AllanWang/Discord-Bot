@@ -13,4 +13,9 @@ class BaseExtTest {
 
         assertThat(source.chunkedByLength(12), equalTo(listOf("$chunk\n$chunk", "$chunk\n$chunk", chunk)))
     }
+
+    @Test
+    fun chunkBySizeEmpty() {
+        assertThat(emptyList<String>().chunkedByLength(emptyText = "Empty Text"), equalTo(listOf("Empty Text")))
+    }
 }

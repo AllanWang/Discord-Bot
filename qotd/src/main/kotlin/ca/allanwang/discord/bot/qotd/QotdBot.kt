@@ -415,12 +415,6 @@ class QotdBot @Inject constructor(
     private suspend fun CommandHandlerEvent.questions(showKey: Boolean = false) {
         val guildId = statusGuildId() ?: return
         val questions = api.questions(guildId)
-        if (questions.isEmpty()) {
-            channel.createQotd {
-                description = "No questions found"
-            }
-            return
-        }
         val questionText = questions.entries.mapIndexed { index, (key, q) ->
             buildString {
                 appendBold {
@@ -436,7 +430,7 @@ class QotdBot @Inject constructor(
                 append(q)
             }
         }
-        val questionPages = questionText.chunkedByLength()
+        val questionPages = questionText.chunkedByLength(emptyText = "No questions found")
 
         channel.paginatedMessage(questionPages) {
             createQotd(it)

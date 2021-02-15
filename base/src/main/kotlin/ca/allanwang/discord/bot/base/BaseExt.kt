@@ -19,7 +19,10 @@ fun Kord.onMessage(consumer: suspend MessageCreateEvent.() -> Unit) = on<Message
     consumer()
 }
 
-fun List<String>.chunkedByLength(length: Int = 2048): List<String> {
+fun List<String>.chunkedByLength(length: Int = 2048, emptyText: String? = null): List<String> {
+    if (isEmpty()) {
+        return if (emptyText != null) listOf(emptyText) else emptyList()
+    }
     val stringBuilder = StringBuilder()
     val list = mutableListOf<String>()
     forEach {
