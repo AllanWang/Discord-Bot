@@ -18,3 +18,22 @@ fun Kord.onMessage(consumer: suspend MessageCreateEvent.() -> Unit) = on<Message
     if (message.author?.isBot == true) return@on
     consumer()
 }
+
+fun List<String>.chunkedByLength(length: Int = 2048): List<String> {
+    val stringBuilder = StringBuilder()
+    val list = mutableListOf<String>()
+    forEach {
+        if (stringBuilder.length + it.length <= length) {
+            if (stringBuilder.isNotEmpty())
+                stringBuilder.appendLine()
+        } else {
+            list.add(stringBuilder.toString())
+            stringBuilder.clear()
+        }
+        stringBuilder.append(it)
+    }
+    if (stringBuilder.isNotEmpty()) {
+        list.add(stringBuilder.toString())
+    }
+    return list
+}

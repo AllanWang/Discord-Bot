@@ -3,14 +3,16 @@ package ca.allanwang.discord.bot.qotd
 import ca.allanwang.discord.bot.base.*
 import ca.allanwang.discord.bot.firebase.FirebaseCache
 import ca.allanwang.discord.bot.time.TimeApi
+import com.gitlab.kordlib.kordx.emoji.Emojis
 import com.google.common.flogger.FluentLogger
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.Kord
 import dev.kord.core.behavior.channel.MessageChannelBehavior
 import dev.kord.core.behavior.channel.createEmbed
+import dev.kord.core.behavior.edit
+import dev.kord.core.live.live
 import dev.kord.rest.builder.message.EmbedBuilder
 import java.time.Instant
-import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -413,25 +415,31 @@ class QotdBot @Inject constructor(
     private suspend fun CommandHandlerEvent.questions(showKey: Boolean = false) {
         val guildId = statusGuildId() ?: return
         val questions = api.questions(guildId)
-        channel.createQotd {
-            description =
-                if (questions.isEmpty()) "No questions found"
-                else buildString {
-                    questions.entries.forEachIndexed { index, (key, q) ->
-                        appendBold {
-                            if (showKey) {
-                                append(key)
-                                append(':')
-                            } else {
-                                append(index + 1)
-                                append('.')
-                            }
-                        }
-                        append(' ')
-                        append(q)
-                        appendLine()
+        if (questions.isEmpty()) {
+            channel.createQotd {
+                description = "No questions found"
+            }
+            return
+        }
+        val questionText = questions.entries.mapIndexed { index, (key, q) ->
+            buildString {
+                appendBold {
+                    if (showKey) {
+                        append(key)
+                        append(':')
+                    } else {
+                        append(index + 1)
+                        append('.')
                     }
-                }.trim()
+                }
+                append(' ')
+                append(q)
+            }
+        }
+        val questionPages = questionText.chunkedByLength()
+
+        channel.paginatedMessage(questionPages) {
+            createQotd(it)
         }
     }
 

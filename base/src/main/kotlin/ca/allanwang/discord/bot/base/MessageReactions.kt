@@ -1,14 +1,15 @@
 package ca.allanwang.discord.bot.base
 
 import ca.allanwang.discord.bot.core.withTimeout
+import com.gitlab.kordlib.kordx.emoji.Emojis
 import dev.kord.common.entity.Snowflake
+import dev.kord.core.behavior.channel.MessageChannelBehavior
+import dev.kord.core.behavior.channel.createEmbed
+import dev.kord.core.behavior.edit
 import dev.kord.core.entity.Message
 import dev.kord.core.event.message.ReactionAddEvent
-import com.gitlab.kordlib.kordx.emoji.Emojis
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.filterIsInstance
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.mapNotNull
+import dev.kord.rest.builder.message.EmbedBuilder
+import kotlinx.coroutines.flow.*
 import java.util.concurrent.TimeUnit
 
 suspend fun Message.confirmationReaction(user: Snowflake? = null): Boolean {
@@ -27,4 +28,51 @@ suspend fun Message.confirmationReaction(user: Snowflake? = null): Boolean {
         }
         .withTimeout(TimeUnit.MINUTES.toMillis(1))
         .first()
+}
+
+suspend fun MessageChannelBehavior.paginatedMessage(
+    descriptions: List<String>,
+    template: suspend MessageChannelBehavior.(builder: EmbedBuilder.() -> Unit) -> Message = { createEmbed(it) },
+): Message {
+    if (descriptions.size <= 1) {
+        return template {
+            description = descriptions.firstOrNull()
+        }
+    }
+
+    val left = Emojis.arrowBackward.toReaction()
+    val right = Emojis.arrowForward.toReaction()
+
+    var currentIndex = 0
+
+    fun EmbedBuilder.pageEmbed(index: Int) {
+        description = descriptions[index]
+        footer {
+            text = "$index/${descriptions.size}"
+        }
+    }
+
+    val message = template {
+        pageEmbed(currentIndex)
+    }
+
+    kord.events.filterIsInstance<ReactionAddEvent>()
+        .filter { it.emoji == left || it.emoji == right }
+        .withTimeout(TimeUnit.MINUTES.toMillis(1))
+        .collect {
+            when (it.emoji) {
+                left -> currentIndex--
+                right -> currentIndex++
+                else -> return@collect
+            }
+            currentIndex = Math.floorMod(currentIndex, descriptions.size)
+            message.deleteReaction(it.userId, it.emoji)
+            message.edit {
+                embed {
+                    pageEmbed(currentIndex)
+                }
+            }
+        }
+
+    return message
 }
