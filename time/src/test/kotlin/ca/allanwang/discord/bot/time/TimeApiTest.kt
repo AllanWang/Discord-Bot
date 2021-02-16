@@ -66,5 +66,4 @@ class TimeApiTest {
         assertEquals(12, TimeApi.TimeEntry(hour = 12, minute = 59, pm = null).hour24, "12:59 = 12:59 (pm)")
         assertEquals(12, TimeApi.TimeEntry(hour = 12, minute = 59, pm = true).hour24, "12:59pm = 12:59")
     }
-
 }

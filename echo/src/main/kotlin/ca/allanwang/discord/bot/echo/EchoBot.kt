@@ -9,8 +9,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class EchoBot @Inject constructor(
-) : CommandHandlerBot {
+class EchoBot @Inject constructor() : CommandHandlerBot {
 
     companion object {
         private val logger = FluentLogger.forEnclosingClass()

@@ -5,6 +5,8 @@ import ca.allanwang.discord.bot.base.appendItalic
 import ca.allanwang.discord.bot.base.appendPlural
 import ca.allanwang.discord.bot.base.toReaction
 import com.gitlab.kordlib.kordx.emoji.Emojis
+import com.google.common.flogger.FluentLogger
+import dev.kord.common.Color
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.Kord
 import dev.kord.core.behavior.channel.MessageChannelBehavior
@@ -17,8 +19,6 @@ import dev.kord.core.event.Event
 import dev.kord.core.event.message.ReactionAddEvent
 import dev.kord.core.event.message.ReactionRemoveEvent
 import dev.kord.rest.builder.message.EmbedBuilder
-import com.google.common.flogger.FluentLogger
-import dev.kord.common.Color
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
@@ -62,9 +62,11 @@ class OustDiscordClient @Inject constructor(
                     appendPlural(player.cards.size, "Card")
                     append(" - ")
                     appendItalic {
-                        append(player.cards.joinToString(" • ") {
-                            if (it.visible) it.value.name else "Unknown"
-                        })
+                        append(
+                            player.cards.joinToString(" • ") {
+                                if (it.visible) it.value.name else "Unknown"
+                            }
+                        )
                     }
                     appendLine()
                     appendPlural(player.coins, "Coin")
@@ -73,10 +75,13 @@ class OustDiscordClient @Inject constructor(
         }
 
         private inline fun selectionMessage(crossinline header: EmbedBuilder.() -> Unit): SelectionMessage =
-            SelectionMessage(kord = kord, channel = channel, header = {
-                color = embedColor
-                header()
-            })
+            SelectionMessage(
+                kord = kord, channel = channel,
+                header = {
+                    color = embedColor
+                    header()
+                }
+            )
 
         override suspend fun selectCards(message: String, count: Int, cards: List<OustCard>): List<OustCard> {
             return selectionMessage.selectActions(player.snowflake, cards.map { it.name }, count) {
@@ -337,5 +342,4 @@ class SelectionMessage @Inject constructor(
         val message = _message ?: return
         message.deleteAllReactions()
     }
-
 }

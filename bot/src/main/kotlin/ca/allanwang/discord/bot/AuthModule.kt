@@ -1,6 +1,5 @@
 package ca.allanwang.discord.bot
 
-import ca.allanwang.discord.bot.core.BotFeature
 import ca.allanwang.discord.bot.core.CoreModule
 import ca.allanwang.discord.bot.core.PrivProperties
 import com.google.common.flogger.FluentLogger
@@ -35,7 +34,6 @@ object AuthModule {
         } ?: privProperties.getProperty(kordTokenPropKey)?.also {
             logger.atInfo().log("Got token from properties")
         } ?: error("missing bot token")
-
 }
 
 @Singleton

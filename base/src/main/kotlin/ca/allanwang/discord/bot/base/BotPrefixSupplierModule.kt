@@ -1,16 +1,15 @@
 package ca.allanwang.discord.bot.base
 
 import ca.allanwang.discord.bot.firebase.FirebaseModule
-import dev.kord.common.entity.Snowflake
-import dev.kord.core.Kord
 import com.google.common.flogger.FluentLogger
 import dagger.Binds
 import dagger.Module
+import dev.kord.common.entity.Snowflake
+import dev.kord.core.Kord
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicReference
 import javax.inject.Inject
-import javax.inject.Qualifier
 import javax.inject.Singleton
 
 interface BotPrefixSupplier {

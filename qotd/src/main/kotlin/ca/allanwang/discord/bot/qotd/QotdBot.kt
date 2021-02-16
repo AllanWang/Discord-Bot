@@ -3,14 +3,11 @@ package ca.allanwang.discord.bot.qotd
 import ca.allanwang.discord.bot.base.*
 import ca.allanwang.discord.bot.firebase.FirebaseCache
 import ca.allanwang.discord.bot.time.TimeApi
-import com.gitlab.kordlib.kordx.emoji.Emojis
 import com.google.common.flogger.FluentLogger
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.Kord
 import dev.kord.core.behavior.channel.MessageChannelBehavior
 import dev.kord.core.behavior.channel.createEmbed
-import dev.kord.core.behavior.edit
-import dev.kord.core.live.live
 import dev.kord.rest.builder.message.EmbedBuilder
 import java.time.Instant
 import java.util.concurrent.TimeUnit
@@ -208,7 +205,6 @@ class QotdBot @Inject constructor(
                 appendCommand("image", "Provide image url to attach to question. Send `remove` to remove image.")
                 appendCommand("roleMention", "Add role to mention with each QOTD. Send `remove` to remove mentions.")
                 appendCommand("template", "Add a template for QOTD. Send `remove` to remove template.")
-
             }.trim()
         }
 
@@ -337,14 +333,16 @@ class QotdBot @Inject constructor(
             return
         }
         api.template(guildId, message)
-        channel.createMessage(buildString {
-            append("Template saved. Use ")
-            appendCodeBlock {
-                append(prefix)
-                append("qotd sample")
+        channel.createMessage(
+            buildString {
+                append("Template saved. Use ")
+                appendCodeBlock {
+                    append(prefix)
+                    append("qotd sample")
+                }
+                append(" to view a sample output.")
             }
-            append(" to view a sample output.")
-        })
+        )
     }
 
     private suspend fun CommandHandlerEvent.time(remove: Boolean = false) {
@@ -363,13 +361,15 @@ class QotdBot @Inject constructor(
         }
         val origTimezone = timeApi.getTime(guildId, authorId)
         if (origTimezone == null) {
-            channel.createMessage(buildString {
-                append("Timezone not specified, please use ")
-                appendCodeBlock {
-                    append(prefix)
-                    append("timezone")
+            channel.createMessage(
+                buildString {
+                    append("Timezone not specified, please use ")
+                    appendCodeBlock {
+                        append(prefix)
+                        append("timezone")
+                    }
                 }
-            })
+            )
             return
         }
         val time = timeEntry.toZonedDateTime(origTimezone.toZoneId())
@@ -386,11 +386,13 @@ class QotdBot @Inject constructor(
             return
         }
         api.timeInterval(guildId, TimeUnit.HOURS.toMillis(hours))
-        channel.createMessage(buildString {
-            append("QOTD will send every ")
-            appendPlural(hours.toInt(), "hour")
-            append(".")
-        })
+        channel.createMessage(
+            buildString {
+                append("QOTD will send every ")
+                appendPlural(hours.toInt(), "hour")
+                append(".")
+            }
+        )
     }
 
     private suspend fun CommandHandlerEvent.roleMention(remove: Boolean = false) {
@@ -441,13 +443,15 @@ class QotdBot @Inject constructor(
         val guildId = statusGuildId() ?: return
         if (message.isBlank()) {
             questions(showKey = true)
-            channel.createMessage(buildString {
-                append("Delete a question via ")
-                appendCodeBlock {
-                    append(prefix)
-                    append("qotd deleteQuestion [key]")
+            channel.createMessage(
+                buildString {
+                    append("Delete a question via ")
+                    appendCodeBlock {
+                        append(prefix)
+                        append("qotd deleteQuestion [key]")
+                    }
                 }
-            })
+            )
             return
         }
         val result = api.removeQuestion(guildId, message)
@@ -466,5 +470,4 @@ class QotdBot @Inject constructor(
             channel.createMessage("Request cancelled.")
         }
     }
-
 }

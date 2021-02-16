@@ -35,16 +35,18 @@ class DevBot @Inject constructor(
     }
 
     private suspend fun CommandHandlerEvent.channelInfo() {
-        channel.createMessage(buildString {
-            appendBold { append("Server: ") }
-            appendLine(event.guildId?.asString ?: "Not found")
-            appendBold { append("Channel: ") }
-            appendLine(event.message.channelId.asString)
-            appendBold { append("Author: ") }
-            append(event.member?.displayName ?: "No name")
-            append(" ")
-            appendLine(event.member?.id?.asString ?: "No id")
-        })
+        channel.createMessage(
+            buildString {
+                appendBold { append("Server: ") }
+                appendLine(event.guildId?.asString ?: "Not found")
+                appendBold { append("Channel: ") }
+                appendLine(event.message.channelId.asString)
+                appendBold { append("Author: ") }
+                append(event.member?.displayName ?: "No name")
+                append(" ")
+                appendLine(event.member?.id?.asString ?: "No id")
+            }
+        )
     }
 
     private suspend fun CommandHandlerEvent.emojiInfo() {

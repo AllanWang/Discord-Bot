@@ -1,12 +1,12 @@
 package ca.allanwang.discord.bot.base
 
 import ca.allanwang.discord.bot.core.BotFeature
-import dev.kord.core.Kord
-import dev.kord.core.event.message.MessageCreateEvent
 import com.google.common.flogger.FluentLogger
 import dagger.Module
 import dagger.Provides
 import dagger.multibindings.IntoSet
+import dev.kord.core.Kord
+import dev.kord.core.event.message.MessageCreateEvent
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -43,9 +43,11 @@ abstract class CommandBot(
         val prefixedMessage = prefixedMessage() ?: return
         val key = prefixedMessage.message.substringBefore(' ')
         val handler = candidates[key] ?: return
-        kord.launch(CoroutineExceptionHandler { _, throwable ->
-            logger.atWarning().withCause(throwable).log("Failure for %s", handler::class.simpleName)
-        }) {
+        kord.launch(
+            CoroutineExceptionHandler { _, throwable ->
+                logger.atWarning().withCause(throwable).log("Failure for %s", handler::class.simpleName)
+            }
+        ) {
             handler.handle(
                 CommandHandlerEvent(
                     event = this@handleCommands,

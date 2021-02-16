@@ -2,11 +2,11 @@ package ca.allanwang.discord.bot.time
 
 import ca.allanwang.discord.bot.base.*
 import ca.allanwang.discord.bot.maps.MapsApi
-import dev.kord.core.behavior.channel.createEmbed
-import dev.kord.rest.builder.message.EmbedBuilder
 import com.google.common.flogger.FluentLogger
 import com.google.maps.model.AddressType
 import com.google.maps.model.GeocodingResult
+import dev.kord.core.behavior.channel.createEmbed
+import dev.kord.rest.builder.message.EmbedBuilder
 import java.time.LocalDateTime
 import java.util.*
 import javax.inject.Inject
@@ -57,7 +57,7 @@ class TimeConfigBot @Inject constructor(
     private fun LocalDateTime.clockEmoji(): String {
         val hourString = (hour % 12).let { if (it == 0) 12 else it }.toString()
         val minuteString = if (minute in 20..40) "30" else ""
-        return ":clock${hourString}${minuteString}:"
+        return ":clock${hourString}$minuteString:"
     }
 
     private val validTypes =

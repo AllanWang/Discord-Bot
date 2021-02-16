@@ -22,17 +22,21 @@ class OustController @Inject constructor(
 
     suspend fun launch() {
         coroutineScope {
-            launch(CoroutineExceptionHandler { coroutineContext, throwable ->
-                logger.atSevere().withCause(throwable).log("Oust game crashed")
-                launch {
-                    client.sendBroadcast(buildString {
-                        append("Oops; an error occurred: ")
-                        appendCodeBlock {
-                            append(throwable::class.simpleName)
-                        }
-                    })
+            launch(
+                CoroutineExceptionHandler { coroutineContext, throwable ->
+                    logger.atSevere().withCause(throwable).log("Oust game crashed")
+                    launch {
+                        client.sendBroadcast(
+                            buildString {
+                                append("Oops; an error occurred: ")
+                                appendCodeBlock {
+                                    append(throwable::class.simpleName)
+                                }
+                            }
+                        )
+                    }
                 }
-            }) {
+            ) {
                 turnLoop()
             }
         }
@@ -118,7 +122,6 @@ class OustController @Inject constructor(
         class NextRequest(val request: OustRequest) : TurnStep()
         class TurnResponse(val response: OustTurnResponse) : TurnStep()
     }
-
 }
 
 @Scope

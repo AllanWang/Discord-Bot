@@ -1,8 +1,8 @@
 package ca.allanwang.discord.bot.firebase
 
-import dev.kord.common.entity.Snowflake
 import com.google.common.flogger.FluentLogger
 import com.google.firebase.database.*
+import dev.kord.common.entity.Snowflake
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow

@@ -4,12 +4,12 @@ import ca.allanwang.discord.bot.core.BotFeature
 import ca.allanwang.discord.bot.firebase.FirebaseModule
 import ca.allanwang.discord.bot.firebase.FirebaseRootRef
 import ca.allanwang.discord.bot.firebase.setValue
-import dev.kord.core.Kord
 import com.google.common.flogger.FluentLogger
 import com.google.firebase.database.DatabaseReference
 import dagger.Module
 import dagger.Provides
 import dagger.multibindings.IntoSet
+import dev.kord.core.Kord
 import javax.inject.Inject
 import javax.inject.Singleton
 

@@ -1,10 +1,10 @@
 package ca.allanwang.discord.bot.game
 
 import ca.allanwang.discord.bot.base.onMessage
+import com.google.common.flogger.FluentLogger
 import dev.kord.core.Kord
 import dev.kord.core.behavior.channel.createEmbed
 import dev.kord.core.event.message.MessageCreateEvent
-import com.google.common.flogger.FluentLogger
 
 suspend fun Kord.gameBot() {
     val logger = FluentLogger.forEnclosingClass()

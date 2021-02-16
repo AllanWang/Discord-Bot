@@ -1,19 +1,16 @@
 package ca.allanwang.discord.bot.base
 
 import ca.allanwang.discord.bot.core.BotFeature
-import dev.kord.core.Kord
-import dev.kord.core.event.message.MessageCreateEvent
-import dev.kord.core.on
 import com.google.common.flogger.FluentLogger
 import dagger.Module
 import dagger.Provides
 import dagger.multibindings.IntoSet
+import dev.kord.core.Kord
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class LogBot @Inject constructor(
-) : BotFeature {
+class LogBot @Inject constructor() : BotFeature {
 
     companion object {
         private val logger = FluentLogger.forEnclosingClass()

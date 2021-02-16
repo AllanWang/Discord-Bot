@@ -13,7 +13,6 @@ interface CommandBuilderRootDsl {
     var help: String?
 
     fun arg(arg: String, help: String? = null, block: CommandBuilderArgDsl.() -> Unit)
-
 }
 
 @BotCommandDsl
@@ -24,7 +23,6 @@ interface CommandBuilderArgDsl : CommandBuilderRootDsl {
         help: String? = null,
         action: CommandHandlerAction
     )
-
 }
 
 @BotCommandDsl
@@ -84,12 +82,14 @@ internal open class CommandBuilderBase : CommandBuilderRootDsl {
     }
 }
 
-internal class CommandBuilderRoot(override val types: Set<CommandHandler.Type>) : CommandBuilderBase(),
+internal class CommandBuilderRoot(override val types: Set<CommandHandler.Type>) :
+    CommandBuilderBase(),
     CommandBuilderRootDsl,
     CommandHandler
 
 internal class CommandBuilderArg(
-    val prevCommand: String, val arg: String
+    val prevCommand: String,
+    val arg: String
 ) : CommandBuilderBase(), CommandBuilderArgDsl {
 
     companion object {
@@ -161,6 +161,5 @@ internal class CommandBuilderAction : CommandBuilderActionDsl {
     override var action: CommandHandlerAction = HANDLER_NOOP
 
     internal fun finish() {
-
     }
 }

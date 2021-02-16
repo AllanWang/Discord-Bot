@@ -36,7 +36,6 @@ sealed class OustMove {
             currentPlayer.coins += value
         }
     }
-
 }
 
 enum class OustAction(val requiredCoins: Int = 0, val blockable: Boolean = true) {

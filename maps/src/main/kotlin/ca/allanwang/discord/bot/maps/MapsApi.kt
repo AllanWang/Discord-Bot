@@ -28,5 +28,4 @@ class MapsApiImpl @Inject constructor(
     override suspend fun getTimezone(latLng: LatLng): TimeZone? = withContext(Dispatchers.IO) {
         TimeZoneApi.getTimeZone(geoApiContext, latLng).awaitIgnoreError()
     }
-
 }

@@ -40,4 +40,7 @@ object Versions {
     // https://github.com/npryce/hamkrest/releases
     const val hamkrest = "1.8.0.1"
 
+    // https://github.com/diffplug/spotless/blob/master/plugin-gradle/CHANGES.md
+    const val spotless = "5.7.0"
+
 }

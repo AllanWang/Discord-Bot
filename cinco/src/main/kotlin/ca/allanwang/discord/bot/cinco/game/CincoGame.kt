@@ -3,8 +3,8 @@ package ca.allanwang.discord.bot.cinco.game
 import ca.allanwang.discord.bot.cinco.CincoScope
 import ca.allanwang.discord.bot.cinco.game.core.CincoMessageBehavior
 import ca.allanwang.discord.bot.cinco.game.features.CincoGameFeature
-import dev.kord.core.Kord
 import com.google.common.flogger.FluentLogger
+import dev.kord.core.Kord
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
@@ -74,6 +74,4 @@ class CincoGame @Inject constructor(
                 }
             }.first()
     }
-
 }
-

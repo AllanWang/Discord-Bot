@@ -73,13 +73,15 @@ class CincoBot @Inject constructor(
     private suspend fun CommandHandlerEvent.checkWord() {
         val word = message.trim()
         val isWord = wordBank.isWord(word)
-        channel.createMessage(buildString {
-            appendCodeBlock {
-                append(word)
+        channel.createMessage(
+            buildString {
+                appendCodeBlock {
+                    append(word)
+                }
+                if (isWord) append(" is a registered word")
+                else append(" is not a registered word")
             }
-            if (isWord) append(" is a registered word")
-            else append(" is not a registered word")
-        })
+        )
     }
 
     private val games: MutableMap<Snowflake, Long> = ConcurrentHashMap()
@@ -154,10 +156,12 @@ class CincoBot @Inject constructor(
         games[event.message.channelId] = System.currentTimeMillis()
 
         coroutineScope {
-            launch(CoroutineExceptionHandler { _, throwable ->
-                logger.atWarning().withCause(throwable).log("Cinco error")
-                games.remove(event.message.channelId)
-            }) {
+            launch(
+                CoroutineExceptionHandler { _, throwable ->
+                    logger.atWarning().withCause(throwable).log("Cinco error")
+                    games.remove(event.message.channelId)
+                }
+            ) {
                 val participants = getParticipants(variant)
 
                 logger.atInfo().log("Participants cinco %s: %s", variant, participants)

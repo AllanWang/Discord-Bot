@@ -65,10 +65,8 @@ class OustTurn(
     suspend fun act(response: OustTurnResponse) {
         when (response) {
             is OustTurnResponse.SelectCardsShuffle -> {
-
             }
             is OustTurnResponse.Steal -> {
-
             }
             is OustTurnResponse.BigPayDay -> {
                 currentPlayer.coins += 2
@@ -79,7 +77,6 @@ class OustTurn(
                 entry.finalMessage("Increase coin by 1")
             }
             is OustTurnResponse.KillPlayer -> {
-
             }
         }
     }
@@ -129,5 +126,4 @@ class OustTurn(
             )
         }
     }
-
 }

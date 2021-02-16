@@ -53,14 +53,14 @@ suspend fun main(args: Array<String>) {
 
     logger.atInfo().log(
         """
-        
-        
+
+
         ----------------------------------------
                       Ready
         ----------------------------------------
-        
-        
-    """.trimIndent()
+
+
+        """.trimIndent()
     )
 
     kord.login { playing("beep boop") }

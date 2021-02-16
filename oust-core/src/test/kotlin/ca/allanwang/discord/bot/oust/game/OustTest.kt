@@ -16,5 +16,4 @@ class OustTest {
 
         assertThat("Id set match", players.map { it.id }.toSet(), equalTo(game.players.map { it.info.id }.toSet()))
     }
-
 }

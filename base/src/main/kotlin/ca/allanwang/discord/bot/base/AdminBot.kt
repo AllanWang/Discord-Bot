@@ -2,12 +2,12 @@ package ca.allanwang.discord.bot.base
 
 import ca.allanwang.discord.bot.core.Build
 import ca.allanwang.discord.bot.core.CoreModule
-import dev.kord.core.behavior.channel.createEmbed
 import com.google.common.flogger.FluentLogger
 import dagger.Module
 import dagger.Provides
 import dagger.multibindings.IntoSet
 import dev.kord.common.Color
+import dev.kord.core.behavior.channel.createEmbed
 import javax.inject.Inject
 import javax.inject.Singleton
 

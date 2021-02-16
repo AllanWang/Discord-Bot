@@ -1,8 +1,20 @@
+import com.diffplug.gradle.spotless.SpotlessExtension
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version bot.Versions.kotlin
     kotlin("kapt") version bot.Versions.kotlin
+    id("com.diffplug.spotless") version bot.Versions.spotless
+}
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+
+    dependencies {
+        classpath(bot.Plugins.spotless)
+    }
 }
 
 repositories {
@@ -19,6 +31,7 @@ subprojects {
 
     apply(plugin = "org.jetbrains.kotlin.jvm")
     apply(plugin = "org.jetbrains.kotlin.kapt")
+    apply(plugin = "com.diffplug.spotless")
 
     repositories {
         jcenter()
@@ -48,6 +61,15 @@ subprojects {
         kotlinOptions {
             jvmTarget = bot.Gradle.jvmTarget
             freeCompilerArgs = bot.Gradle.compilerArgs
+        }
+    }
+
+    configure<SpotlessExtension> {
+        kotlin {
+            target("**/*.kt")
+            ktlint("0.40.0").userData(mapOf("disabled_rules" to "no-wildcard-imports"))
+            trimTrailingWhitespace()
+            endWithNewline()
         }
     }
 

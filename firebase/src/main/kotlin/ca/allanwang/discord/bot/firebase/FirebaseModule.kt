@@ -1,7 +1,6 @@
 package ca.allanwang.discord.bot.firebase
 
 import ca.allanwang.discord.bot.core.PrivProperties
-import dev.kord.core.Kord
 import com.google.auth.oauth2.GoogleCredentials
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
@@ -9,6 +8,7 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import dagger.Module
 import dagger.Provides
+import dev.kord.core.Kord
 import java.io.FileInputStream
 import java.util.*
 import javax.inject.Named
