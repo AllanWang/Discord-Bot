@@ -12,13 +12,16 @@ import dev.kord.rest.builder.message.EmbedBuilder
 import kotlinx.coroutines.flow.*
 import java.util.concurrent.TimeUnit
 
+suspend fun Message.reactionAddEvents() = kord.events.filterIsInstance<ReactionAddEvent>()
+    .filter { it.userId != kord.selfId }
+    .filter { it.messageId == id }
+
 suspend fun Message.confirmationReaction(user: Snowflake? = null): Boolean {
     val positive = Emojis.whiteCheckMark.toReaction()
     val negative = Emojis.negativeSquaredCrossMark.toReaction()
     addReaction(positive)
     addReaction(negative)
-    return kord.events.filterIsInstance<ReactionAddEvent>()
-        .filter { it.userId != kord.selfId }
+    return reactionAddEvents()
         .run { if (user == null) this else filter { it.userId == user } }
         .mapNotNull {
             when (it.emoji) {
@@ -60,8 +63,7 @@ suspend fun MessageChannelBehavior.paginatedMessage(
     message.addReaction(left)
     message.addReaction(right)
 
-    kord.events.filterIsInstance<ReactionAddEvent>()
-        .filter { it.userId != kord.selfId }
+    message.reactionAddEvents()
         .filter { it.emoji == left || it.emoji == right }
         .withTimeout(TimeUnit.MINUTES.toMillis(1))
         .collect {

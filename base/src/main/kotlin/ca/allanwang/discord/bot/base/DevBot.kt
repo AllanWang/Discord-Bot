@@ -7,10 +7,7 @@ import dagger.Provides
 import dagger.multibindings.IntoSet
 import dev.kord.core.Kord
 import dev.kord.core.behavior.edit
-import dev.kord.core.event.message.ReactionAddEvent
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.filterIsInstance
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -52,8 +49,7 @@ class DevBot @Inject constructor(
 
     private suspend fun CommandHandlerEvent.emojiInfo() {
         var message = channel.createMessage("React to emoji to get id")
-        kord.events.filterIsInstance<ReactionAddEvent>()
-            .filter { it.userId != kord.selfId }
+        message.reactionAddEvents()
             .withTimeout(TimeUnit.MINUTES.toMillis(1))
             .collect {
                 message = message.edit {

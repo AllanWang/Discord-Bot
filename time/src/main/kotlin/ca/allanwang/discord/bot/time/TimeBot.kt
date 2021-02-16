@@ -11,8 +11,6 @@ import dev.kord.core.event.message.MessageCreateEvent
 import dev.kord.core.event.message.ReactionAddEvent
 import com.google.common.flogger.FluentLogger
 import dev.kord.common.entity.MessageType
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -128,8 +126,7 @@ class TimeBot @Inject constructor(
         message.addReaction(timeApi.reactionEmoji)
         launch {
             withTimeoutOrNull(timeApi.reactionThresholdTime) {
-                kord.events.filterIsInstance<ReactionAddEvent>()
-                    .filter { it.messageId == message.id }
+                message.reactionAddEvents()
                     .first { it.handleEvent() }
             }
             message.deleteOwnReaction(timeApi.reactionEmoji)
@@ -138,7 +135,6 @@ class TimeBot @Inject constructor(
     }
 
     private suspend fun ReactionAddEvent.handleEvent(): Boolean {
-        if (userId == kord.selfId) return false
         logger.atFine().log("Receive pending event with emoji %s", emoji.name)
         if (emoji != timeApi.reactionEmoji) return false
         val user = getUserOrNull()
