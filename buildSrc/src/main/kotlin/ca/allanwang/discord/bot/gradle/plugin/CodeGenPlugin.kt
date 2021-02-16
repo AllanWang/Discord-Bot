@@ -16,17 +16,6 @@ import kotlin.reflect.typeOf
 @ExperimentalStdlibApi
 class CodeGenPlugin : Plugin<Project> {
 
-    private fun FunSpec.Builder.stringParam(name: String, value: String?) = param(name, "%S", value)
-
-    private fun FunSpec.Builder.boolParam(name: String, value: Boolean) = param(name, "%L", value)
-
-    private inline fun <reified T> FunSpec.Builder.param(name: String, format: String, value: T) = addParameter(
-        ParameterSpec.builder(name, T::class, KModifier.OVERRIDE, KModifier.PUBLIC).defaultValue(format, value).build()
-    )
-
-    private inline fun <reified T> TypeSpec.Builder.override(name: String) =
-        addProperty(PropertySpec.builder(name, T::class, KModifier.OVERRIDE).initializer(name).build())
-
     override fun apply(target: Project) {
         val file = buildFile(target)
         val dir = File(target.buildDir, "plugingen")
