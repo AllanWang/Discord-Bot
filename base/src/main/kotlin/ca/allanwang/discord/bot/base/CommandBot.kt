@@ -28,7 +28,7 @@ abstract class CommandBot(
     abstract suspend fun MessageCreateEvent.prefixedMessage(): PrefixedMessage?
 
     final override suspend fun Kord.attach() {
-        logger.atInfo().log("Loaded $type handlers %s", handlers.map { it::class.simpleName })
+        logger.atInfo().log("Loaded $type handlers %s", handlers.mapNotNull { it::class.simpleName }.sorted())
         val candidates = handlers.onEach { with(it) { attach() } }.candidates()
         val duplicateKeys = handlers.duplicateKeys()
         if (duplicateKeys.isNotEmpty()) {
