@@ -51,7 +51,7 @@ class CodeGenPlugin : Plugin<Project> {
             valid = true,
             version = hash,
             buildTime = now,
-            commitUrl = "$originUrl/commit/${headRef.objectId.name()}"
+            commitUrl = "$originUrl/tree/${headRef.objectId.name()}"
         )
     }
 
