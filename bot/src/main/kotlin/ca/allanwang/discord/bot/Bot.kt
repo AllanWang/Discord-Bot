@@ -2,20 +2,17 @@
 
 package ca.allanwang.discord.bot
 
-import ca.allanwang.discord.bot.base.AdminBotModule
-import ca.allanwang.discord.bot.base.CommandBotModule
-import ca.allanwang.discord.bot.base.PrefixBotModule
-import ca.allanwang.discord.bot.base.StartBotModule
+import ca.allanwang.discord.bot.base.*
 import ca.allanwang.discord.bot.cinco.CincoBotModule
 import ca.allanwang.discord.bot.core.BotFeature
 import ca.allanwang.discord.bot.oust.OustBotModule
 import ca.allanwang.discord.bot.qotd.QotdBotModule
 import ca.allanwang.discord.bot.random.RandomBotModule
 import ca.allanwang.discord.bot.time.TimeBotModule
-import dev.kord.core.Kord
 import com.google.common.flogger.FluentLogger
 import dagger.BindsInstance
 import dagger.Component
+import dev.kord.core.Kord
 import javax.inject.Singleton
 
 suspend fun main(args: Array<String>) {
@@ -75,6 +72,7 @@ suspend fun main(args: Array<String>) {
         StartBotModule::class,
         CommandBotModule::class,
         AdminBotModule::class,
+        DevBotModule::class,
         PrefixBotModule::class,
         RandomBotModule::class,
         TimeBotModule::class,
