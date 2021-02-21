@@ -3,6 +3,7 @@ package ca.allanwang.discord.bot.qotd
 import ca.allanwang.discord.bot.base.*
 import ca.allanwang.discord.bot.firebase.FirebaseCache
 import ca.allanwang.discord.bot.time.TimeApi
+import ca.allanwang.discord.bot.time.TimeConfigBot
 import com.google.common.flogger.FluentLogger
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.Kord
@@ -19,7 +20,8 @@ class QotdBot @Inject constructor(
     private val mentions: Mentions,
     private val qotd: Qotd,
     private val api: QotdApi,
-    private val timeApi: TimeApi
+    private val timeApi: TimeApi,
+    private val timeConfigBot: TimeConfigBot,
 ) : CommandHandlerBot {
 
     companion object {
@@ -361,15 +363,7 @@ class QotdBot @Inject constructor(
         }
         val origTimezone = timeApi.getTime(guildId, authorId)
         if (origTimezone == null) {
-            channel.createMessage(
-                buildString {
-                    append("Timezone not specified, please use ")
-                    appendCodeBlock {
-                        append(prefix)
-                        append("timezone")
-                    }
-                }
-            )
+            timeConfigBot.timezoneSignup(this)
             return
         }
         val time = timeEntry.toZonedDateTime(origTimezone.toZoneId())
