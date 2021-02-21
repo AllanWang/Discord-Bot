@@ -118,6 +118,13 @@ class TimeConfigBot @Inject constructor(
         }
     }
 
+    fun timezoneCommand(prefix: String): String = buildString {
+        appendCodeBlock {
+            append(prefix)
+            append("timezone [city]")
+        }
+    }
+
     /**
      * Add timezone sign up message. User defaults to null as CommandHandlers are generally a result of an immediate command call.
      * Mentions are generally for reaction events.
@@ -140,10 +147,7 @@ class TimeConfigBot @Inject constructor(
                     append("No timezone set.")
                 }
                 append(" Please use ")
-                appendCodeBlock {
-                    append(prefix)
-                    append("timezone [city]")
-                }
+                append(timezoneCommand(prefix))
             }
         }
     }

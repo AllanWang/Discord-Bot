@@ -2,8 +2,12 @@ package ca.allanwang.discord.bot.time
 
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.fail
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class TimeApiTest {
 
@@ -65,5 +69,34 @@ class TimeApiTest {
         assertEquals(0, TimeApi.TimeEntry(hour = 12, minute = 59, pm = false).hour24, "12:59pm = 0:59")
         assertEquals(12, TimeApi.TimeEntry(hour = 12, minute = 59, pm = null).hour24, "12:59 = 12:59 (pm)")
         assertEquals(12, TimeApi.TimeEntry(hour = 12, minute = 59, pm = true).hour24, "12:59pm = 12:59")
+    }
+
+    /**
+     * It would probably be better to use clock calls and inject a static one for testing.
+     * For the current test, we only try to verify that the time is within 24 hours of the future when no date is provided.
+     */
+    private fun assertTimeEntryZonedDateTimeWithin24HoursFromNow(timeEntry: TimeApi.TimeEntry) {
+        val zoneId = ZoneId.systemDefault()
+        val zonedDateTime = timeEntry.toZonedDateTime(zoneId)
+        val zonedDateTimeNow = ZonedDateTime.now(zoneId)
+        val delta = zonedDateTime.toEpochSecond() - zonedDateTimeNow.toEpochSecond()
+        val maxDelta = TimeUnit.DAYS.toSeconds(1)
+
+        assertTrue(delta in (0..maxDelta))
+    }
+
+    @Test
+    fun timeEntryDateWithin24HoursEarly() {
+        assertTimeEntryZonedDateTimeWithin24HoursFromNow(TimeApi.TimeEntry(hour = 12, minute = 0, pm = false))
+    }
+
+    @Test
+    fun timeEntryDateWithin24HoursMid() {
+        assertTimeEntryZonedDateTimeWithin24HoursFromNow(TimeApi.TimeEntry(hour = 1, minute = 30, pm = true))
+    }
+
+    @Test
+    fun timeEntryDateWithin24HoursLate() {
+        assertTimeEntryZonedDateTimeWithin24HoursFromNow(TimeApi.TimeEntry(hour = 11, minute = 59, pm = true))
     }
 }
