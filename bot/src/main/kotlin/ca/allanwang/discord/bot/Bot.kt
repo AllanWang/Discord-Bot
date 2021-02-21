@@ -5,6 +5,7 @@ package ca.allanwang.discord.bot
 import ca.allanwang.discord.bot.base.*
 import ca.allanwang.discord.bot.cinco.CincoBotModule
 import ca.allanwang.discord.bot.core.BotFeature
+import ca.allanwang.discord.bot.gameevent.GameEventBotModule
 import ca.allanwang.discord.bot.oust.OustBotModule
 import ca.allanwang.discord.bot.qotd.QotdBotModule
 import ca.allanwang.discord.bot.random.RandomBotModule
@@ -79,6 +80,7 @@ suspend fun main(args: Array<String>) {
         OustBotModule::class,
         CincoBotModule::class,
         QotdBotModule::class,
+        GameEventBotModule::class,
 
         // ca.allanwang.discord.bot.base.LogBotModule::class,
         // ca.allanwang.discord.bot.echo.EchoBotModule::class,

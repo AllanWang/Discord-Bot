@@ -1,5 +1,7 @@
 package ca.allanwang.discord.bot.base
 
+import dev.kord.core.entity.ReactionEmoji
+
 inline fun StringBuilder.appendOptional(
     enable: Boolean,
     style: (() -> Unit) -> Unit,
@@ -58,4 +60,8 @@ inline fun StringBuilder.appendQuote(block: () -> Unit) {
  */
 inline fun StringBuilder.appendPlural(count: Int, single: String, plural: String = "${single}s") {
     append(if (count == 1) "1 $single" else "$count $plural")
+}
+
+inline fun StringBuilder.appendReaction(emoji: ReactionEmoji) {
+    append(emoji.mention)
 }

@@ -9,6 +9,7 @@ import dev.kord.core.Kord
 import dev.kord.core.event.message.MessageCreateEvent
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.launch
+import java.util.*
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -42,7 +43,7 @@ abstract class CommandBot(
     private suspend fun MessageCreateEvent.handleCommands(candidates: Map<String, CommandHandler>) {
         val prefixedMessage = prefixedMessage() ?: return
         val key = prefixedMessage.message.substringBefore(' ')
-        val handler = candidates[key] ?: return
+        val handler = candidates[key.toLowerCase(Locale.US)] ?: return
         kord.launch(
             CoroutineExceptionHandler { _, throwable ->
                 logger.atWarning().withCause(throwable).log("Failure for %s", handler::class.simpleName)
