@@ -51,6 +51,11 @@ class GameEventBot @Inject internal constructor(
                     createEvent()
                 }
             }
+            arg("help") {
+                action(withMessage = false) {
+                    help()
+                }
+            }
         }
     }
 
@@ -202,5 +207,42 @@ class GameEventBot @Inject internal constructor(
             return null
         }
         return timeEntry.toZonedDateTime(timeZone.toZoneId()).toEpochSecond() * 1000
+    }
+
+    private suspend fun CommandHandlerEvent.help() {
+        channel.createEmbed {
+            title = "GameEvent Help"
+            color = embedColor
+            commandFields(prefix)
+        }
+    }
+
+    private fun EmbedBuilder.commandFields(prefix: String) {
+        fun StringBuilder.appendCommand(command: String, description: String) {
+            appendCodeBlock {
+                append(prefix)
+                append("gameEvent ")
+                append(command)
+            }
+            append(": ")
+            append(description)
+            appendLine()
+        }
+
+        field {
+            name = "Commands"
+            value = buildString {
+                appendCommand("help", "see this message again.")
+                appendCommand(
+                    "create",
+                    buildString {
+                        append("Create a new event. ")
+                        append("If your timezone is set (${timeConfigBot.timezoneCommand(prefix)}), ")
+                        append("the bot can parse and add it to the bottom right, where it shows with the proper timezone for everyone. ")
+                        append("Events can only be set a day in advance, as dates cannot be parsed. ")
+                    }
+                )
+            }.trim()
+        }
     }
 }

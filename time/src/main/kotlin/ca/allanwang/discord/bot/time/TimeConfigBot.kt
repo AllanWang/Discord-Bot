@@ -118,7 +118,7 @@ class TimeConfigBot @Inject constructor(
         }
     }
 
-    suspend fun timezoneCommand(prefix: String): String = buildString {
+    fun timezoneCommand(prefix: String): String = buildString {
         appendCodeBlock {
             append(prefix)
             append("timezone [city]")
