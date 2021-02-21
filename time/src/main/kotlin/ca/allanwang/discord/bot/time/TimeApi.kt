@@ -83,8 +83,18 @@ class TimeApi @Inject constructor(
                 else -> hour
             }
 
-        fun toZonedDateTime(zoneId: ZoneId): ZonedDateTime =
-            ZonedDateTime.of(LocalDate.now(zoneId), LocalTime.of(hour24, minute), zoneId)
+        /**
+         * Convert to zoned date time. If date is not set, it will be the closest zoned date time in the future.
+         */
+        fun toZonedDateTime(zoneId: ZoneId, localDate: LocalDate? = null): ZonedDateTime {
+            val localTime = LocalTime.of(hour24, minute)
+            val _localDate: LocalDate = when {
+                localDate != null -> localDate
+                LocalTime.now(zoneId) > localTime -> LocalDate.now(zoneId).plusDays(1)
+                else -> LocalDate.now(zoneId)
+            }
+            return ZonedDateTime.of(_localDate, localTime, zoneId)
+        }
     }
 
     private fun MatchResult.toTimeEntry(): TimeEntry? {
