@@ -132,7 +132,7 @@ class TimeBot @Inject constructor(
     private suspend fun Message.createSignupMessage(groupSnowflake: Snowflake) {
         val authorId = author?.id ?: return
         val prefix = prefixSupplier.prefix(groupSnowflake)
-        timeConfigBot.timezoneSignup(authorId, prefix, channel)
+        timeConfigBot.timezoneSignup(channel, prefix, authorId)
     }
 
     private suspend fun MessageCreateEvent.createTimezoneReaction() {

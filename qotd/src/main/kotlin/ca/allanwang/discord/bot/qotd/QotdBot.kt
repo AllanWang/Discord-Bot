@@ -363,7 +363,7 @@ class QotdBot @Inject constructor(
         }
         val origTimezone = timeApi.getTime(guildId, authorId)
         if (origTimezone == null) {
-            timeConfigBot.timezoneSignup(null, this)
+            timeConfigBot.timezoneSignup(this)
             return
         }
         val time = timeEntry.toZonedDateTime(origTimezone.toZoneId())

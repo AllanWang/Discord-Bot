@@ -39,7 +39,7 @@ class TimeConfigBot @Inject constructor(
         logger.atFine().log()
         val authorId = authorId ?: return
         val timezone = timeApi.getTime(event.groupSnowflake(), authorId)
-        if (timezone == null) timezoneSignup(null, this)
+        if (timezone == null) timezoneSignup(this)
         else channel.createEmbed {
             color = timeApi.embedColor
             title = "Saved timezone"
@@ -118,11 +118,15 @@ class TimeConfigBot @Inject constructor(
         }
     }
 
-    suspend fun timezoneSignup(userSnowflake: Snowflake?, commandHandlerEvent: CommandHandlerEvent) {
-        timezoneSignup(userSnowflake, commandHandlerEvent.prefix, commandHandlerEvent.channel)
+    /**
+     * Add timezone sign up message. User defaults to null as CommandHandlers are generally a result of an immediate command call.
+     * Mentions are generally for reaction events.
+     */
+    suspend fun timezoneSignup(commandHandlerEvent: CommandHandlerEvent, userSnowflake: Snowflake? = null) {
+        timezoneSignup(commandHandlerEvent.channel, commandHandlerEvent.prefix, userSnowflake)
     }
 
-    suspend fun timezoneSignup(userSnowflake: Snowflake?, prefix: String, channel: MessageChannelBehavior) {
+    suspend fun timezoneSignup(channel: MessageChannelBehavior, prefix: String, userSnowflake: Snowflake?) {
         channel.createEmbed {
             title = "Timezone Signup"
 
