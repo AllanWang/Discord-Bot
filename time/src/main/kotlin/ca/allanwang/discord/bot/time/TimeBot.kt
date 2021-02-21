@@ -20,7 +20,9 @@ import javax.inject.Singleton
 
 @Singleton
 class TimeBot @Inject constructor(
-    private val timeApi: TimeApi
+    private val timeApi: TimeApi,
+    private val prefixSupplier: BotPrefixSupplier,
+    private val timeConfigBot: TimeConfigBot,
 ) : BotFeature {
 
     companion object {
@@ -33,22 +35,26 @@ class TimeBot @Inject constructor(
         }
     }
 
-    private class TimeBotInfo(
-        val authorId: Snowflake,
-        val times: List<TimeApi.TimeEntry>,
-        val origTimezone: TimeZone,
-        val timezones: List<TimeZone>
-    )
+    sealed class TimeResult {
+        data class Info(
+            val authorId: Snowflake,
+            val times: List<TimeApi.TimeEntry>,
+            val origTimezone: TimeZone,
+            val timezones: List<TimeZone>
+        ) : TimeResult()
 
-    private suspend fun Message.timeBotInfo(groupSnowflake: Snowflake): TimeBotInfo? {
+        object MissingTimezone : TimeResult()
+    }
+
+    private suspend fun Message.timeBotInfo(groupSnowflake: Snowflake): TimeResult? {
         val authorId = author?.id ?: return null
         val times = timeApi.findTimes(content)
         if (times.isEmpty()) return null
         logger.atFine().log("Times matched %s - %d", times, id.value)
-        val origTimezone = timeApi.getTime(groupSnowflake, authorId) ?: return null
+        val origTimezone = timeApi.getTime(groupSnowflake, authorId) ?: return TimeResult.MissingTimezone
         val timezones = timeApi.groupTimes(groupSnowflake)
         if (timezones.size <= 1) return null
-        return TimeBotInfo(
+        return TimeResult.Info(
             authorId = authorId,
             times = times,
             origTimezone = origTimezone,
@@ -60,10 +66,11 @@ class TimeBot @Inject constructor(
         val info = message.timeBotInfo(groupSnowflake()) ?: return
 
         // To avoid spam, we limit auto messages to only occur during mentions
-        if (message.hasMention)
+        if (message.hasMention && info is TimeResult.Info) {
             message.createTimezoneMessage(info, user = message.author)
-        else
+        } else {
             createTimezoneReaction()
+        }
     }
 
     private val Message.hasMention: Boolean
@@ -73,7 +80,7 @@ class TimeBot @Inject constructor(
             return mentionedRoleIds.isNotEmpty() || mentionsEveryone
         }
 
-    private suspend fun Message.createTimezoneMessage(info: TimeBotInfo, user: User?) {
+    private suspend fun Message.createTimezoneMessage(info: TimeResult.Info, user: User?) {
         channel.createEmbed {
             title = "Timezones"
 
@@ -122,6 +129,12 @@ class TimeBot @Inject constructor(
         }
     }
 
+    private suspend fun Message.createSignupMessage(groupSnowflake: Snowflake) {
+        val authorId = author?.id ?: return
+        val prefix = prefixSupplier.prefix(groupSnowflake)
+        timeConfigBot.timezoneSignup(authorId, prefix, channel)
+    }
+
     private suspend fun MessageCreateEvent.createTimezoneReaction() {
         message.addReaction(timeApi.reactionEmoji)
         launch {
@@ -140,9 +153,13 @@ class TimeBot @Inject constructor(
         val user = getUserOrNull()
         if (user?.isBot == true) return false
         val message = getMessage()
-        val info = message.timeBotInfo(message.groupSnowflake(guildId)) ?: return true
+        val groupSnowflake = message.groupSnowflake(guildId)
+        val info = message.timeBotInfo(groupSnowflake) ?: return true
         logger.atFine().log("Sending reaction response message")
-        message.createTimezoneMessage(info, user = user)
+        when (info) {
+            is TimeResult.Info -> message.createTimezoneMessage(info, user = user)
+            is TimeResult.MissingTimezone -> message.createSignupMessage(groupSnowflake)
+        }
         return true
     }
 }

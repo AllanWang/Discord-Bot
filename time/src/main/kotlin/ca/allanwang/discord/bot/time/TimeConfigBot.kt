@@ -5,6 +5,8 @@ import ca.allanwang.discord.bot.maps.MapsApi
 import com.google.common.flogger.FluentLogger
 import com.google.maps.model.AddressType
 import com.google.maps.model.GeocodingResult
+import dev.kord.common.entity.Snowflake
+import dev.kord.core.behavior.channel.MessageChannelBehavior
 import dev.kord.core.behavior.channel.createEmbed
 import dev.kord.rest.builder.message.EmbedBuilder
 import java.time.LocalDateTime
@@ -15,7 +17,8 @@ import javax.inject.Singleton
 @Singleton
 class TimeConfigBot @Inject constructor(
     private val timeApi: TimeApi,
-    private val mapApi: MapsApi
+    private val mapApi: MapsApi,
+    private val mentions: Mentions,
 ) : CommandHandlerBot {
 
     companion object {
@@ -36,7 +39,7 @@ class TimeConfigBot @Inject constructor(
         logger.atFine().log()
         val authorId = authorId ?: return
         val timezone = timeApi.getTime(event.groupSnowflake(), authorId)
-        if (timezone == null) channel.createMessage("No timezone set; use `$command [city]`")
+        if (timezone == null) timezoneSignup(null, this)
         else channel.createEmbed {
             color = timeApi.embedColor
             title = "Saved timezone"
@@ -112,6 +115,32 @@ class TimeConfigBot @Inject constructor(
             color = timeApi.embedColor
             title = "Timezone Set"
             addTimezoneInfo(result)
+        }
+    }
+
+    suspend fun timezoneSignup(userSnowflake: Snowflake?, commandHandlerEvent: CommandHandlerEvent) {
+        timezoneSignup(userSnowflake, commandHandlerEvent.prefix, commandHandlerEvent.channel)
+    }
+
+    suspend fun timezoneSignup(userSnowflake: Snowflake?, prefix: String, channel: MessageChannelBehavior) {
+        channel.createEmbed {
+            title = "Timezone Signup"
+
+            color = timeApi.embedColor
+
+            description = buildString {
+                if (userSnowflake != null) {
+                    append(mentions.userMention(userSnowflake))
+                    append(" has not set their timezone.")
+                } else {
+                    append("No timezone set.")
+                }
+                append(" Please use ")
+                appendCodeBlock {
+                    append(prefix)
+                    append("timezone [city]")
+                }
+            }
         }
     }
 }

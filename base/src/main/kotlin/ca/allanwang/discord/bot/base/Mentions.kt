@@ -10,7 +10,7 @@ class Mentions @Inject constructor() {
     fun channelMention(snowflake: Snowflake) = "<#${snowflake.value}>"
 
     val userMentionRegex = Regex("<@!?([0-9]+)>")
-    fun userMentionRegex(snowflake: Snowflake) = "<@${snowflake.value}>"
+    fun userMention(snowflake: Snowflake) = "<@${snowflake.value}>"
 
     val roleMentionRegex = Regex("<@&([0-9]+)>")
     fun roleMention(snowflake: Snowflake) = "<@&${snowflake.value}>"
