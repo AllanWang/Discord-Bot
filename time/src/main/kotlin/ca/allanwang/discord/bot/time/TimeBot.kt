@@ -69,7 +69,7 @@ class TimeBot @Inject constructor(
     private val Message.hasMention: Boolean
         get() {
             // Do not accept user mentions if from replies
-            if (mentionedUserIds.isNotEmpty()) return type != MessageType.Reply
+            if (mentionedUserIds.size >= 2) return type != MessageType.Reply
             return mentionedRoleIds.isNotEmpty() || mentionsEveryone
         }
 
