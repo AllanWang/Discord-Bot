@@ -12,7 +12,7 @@ import dev.kord.core.behavior.channel.createEmbed
 import dev.kord.core.behavior.edit
 import dev.kord.core.entity.ReactionEmoji
 import dev.kord.rest.builder.message.EmbedBuilder
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.*
 import java.time.Instant
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -59,7 +59,7 @@ class GameEventBot @Inject internal constructor(
         }
     }
 
-    data class GameEvent(
+    internal data class GameEvent(
         val authorId: Snowflake,
         val authorTag: String?,
         val message: String,
@@ -68,6 +68,15 @@ class GameEventBot @Inject internal constructor(
         val maybe: List<Snowflake> = emptyList(),
         val no: List<Snowflake> = emptyList(),
     )
+
+    private sealed class GameDelta {
+
+        abstract val userId: Snowflake
+
+        data class Yes(override val userId: Snowflake) : GameDelta()
+        data class Maybe(override val userId: Snowflake) : GameDelta()
+        data class No(override val userId: Snowflake) : GameDelta()
+    }
 
     private fun GameEvent.filterUser(id: Snowflake): GameEvent =
         copy(yes = yes.filter { it != id }, maybe = maybe.filter { it != id }, no = no.filter { it != id })
@@ -130,45 +139,60 @@ class GameEventBot @Inject internal constructor(
 
     private suspend fun CommandHandlerEvent.createEvent() {
         logger.atInfo().log("Create Game Event Request")
-        var gameEvent = gameEvent() ?: return
-        val expiration = expiration(gameEvent.timeMs)
+        val baseGameEvent = gameEvent() ?: return
+        val expiration = expiration(baseGameEvent.timeMs)
         val message = channel.createEmbed {
-            addGameEvent(gameEvent)
+            addGameEvent(baseGameEvent)
         }
         message.addReaction(yesEmoji)
         message.addReaction(maybeEmoji)
         message.addReaction(noEmoji)
         message.reactionAddEvents()
             .withTimeout(expiration)
-            .collect {
-                // We do everything during collect as this involves mutation, and we want to make sure game event data
-                // is accessed only once the previous step completes.
-                val emoji = it.emoji
-                val userId = it.userId
-                val newGameEvent = when (emoji) {
-                    yesEmoji -> {
-                        message.deleteReaction(userId, maybeEmoji)
-                        message.deleteReaction(userId, noEmoji)
-                        gameEvent.filterUser(userId).copy(yes = gameEvent.yes + userId)
-                    }
-                    maybeEmoji -> {
-                        message.deleteReaction(userId, yesEmoji)
-                        message.deleteReaction(userId, noEmoji)
-                        gameEvent.filterUser(userId).copy(maybe = gameEvent.maybe + userId)
-                    }
-                    noEmoji -> {
-                        message.deleteReaction(userId, yesEmoji)
-                        message.deleteReaction(userId, maybeEmoji)
-                        gameEvent.filterUser(userId).copy(no = gameEvent.no + userId)
-                    }
-                    else -> return@collect
-                }
-                gameEvent = newGameEvent
-                logger.atInfo().log("New event $newGameEvent")
-                message.edit {
-                    embed { addGameEvent(newGameEvent) }
+            .mapNotNull {
+                when (it.emoji) {
+                    yesEmoji -> GameDelta.Yes(it.userId)
+                    maybeEmoji -> GameDelta.Maybe(it.userId)
+                    noEmoji -> GameDelta.No(it.userId)
+                    else -> null
                 }
             }
+            .scan(baseGameEvent) { gameEvent, delta ->
+                val userId = delta.userId
+                val newGameEvent = gameEvent.filterUser(userId)
+                when (delta) {
+                    is GameDelta.Yes -> {
+                        message.deleteReaction(userId, maybeEmoji)
+                        message.deleteReaction(userId, noEmoji)
+                        newGameEvent.copy(yes = newGameEvent.yes + userId)
+                    }
+                    is GameDelta.Maybe -> {
+                        message.deleteReaction(userId, yesEmoji)
+                        message.deleteReaction(userId, noEmoji)
+                        newGameEvent.copy(maybe = newGameEvent.maybe + userId)
+                    }
+                    is GameDelta.No -> {
+                        message.deleteReaction(userId, yesEmoji)
+                        message.deleteReaction(userId, maybeEmoji)
+                        newGameEvent.copy(no = newGameEvent.no + userId)
+                    }
+                }
+            }
+            // Scan will emit initial event
+            .drop(1)
+            .distinctUntilChanged()
+            // If multiple reactions happen before a message edit, we only care about the end state
+            .conflate()
+            .collect { gameEvent ->
+                logger.atFine().log("New event $gameEvent")
+                message.edit {
+                    embed { addGameEvent(gameEvent) }
+                }
+            }
+        // Show that event is no longer active
+        message.deleteReaction(yesEmoji)
+        message.deleteReaction(maybeEmoji)
+        message.deleteReaction(noEmoji)
     }
 
     /**
