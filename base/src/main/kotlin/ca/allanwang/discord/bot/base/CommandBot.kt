@@ -93,6 +93,7 @@ class BotPrefixGroupFeature @Inject constructor(
 @Singleton
 class BotMentionGroupFeature @Inject constructor(
     handlers: Set<@JvmSuppressWildcards CommandHandlerBot>,
+    private val mentions: Mentions,
     kord: Kord
 ) : CommandBot(handlers = handlers, type = CommandHandler.Type.Mention) {
 
@@ -100,17 +101,11 @@ class BotMentionGroupFeature @Inject constructor(
         private val logger = FluentLogger.forEnclosingClass()
     }
 
-    /**
-     * Discord ids are sent via text via `<@{id}>`.
-     * If there is a nickname, an additional `!` will follow `@`
-     */
-    private val mentionRegex = Regex("^(<@!?${kord.selfId.asString}>) (.*)$")
-
     override suspend fun MessageCreateEvent.prefixedMessage(): PrefixedMessage? {
-        val match = mentionRegex.find(message.content) ?: return null
+        val match = mentions.userMentionRegex.find(message.content) ?: return null
         logger.atInfo().log("Bot mention matched")
         val prefix = match.groupValues[1]
-        val message = match.groupValues[2].takeIf { it.isNotBlank() } ?: return null
+        val message = message.content.substringAfter(prefix).trimStart().takeIf { it.isNotBlank() } ?: return null
         return PrefixedMessage(prefix = prefix, message = message)
     }
 }
@@ -125,5 +120,15 @@ object CommandBotModule {
     @Provides
     @IntoSet
     @Singleton
+    fun prefixCommandBot(bot: BotPrefixGroupFeature): CommandBot = bot
+
+    @Provides
+    @IntoSet
+    @Singleton
     fun mentionBot(bot: BotMentionGroupFeature): BotFeature = bot
+
+    @Provides
+    @IntoSet
+    @Singleton
+    fun mentionCommandBot(bot: BotMentionGroupFeature): CommandBot = bot
 }

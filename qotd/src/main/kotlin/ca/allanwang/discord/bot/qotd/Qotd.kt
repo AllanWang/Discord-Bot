@@ -3,7 +3,6 @@ package ca.allanwang.discord.bot.qotd
 import ca.allanwang.discord.bot.base.ColorPalette
 import ca.allanwang.discord.bot.base.Mentions
 import com.google.common.flogger.FluentLogger
-import dev.kord.common.Color
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.Kord
 import dev.kord.core.behavior.channel.MessageChannelBehavior

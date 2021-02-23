@@ -19,6 +19,7 @@ class HelpBot @Inject constructor(
     private val prefixSupplier: BotPrefixSupplier,
     private val mentions: Mentions,
     handlers: Set<@JvmSuppressWildcards CommandHandlerBot>,
+    private val commandBots: Set<@JvmSuppressWildcards CommandBot>
 ) : BotFeature {
 
     companion object {
@@ -34,13 +35,16 @@ class HelpBot @Inject constructor(
     }.filterValues { it.isNotEmpty() }
 
     /**
-     * Manual implementation of command handlers to avoid cyclic dependencies.
+     * Reuse commandBots for prefix handling. Cannot use command handler bots due to cyclic dependencies.
      */
     override suspend fun Kord.attach() {
         onMessage {
             val prefix = prefixSupplier.prefix(groupSnowflake())
-            if (message.content.equals("${prefix}help", ignoreCase = true) ||
-                message.content.equals("${mentions.userMention(kord.selfId)} help", ignoreCase = true)
+            if (commandBots.any {
+                    with(it) {
+                        prefixedMessage()?.message?.equals("help", ignoreCase = true) == true
+                    }
+                }
             ) {
                 kord.launch {
                     help(prefix)
@@ -74,7 +78,7 @@ class HelpBot @Inject constructor(
     }
 }
 
-@Module(includes = [BotPrefixModule::class])
+@Module(includes = [CommandBotModule::class, BotPrefixModule::class])
 object HelpBotModule {
 
     @Provides

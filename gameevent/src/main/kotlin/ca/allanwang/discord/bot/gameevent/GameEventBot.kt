@@ -29,7 +29,6 @@ class GameEventBot @Inject internal constructor(
     companion object {
         private val logger = FluentLogger.forEnclosingClass()
 
-
         private val dayInMs = TimeUnit.DAYS.toMillis(1)
 
         private val yesEmoji: ReactionEmoji =
