@@ -25,14 +25,16 @@ class TimeConfigBot @Inject constructor(
         private val logger = FluentLogger.forEnclosingClass()
     }
 
-    override val handler = commandBuilder(CommandHandler.Type.Prefix, color = timeApi.embedColor) {
+    override val handler = commandBuilder(
+        "timezone",
+        timeApi.embedColor,
+        CommandHandler.Type.Prefix,
         description = "Show registered timezones for messages (12 hour format)"
-        arg("timezone") {
-            action(withMessage = true, helpArgs = "[city]", help = { "Set timezone to matching [city]" }) {
-                logger.atInfo().log("action")
-                if (message.isBlank()) getTimezone()
-                else setTimezone(message)
-            }
+    ) {
+        action(withMessage = true, helpArgs = "[city]", help = { "Set timezone to matching [city]" }) {
+            logger.atInfo().log("action")
+            if (message.isBlank()) getTimezone()
+            else setTimezone(message)
         }
     }
 

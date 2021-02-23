@@ -25,6 +25,8 @@ class PrefixApi @Inject constructor(
         private val logger = FluentLogger.forEnclosingClass()
     }
 
+    val defaultPrefix: String = "!"
+
     private val ref: DatabaseReference = rootRef.child(PREFIX)
 
     suspend fun setPrefix(group: Snowflake, prefix: String): Boolean = ref.child(group.asString).setValue(prefix)
@@ -53,13 +55,20 @@ class PrefixBot @Inject constructor(
         private val embedColor = Color(0xff306EA4.toInt())
     }
 
-    override val handler = commandBuilder(CommandHandler.Type.Prefix, CommandHandler.Type.Mention, color = embedColor) {
-        arg("prefix") {
-            action(withMessage = true) {
+    override val handler =
+        commandBuilder("prefix", embedColor, CommandHandler.Type.Prefix, CommandHandler.Type.Mention, description = "Bot prefix configuration") {
+            action(
+                withMessage = true, helpArgs = "[prefix]",
+                help = {
+                    buildString {
+                        append("Set new prefix. Default is ")
+                        appendCodeBlock { append(prefixApi.defaultPrefix) }
+                    }
+                }
+            ) {
                 prefix()
             }
         }
-    }
 
     private suspend fun CommandHandlerEvent.prefix() {
         if (message.isBlank()) {

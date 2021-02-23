@@ -30,11 +30,13 @@ class OustBot @Inject constructor(
         private val embedColor = Color(0xfff47720.toInt())
     }
 
-    override val handler = commandBuilder(CommandHandler.Type.Prefix, color = embedColor) {
-        arg("oust") {
-            action(withMessage = false) {
-                test()
-            }
+    override val handler = commandBuilder(
+        "oust", embedColor,
+        CommandHandler.Type.Prefix,
+    ) {
+        hiddenHelp = true
+        action(withMessage = false) {
+            test()
         }
     }
 

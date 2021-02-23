@@ -25,18 +25,16 @@ class DevBot @Inject constructor(
         private val embedColor = Color(0xff306EA4.toInt())
     }
 
-    override val handler = commandBuilder(CommandHandler.Type.Mention, color = embedColor) {
+    override val handler = commandBuilder("dev", embedColor, CommandHandler.Type.Mention,) {
         hiddenHelp = true
-        arg("dev") {
-            arg("channel") {
-                action(withMessage = false) {
-                    channelInfo()
-                }
+        arg("channel") {
+            action(withMessage = false) {
+                channelInfo()
             }
-            arg("emoji") {
-                action(withMessage = false) {
-                    emojiInfo()
-                }
+        }
+        arg("emoji") {
+            action(withMessage = false) {
+                emojiInfo()
             }
         }
     }

@@ -13,10 +13,32 @@ data class HelpContext(
     val type: CommandHandler.Type
 )
 
-private fun CommandHandlerEvent.helpContext() = HelpContext(prefix = prefix, type = type)
+internal fun HelpContext.commandEntry(command: String, args: String? = null, description: String?): String =
+    buildString {
+        if (type == CommandHandler.Type.Mention) {
+            append(prefix)
+            append(" ")
+        }
+        appendCodeBlock {
+            if (type == CommandHandler.Type.Prefix) {
+                append(prefix)
+            }
+            append(command)
+            if (args != null) {
+                append(" ")
+                append(args)
+            }
+        }
+        if (description != null) {
+            append(": ")
+            append(description)
+        }
+    }
+
+internal fun CommandHandlerEvent.helpContext() = HelpContext(prefix = prefix, type = type)
 
 @BotCommandDsl
-interface CommandBuilderBaseDsl : CommandHelp {
+interface CommandBuilderArgDsl : CommandHelp {
     /**
      * Disable auto generated help for current node and child nodes.
      */
@@ -26,23 +48,19 @@ interface CommandBuilderBaseDsl : CommandHelp {
      * Disable help generation when called from parent nodes.
      * Only show node if called from the same node.
      */
-    var hiddenHelp: Boolean
+    override var hiddenHelp: Boolean
 
     fun arg(arg: String, block: CommandBuilderArgDsl.() -> Unit)
+
+    fun action(withMessage: Boolean, helpArgs: String? = null, help: HelpSupplier? = null, action: CommandHandlerAction)
 }
 
 @BotCommandDsl
-interface CommandBuilderRootDsl : CommandBuilderBaseDsl {
+interface CommandBuilderRootDsl : CommandBuilderArgDsl {
 
     val color: Color
 
-    var description: String?
-}
-
-@BotCommandDsl
-interface CommandBuilderArgDsl : CommandBuilderBaseDsl {
-
-    fun action(withMessage: Boolean, helpArgs: String? = null, help: HelpSupplier? = null, action: CommandHandlerAction)
+    val description: String?
 }
 
 @BotCommandDsl
@@ -55,12 +73,22 @@ interface CommandBuilderActionDsl {
 typealias HelpSupplier = HelpContext.() -> String
 
 fun CommandHandlerBot.commandBuilder(
-    vararg types: CommandHandler.Type,
+    command: String,
     color: Color,
+    vararg types: CommandHandler.Type,
+    description: String? = null,
     block: CommandBuilderRootDsl.() -> Unit
-): CommandHandler = CommandBuilderRoot(types = types.toSet(), color = color).apply(block)
+): CommandHandler = CommandBuilderRoot(
+    types = types.toSet(),
+    color = color,
+    command = command,
+    description = description
+).apply {
+    block()
+    postCreate(this)
+}
 
-internal abstract class CommandBuilderBase : CommandBuilderBaseDsl {
+internal abstract class CommandBuilderBase : CommandBuilderArgDsl {
 
     companion object {
         private val logger = FluentLogger.forEnclosingClass()
@@ -79,13 +107,16 @@ internal abstract class CommandBuilderBase : CommandBuilderBaseDsl {
 
     protected val children: MutableMap<String, CommandBuilderArg> = mutableMapOf()
 
+    protected var action: CommandBuilderAction? = null
+
     val keys: Set<String> get() = children.keys
 
     suspend fun handle(event: CommandHandlerEvent) {
-        handleImpl(event)
+        if (handleArg(event)) return
+        handleAction(event)
     }
 
-    protected open suspend fun handleImpl(event: CommandHandlerEvent): Boolean {
+    private suspend fun handleArg(event: CommandHandlerEvent): Boolean {
         val key = event.message.substringBefore(' ')
         logger.atFine().log("Test key %s in %s", key, keys)
         val argHandler = children[key.toLowerCase(Locale.US)]
@@ -97,7 +128,55 @@ internal abstract class CommandBuilderBase : CommandBuilderBaseDsl {
         return false
     }
 
-    override suspend fun handleHelp(event: CommandHandlerEvent) {
+    private suspend fun handleAction(event: CommandHandlerEvent): Boolean {
+        val action = action ?: return false
+        val actionEvent = event.copy(command = command, commandHelp = this)
+        if (action.withMessage) action.action(actionEvent)
+        else if (event.message.isBlank()) action.action(actionEvent)
+        return true
+    }
+
+    final override fun action(
+        withMessage: Boolean,
+        helpArgs: String?,
+        help: HelpSupplier?,
+        action: CommandHandlerAction
+    ) {
+        val builder = CommandBuilderAction(command = command).apply {
+            this.withMessage = withMessage
+            this.helpArgs = helpArgs
+            this.helpSupplier = help
+            this.action = action
+        }
+        this.action = builder
+    }
+
+    internal fun postCreate(parent: CommandBuilderArgDsl) {
+        if (!parent.autoGenHelp) {
+            autoGenHelp = false
+        }
+        if (autoGenHelp && !keys.contains("help")) {
+            arg("help") {
+                autoGenHelp = false
+                action(withMessage = false) {
+                    this@CommandBuilderBase.handleHelp(this)
+                }
+            }
+        }
+    }
+
+    final override fun help(context: HelpContext): List<String> {
+        if (!autoGenHelp) return emptyList()
+        val actionHelp = action?.help(context)
+        val childHelp = childHelp(context)
+
+        return mutableListOf<String>().apply {
+            if (actionHelp != null) add(actionHelp)
+            addAll(childHelp)
+        }
+    }
+
+    final override suspend fun handleHelp(event: CommandHandlerEvent) {
         if (!autoGenHelp) return
         val context = event.helpContext()
 
@@ -117,7 +196,7 @@ internal abstract class CommandBuilderBase : CommandBuilderBaseDsl {
         }
     }
 
-    override fun arg(arg: String, block: CommandBuilderArgDsl.() -> Unit) {
+    final override fun arg(arg: String, block: CommandBuilderArgDsl.() -> Unit) {
         val builder = CommandBuilderArg(root = root, prevCommand = command, arg = arg).apply {
             block()
             postCreate(this@CommandBuilderBase)
@@ -125,29 +204,30 @@ internal abstract class CommandBuilderBase : CommandBuilderBaseDsl {
         children[builder.arg.toLowerCase(Locale.US)] = builder
     }
 
-    protected fun childHelp(context: HelpContext): List<String> {
-        return children.filter { it.key != "help" && !it.value.hiddenHelp }.values.flatMap { it.help(context) }
+    private fun childHelp(context: HelpContext): List<String> {
+        return children.filter { it.key != "help" && !it.value.hiddenHelp }
+            .values.flatMap { it.help(context) }
     }
 }
 
-internal class CommandBuilderRoot(override val types: Set<CommandHandler.Type>, override val color: Color) :
-    CommandBuilderBase(),
+internal class CommandBuilderRoot(
+    override val types: Set<CommandHandler.Type>,
+    override val color: Color,
+    override val command: String,
+    override val description: String?,
+) : CommandBuilderBase(),
     CommandBuilderRootDsl,
     CommandHandler {
 
     override val root: CommandBuilderRootDsl = this
 
-    override var description: String? = null
-
-    override val command: String = ""
-
-    override fun help(context: HelpContext): List<String> {
-        if (!autoGenHelp) return emptyList()
-        return childHelp(context)
+    override fun topLevelHelp(context: HelpContext): String? {
+        if (hiddenHelp) return null
+        return context.commandEntry(command = command, description = description)
     }
 }
 
-internal class CommandBuilderArg(
+internal open class CommandBuilderArg(
     override val root: CommandBuilderRootDsl,
     val prevCommand: String,
     val arg: String
@@ -157,58 +237,7 @@ internal class CommandBuilderArg(
         private val logger = FluentLogger.forEnclosingClass()
     }
 
-    private var action: CommandBuilderAction? = null
-
     override val command: String = if (prevCommand.isBlank()) arg else "$prevCommand $arg"
-
-    override suspend fun handleImpl(event: CommandHandlerEvent): Boolean {
-        if (super.handleImpl(event)) return true
-        if (handleAction(event)) return true
-        return false
-    }
-
-    private suspend fun handleAction(event: CommandHandlerEvent): Boolean {
-        val action = action ?: return false
-        val actionEvent = event.copy(command = command, commandHelp = this)
-        if (action.withMessage) action.action(actionEvent)
-        else if (event.message.isBlank()) action.action(actionEvent)
-        return true
-    }
-
-    override fun action(withMessage: Boolean, helpArgs: String?, help: HelpSupplier?, action: CommandHandlerAction) {
-        val builder = CommandBuilderAction(command = command).apply {
-            this.withMessage = withMessage
-            this.helpArgs = helpArgs
-            this.helpSupplier = help
-            this.action = action
-        }
-        this.action = builder
-    }
-
-    internal fun postCreate(parent: CommandBuilderBaseDsl) {
-        if (!parent.autoGenHelp) {
-            autoGenHelp = false
-        }
-        if (autoGenHelp && !keys.contains("help")) {
-            arg("help") {
-                autoGenHelp = false
-                action(withMessage = false) {
-                    this@CommandBuilderArg.handleHelp(this)
-                }
-            }
-        }
-    }
-
-    override fun help(context: HelpContext): List<String> {
-        if (!autoGenHelp) return emptyList()
-        val actionHelp = action?.help(context)
-        val childHelp = childHelp(context)
-
-        return mutableListOf<String>().apply {
-            if (actionHelp != null) add(actionHelp)
-            addAll(childHelp)
-        }
-    }
 }
 
 internal class CommandBuilderAction(val command: String) : CommandBuilderActionDsl {
@@ -229,24 +258,11 @@ internal class CommandBuilderAction(val command: String) : CommandBuilderActionD
 
     override var action: CommandHandlerAction = HANDLER_NOOP
 
-    fun help(helpContext: HelpContext): String = buildString {
-        if (helpContext.type == CommandHandler.Type.Mention) {
-            append(helpContext.prefix)
-            append(" ")
-        }
-        appendCodeBlock {
-            if (helpContext.type == CommandHandler.Type.Prefix) {
-                append(helpContext.prefix)
-            }
-            append(command)
-            helpArgs?.let { args ->
-                append(" ")
-                append(args)
-            }
-        }
-        helpSupplier?.invoke(helpContext)?.let { description ->
-            append(": ")
-            append(description)
-        }
+    fun help(helpContext: HelpContext): String {
+        return helpContext.commandEntry(
+            command = command,
+            args = helpArgs,
+            description = helpSupplier?.invoke(helpContext)
+        )
     }
 }

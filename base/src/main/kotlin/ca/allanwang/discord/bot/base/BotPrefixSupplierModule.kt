@@ -22,7 +22,6 @@ class BotPrefixSupplierImpl @Inject constructor(
 ) : BotPrefixSupplier {
 
     companion object {
-        private const val DEFAULT_PREFIX = "!"
         private val logger = FluentLogger.forEnclosingClass()
     }
 
@@ -38,7 +37,7 @@ class BotPrefixSupplierImpl @Inject constructor(
         }
     }
 
-    override suspend fun prefix(group: Snowflake): String = atomicPrefix.get()[group] ?: DEFAULT_PREFIX
+    override suspend fun prefix(group: Snowflake): String = atomicPrefix.get()[group] ?: prefixApi.defaultPrefix
 }
 
 @Module(includes = [FirebaseModule::class])

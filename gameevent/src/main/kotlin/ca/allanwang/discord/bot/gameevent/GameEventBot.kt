@@ -44,23 +44,25 @@ class GameEventBot @Inject internal constructor(
         logger.atInfo().log("Game event attached")
     }
 
-    override val handler = commandBuilder(CommandHandler.Type.Prefix, color = embedColor) {
+    override val handler = commandBuilder(
+        "gameEvent",
+        embedColor,
+        CommandHandler.Type.Prefix,
         description = "Schedule events with attendance and queues"
-        arg("gameEvent") {
-            arg("create") {
-                action(
-                    withMessage = true, helpArgs = "[message]",
-                    help = {
-                        buildString {
-                            append("Create a new event. ")
-                            append("If your timezone is set (${timeConfigBot.timezoneCommand(prefix)}), ")
-                            append("the bot can parse and add it to the bottom right, where it shows with the proper timezone for everyone. ")
-                            append("Events can only be set a day in advance, as dates cannot be parsed. ")
-                        }
+    ) {
+        arg("create") {
+            action(
+                withMessage = true, helpArgs = "[message]",
+                help = {
+                    buildString {
+                        append("Create a new event. ")
+                        append("If your timezone is set (${timeConfigBot.timezoneCommand(prefix)}), ")
+                        append("the bot can parse and add it to the bottom right, where it shows with the proper timezone for everyone. ")
+                        append("Events can only be set a day in advance, as dates cannot be parsed. ")
                     }
-                ) {
-                    createEvent()
                 }
+            ) {
+                createEvent()
             }
         }
     }

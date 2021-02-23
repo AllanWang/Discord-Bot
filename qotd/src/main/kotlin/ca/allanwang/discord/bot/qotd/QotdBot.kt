@@ -39,11 +39,8 @@ class QotdBot @Inject constructor(
         qotd.initLoops()
     }
 
-    override val handler = commandBuilder(CommandHandler.Type.Prefix, color = qotd.embedColor) {
-
-        description = "Question/Quote of the Day"
-
-        arg("qotd") {
+    override val handler =
+        commandBuilder("qotd", qotd.embedColor, CommandHandler.Type.Prefix, description = "Question/Quote of the Day") {
             arg("init") {
                 action(
                     withMessage = false,
@@ -107,9 +104,8 @@ class QotdBot @Inject constructor(
             }
             configCommands()
         }
-    }
 
-    private fun CommandBuilderBaseDsl.configCommands() {
+    private fun CommandBuilderArgDsl.configCommands() {
 
         fun CommandBuilderArgDsl.removableAction(
             helpArgs: String? = null,

@@ -34,9 +34,8 @@ class RandomBot @Inject constructor() : CommandHandlerBot {
         }
     }
 
-    override val handler = commandBuilder(CommandHandler.Type.Prefix, color = embedColor) {
-        description = "RNG provider"
-        arg("flip") {
+    override val handler =
+        commandBuilder("flip", embedColor, CommandHandler.Type.Prefix, description = "RNG provider") {
             action(
                 withMessage = true,
                 help = {
@@ -64,36 +63,36 @@ class RandomBot @Inject constructor() : CommandHandlerBot {
                     else -> flipCoin(null)
                 }
             }
-        }
-        arg("roll") {
-            action(
-                withMessage = true,
-                help = {
-                    buildString {
-                        append("Roll a die. ")
-                        append("Optionally provide two numbers to change the range (both inclusive). ")
-                        append("Eg ")
-                        appendCodeBlock {
-                            append(prefix)
-                            append("roll 1 6")
+            // TODO(allanwang) move to separate bot
+            arg("roll") {
+                action(
+                    withMessage = true,
+                    help = {
+                        buildString {
+                            append("Roll a die. ")
+                            append("Optionally provide two numbers to change the range (both inclusive). ")
+                            append("Eg ")
+                            appendCodeBlock {
+                                append(prefix)
+                                append("roll 1 6")
+                            }
+                            append(". ")
+                            append("If only one number is provided, the range will start with 1 and end with that number (")
+                            appendCodeBlock {
+                                append(prefix)
+                                append("roll 8 = ")
+                                append(prefix)
+                                append("roll 1 8")
+                            }
+                            append(").")
                         }
-                        append(". ")
-                        append("If only one number is provided, the range will start with 1 and end with that number (")
-                        appendCodeBlock {
-                            append(prefix)
-                            append("roll 8 = ")
-                            append(prefix)
-                            append("roll 1 8")
-                        }
-                        append(").")
                     }
+                ) {
+                    val range = rollRange(message) ?: 1 to 6
+                    roll(range.first, range.second)
                 }
-            ) {
-                val range = rollRange(message) ?: 1 to 6
-                roll(range.first, range.second)
             }
         }
-    }
 
     private suspend fun CommandHandlerEvent.flipCoin(expectHeads: Boolean?) {
         val heads = rnd.nextBoolean()

@@ -53,28 +53,30 @@ class CincoBot @Inject constructor(
         private const val PARTICIPATION_WAIT_TIME_INDICATOR_SECONDS = 10
     }
 
-    override val handler = commandBuilder(CommandHandler.Type.Prefix, color = baseEmbedColor) {
+    override val handler = commandBuilder(
+        "cinco",
+        baseEmbedColor,
+        CommandHandler.Type.Prefix,
         description = "Games around 5-letter words."
-        arg("cinco") {
-            action(
-                withMessage = false,
-                help = {
-                    "List available games (currently starts azul)"
-                }
-            ) {
-                selectVariant()
+    ) {
+        action(
+            withMessage = false,
+            help = {
+                "List available games (currently starts azul)"
             }
-            CincoVariant.values().forEach {
-                arg(it.tag) {
-                    action(withMessage = false, help = { it.description }) {
-                        startVariant(it)
-                    }
+        ) {
+            selectVariant()
+        }
+        CincoVariant.values().forEach {
+            arg(it.tag) {
+                action(withMessage = false, help = { it.description }) {
+                    startVariant(it)
                 }
             }
-            arg("check") {
-                action(withMessage = true, helpArgs = "[word]", help = { "Check if [word] is a registered word" }) {
-                    checkWord()
-                }
+        }
+        arg("check") {
+            action(withMessage = true, helpArgs = "[word]", help = { "Check if [word] is a registered word" }) {
+                checkWord()
             }
         }
     }

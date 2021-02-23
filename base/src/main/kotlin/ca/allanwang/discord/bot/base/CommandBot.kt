@@ -43,6 +43,7 @@ abstract class CommandBot(
     private suspend fun MessageCreateEvent.handleCommands(candidates: Map<String, CommandHandler>) {
         val prefixedMessage = prefixedMessage() ?: return
         val key = prefixedMessage.message.substringBefore(' ')
+        val subMessage = if (key == prefixedMessage.message) "" else prefixedMessage.message.substringAfter(' ')
         val handler = candidates[key.toLowerCase(Locale.US)] ?: return
         kord.launch(
             CoroutineExceptionHandler { _, throwable ->
@@ -55,7 +56,7 @@ abstract class CommandBot(
                     prefix = prefixedMessage.prefix,
                     type = type,
                     command = key,
-                    message = prefixedMessage.message,
+                    message = subMessage,
                     origMessage = message.content,
                     commandHelp = handler
                 )
