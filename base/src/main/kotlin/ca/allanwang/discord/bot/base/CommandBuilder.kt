@@ -9,6 +9,7 @@ typealias CommandHandlerAction = suspend CommandHandlerEvent.() -> Unit
 data class CommandHandlerEvent(
     val event: MessageCreateEvent,
     val prefix: String,
+    val type: CommandHandler.Type,
     val command: String,
     val message: String,
     val origMessage: String,

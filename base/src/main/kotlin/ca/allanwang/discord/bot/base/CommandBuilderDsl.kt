@@ -9,8 +9,11 @@ import java.util.*
 annotation class BotCommandDsl
 
 data class HelpContext(
-    val prefix: String
+    val prefix: String,
+    val type: CommandHandler.Type
 )
+
+private fun CommandHandlerEvent.helpContext() = HelpContext(prefix = prefix, type = type)
 
 @BotCommandDsl
 interface CommandBuilderBaseDsl : CommandHelp {
@@ -96,7 +99,7 @@ internal abstract class CommandBuilderBase : CommandBuilderBaseDsl {
 
     override suspend fun handleHelp(event: CommandHandlerEvent) {
         if (!autoGenHelp) return
-        val context = HelpContext(prefix = event.prefix)
+        val context = event.helpContext()
 
         val commands =
             help(context).chunkedByLength(length = 1024 /* max field length */, emptyText = "No commands found.")
@@ -227,8 +230,14 @@ internal class CommandBuilderAction(val command: String) : CommandBuilderActionD
     override var action: CommandHandlerAction = HANDLER_NOOP
 
     fun help(helpContext: HelpContext): String = buildString {
-        appendCodeBlock {
+        if (helpContext.type == CommandHandler.Type.Mention) {
             append(helpContext.prefix)
+            append(" ")
+        }
+        appendCodeBlock {
+            if (helpContext.type == CommandHandler.Type.Prefix) {
+                append(helpContext.prefix)
+            }
             append(command)
             helpArgs?.let { args ->
                 append(" ")

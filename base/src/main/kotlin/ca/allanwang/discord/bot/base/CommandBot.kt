@@ -53,6 +53,7 @@ abstract class CommandBot(
                 CommandHandlerEvent(
                     event = this@handleCommands,
                     prefix = prefixedMessage.prefix,
+                    type = type,
                     command = key,
                     message = prefixedMessage.message,
                     origMessage = message.content,
