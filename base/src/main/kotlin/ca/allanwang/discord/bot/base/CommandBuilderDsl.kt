@@ -1,6 +1,7 @@
 package ca.allanwang.discord.bot.base
 
 import com.google.common.flogger.FluentLogger
+import dev.kord.common.Color
 import dev.kord.core.behavior.channel.createEmbed
 import java.util.*
 
@@ -22,7 +23,7 @@ interface CommandBuilderRootDsl {
 @BotCommandDsl
 interface CommandBuilderArgDsl : CommandBuilderRootDsl {
 
-    fun action(withMessage: Boolean, action: CommandHandlerAction)
+    fun action(withMessage: Boolean, help: HelpSupplier? = null, action: CommandHandlerAction)
 }
 
 @BotCommandDsl
@@ -30,8 +31,6 @@ interface CommandBuilderActionDsl {
     var withMessage: Boolean
 
     var action: CommandHandlerAction
-
-    fun help(action: HelpSupplier)
 }
 
 typealias HelpSupplier = HelpContext.() -> String
@@ -98,6 +97,8 @@ internal class CommandBuilderArg(
 
     companion object {
         private val logger = FluentLogger.forEnclosingClass()
+
+        private val embedColor = Color(0xff2172A6.toInt())
     }
 
     private var action: CommandBuilderAction? = null
@@ -123,6 +124,7 @@ internal class CommandBuilderArg(
         val context = HelpContext(prefix = event.prefix)
         event.channel.createEmbed {
             title = command
+            color = embedColor
             val helpText = help(context)
             if (helpText != null) {
                 field {
@@ -133,11 +135,11 @@ internal class CommandBuilderArg(
         }
     }
 
-    override fun action(withMessage: Boolean, action: CommandHandlerAction) {
+    override fun action(withMessage: Boolean, help: HelpSupplier?, action: CommandHandlerAction) {
         val builder = CommandBuilderAction(command = command).apply {
             this.withMessage = withMessage
+            this.helpSupplier = help
             this.action = action
-            finish()
         }
         this.action = builder
     }
@@ -187,27 +189,20 @@ internal class CommandBuilderAction(val command: String) : CommandBuilderActionD
         }
     }
 
-    private var help: HelpSupplier? = null
+    internal var helpSupplier: HelpSupplier? = null
 
     override var withMessage: Boolean = false
 
     override var action: CommandHandlerAction = HANDLER_NOOP
 
-    internal fun finish() {
-    }
-
-    override fun help(action: HelpSupplier) {
-        help = action
-    }
-
     fun help(helpContext: HelpContext): String = buildString {
         appendCodeBlock {
             append(helpContext.prefix)
             append(command)
-            help?.invoke(helpContext)?.let { description ->
-                append(": ")
-                append(description)
-            }
+        }
+        helpSupplier?.invoke(helpContext)?.let { description ->
+            append(": ")
+            append(description)
         }
     }
 }

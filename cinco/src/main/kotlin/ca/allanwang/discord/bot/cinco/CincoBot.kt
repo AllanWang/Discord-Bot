@@ -6,6 +6,7 @@ import ca.allanwang.discord.bot.cinco.game.CincoGame
 import ca.allanwang.discord.bot.cinco.game.WordBank
 import ca.allanwang.discord.bot.cinco.game.features.CincoGameFeatureModule
 import ca.allanwang.discord.bot.cinco.game.features.CincoVariant
+import com.gitlab.kordlib.cache.api.data.description
 import com.gitlab.kordlib.kordx.emoji.Emojis
 import com.google.common.flogger.FluentLogger
 import dagger.BindsInstance
@@ -52,18 +53,23 @@ class CincoBot @Inject constructor(
 
     override val handler = commandBuilder(CommandHandler.Type.Prefix) {
         arg("cinco") {
-            action(withMessage = false) {
+            action(
+                withMessage = false,
+                help = {
+                    "List available games (currently starts azul)"
+                }
+            ) {
                 selectVariant()
             }
             CincoVariant.values().forEach {
                 arg(it.tag) {
-                    action(withMessage = false) {
+                    action(withMessage = false, help = { it.description }) {
                         startVariant(it)
                     }
                 }
             }
             arg("check") {
-                action(withMessage = true) {
+                action(withMessage = true, help = { "Check if input is a registered word" }) {
                     checkWord()
                 }
             }
