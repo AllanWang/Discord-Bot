@@ -11,5 +11,10 @@ object RandomBotModule {
     @Provides
     @IntoSet
     @Singleton
-    fun bot(bot: RandomBot): CommandHandlerBot = bot
+    fun coinBot(bot: CoinBot): CommandHandlerBot = bot
+
+    @Provides
+    @IntoSet
+    @Singleton
+    fun diceBot(bot: DiceBot): CommandHandlerBot = bot
 }
