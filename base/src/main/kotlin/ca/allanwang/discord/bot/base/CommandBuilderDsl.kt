@@ -14,16 +14,21 @@ data class HelpContext(
 )
 
 @BotCommandDsl
-interface CommandBuilderRootDsl {
+interface CommandBuilderBaseDsl {
     var autoGenHelp: Boolean
 
     fun arg(arg: String, block: CommandBuilderArgDsl.() -> Unit)
 }
 
 @BotCommandDsl
-interface CommandBuilderArgDsl : CommandBuilderRootDsl {
+interface CommandBuilderRootDsl : CommandBuilderBaseDsl {
+    var description: String?
+}
 
-    fun action(withMessage: Boolean, help: HelpSupplier? = null, action: CommandHandlerAction)
+@BotCommandDsl
+interface CommandBuilderArgDsl : CommandBuilderBaseDsl {
+
+    fun action(withMessage: Boolean, helpArgs: String? = null, help: HelpSupplier? = null, action: CommandHandlerAction)
 }
 
 @BotCommandDsl
@@ -40,7 +45,7 @@ fun CommandHandlerBot.commandBuilder(
     block: CommandBuilderRootDsl.() -> Unit
 ): CommandHandler = CommandBuilderRoot(types.toSet()).apply(block)
 
-internal abstract class CommandBuilderBase : CommandBuilderRootDsl {
+internal abstract class CommandBuilderBase : CommandBuilderBaseDsl {
 
     companion object {
         private val logger = FluentLogger.forEnclosingClass()
@@ -52,6 +57,8 @@ internal abstract class CommandBuilderBase : CommandBuilderRootDsl {
      * Command used to reach this node. Blank for roots
      */
     protected abstract val command: String
+
+    protected abstract val root: CommandBuilderRootDsl
 
     protected val children: MutableMap<String, CommandBuilderArg> = sortedMapOf()
 
@@ -74,7 +81,7 @@ internal abstract class CommandBuilderBase : CommandBuilderRootDsl {
     }
 
     override fun arg(arg: String, block: CommandBuilderArgDsl.() -> Unit) {
-        val builder = CommandBuilderArg(command, arg).apply {
+        val builder = CommandBuilderArg(root = root, prevCommand = command, arg = arg).apply {
             block()
             postCreate(this@CommandBuilderBase)
         }
@@ -87,10 +94,15 @@ internal class CommandBuilderRoot(override val types: Set<CommandHandler.Type>) 
     CommandBuilderRootDsl,
     CommandHandler {
 
+    override val root: CommandBuilderRootDsl = this
+
+    override var description: String? = null
+
     override val command: String = ""
 }
 
 internal class CommandBuilderArg(
+    override val root: CommandBuilderRootDsl,
     val prevCommand: String,
     val arg: String
 ) : CommandBuilderBase(), CommandBuilderArgDsl {
@@ -124,6 +136,7 @@ internal class CommandBuilderArg(
         val context = HelpContext(prefix = event.prefix)
         event.channel.createEmbed {
             title = command
+            description = root.description
             color = embedColor
             val helpText = help(context)
             if (helpText != null) {
@@ -135,16 +148,17 @@ internal class CommandBuilderArg(
         }
     }
 
-    override fun action(withMessage: Boolean, help: HelpSupplier?, action: CommandHandlerAction) {
+    override fun action(withMessage: Boolean, helpArgs: String?, help: HelpSupplier?, action: CommandHandlerAction) {
         val builder = CommandBuilderAction(command = command).apply {
             this.withMessage = withMessage
+            this.helpArgs = helpArgs
             this.helpSupplier = help
             this.action = action
         }
         this.action = builder
     }
 
-    internal fun postCreate(parent: CommandBuilderRootDsl) {
+    internal fun postCreate(parent: CommandBuilderBaseDsl) {
         if (!parent.autoGenHelp) {
             autoGenHelp = false
         }
@@ -189,6 +203,8 @@ internal class CommandBuilderAction(val command: String) : CommandBuilderActionD
         }
     }
 
+    internal var helpArgs: String? = null
+
     internal var helpSupplier: HelpSupplier? = null
 
     override var withMessage: Boolean = false
@@ -199,6 +215,10 @@ internal class CommandBuilderAction(val command: String) : CommandBuilderActionD
         appendCodeBlock {
             append(helpContext.prefix)
             append(command)
+            helpArgs?.let { args ->
+                append(" ")
+                append(args)
+            }
         }
         helpSupplier?.invoke(helpContext)?.let { description ->
             append(": ")

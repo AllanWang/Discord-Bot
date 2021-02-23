@@ -6,7 +6,6 @@ import ca.allanwang.discord.bot.cinco.game.CincoGame
 import ca.allanwang.discord.bot.cinco.game.WordBank
 import ca.allanwang.discord.bot.cinco.game.features.CincoGameFeatureModule
 import ca.allanwang.discord.bot.cinco.game.features.CincoVariant
-import com.gitlab.kordlib.cache.api.data.description
 import com.gitlab.kordlib.kordx.emoji.Emojis
 import com.google.common.flogger.FluentLogger
 import dagger.BindsInstance
@@ -52,6 +51,7 @@ class CincoBot @Inject constructor(
     }
 
     override val handler = commandBuilder(CommandHandler.Type.Prefix) {
+        description = "Games around 5-letter words."
         arg("cinco") {
             action(
                 withMessage = false,
@@ -69,7 +69,7 @@ class CincoBot @Inject constructor(
                 }
             }
             arg("check") {
-                action(withMessage = true, help = { "Check if input is a registered word" }) {
+                action(withMessage = true, helpArgs = "[word]", help = { "Check if [word] is a registered word" }) {
                     checkWord()
                 }
             }

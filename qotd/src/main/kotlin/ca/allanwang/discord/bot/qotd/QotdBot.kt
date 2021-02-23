@@ -85,7 +85,7 @@ class QotdBot @Inject constructor(
         }
     }
 
-    private fun CommandBuilderRootDsl.configCommands() {
+    private fun CommandBuilderBaseDsl.configCommands() {
         arg("channel") {
             arg(REMOVE_KEY) { action(withMessage = false) { channel(remove = true) } }
             action(withMessage = true) {
