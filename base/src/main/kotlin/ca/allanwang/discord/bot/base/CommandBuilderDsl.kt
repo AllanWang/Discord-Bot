@@ -14,7 +14,16 @@ data class HelpContext(
 
 @BotCommandDsl
 interface CommandBuilderBaseDsl : CommandHelp {
+    /**
+     * Disable auto generated help for current node and child nodes.
+     */
     var autoGenHelp: Boolean
+
+    /**
+     * Disable help generation when called from parent nodes.
+     * Only show node if called from the same node.
+     */
+    var hiddenHelp: Boolean
 
     fun arg(arg: String, block: CommandBuilderArgDsl.() -> Unit)
 }
@@ -55,6 +64,8 @@ internal abstract class CommandBuilderBase : CommandBuilderBaseDsl {
     }
 
     override var autoGenHelp: Boolean = true
+
+    override var hiddenHelp: Boolean = false
 
     /**
      * Command used to reach this node. Blank for roots
@@ -110,6 +121,10 @@ internal abstract class CommandBuilderBase : CommandBuilderBaseDsl {
         }
         children[builder.arg.toLowerCase(Locale.US)] = builder
     }
+
+    protected fun childHelp(context: HelpContext): List<String> {
+        return children.filter { it.key != "help" && !it.value.hiddenHelp }.values.flatMap { it.help(context) }
+    }
 }
 
 internal class CommandBuilderRoot(override val types: Set<CommandHandler.Type>, override val color: Color) :
@@ -125,7 +140,7 @@ internal class CommandBuilderRoot(override val types: Set<CommandHandler.Type>, 
 
     override fun help(context: HelpContext): List<String> {
         if (!autoGenHelp) return emptyList()
-        return children.filterKeys { it != "help" }.values.flatMap { it.help(context) }
+        return childHelp(context)
     }
 }
 
@@ -184,11 +199,11 @@ internal class CommandBuilderArg(
     override fun help(context: HelpContext): List<String> {
         if (!autoGenHelp) return emptyList()
         val actionHelp = action?.help(context)
-        val nestedHelp = children.filterKeys { it != "help" }.values.flatMap { it.help(context) }
+        val childHelp = childHelp(context)
 
         return mutableListOf<String>().apply {
             if (actionHelp != null) add(actionHelp)
-            addAll(nestedHelp)
+            addAll(childHelp)
         }
     }
 }

@@ -26,6 +26,7 @@ class DevBot @Inject constructor(
     }
 
     override val handler = commandBuilder(CommandHandler.Type.Mention, color = embedColor) {
+        hiddenHelp = true
         arg("dev") {
             arg("channel") {
                 action(withMessage = false) {

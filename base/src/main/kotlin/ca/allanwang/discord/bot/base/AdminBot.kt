@@ -23,6 +23,7 @@ class AdminBot @Inject constructor(
     }
 
     override val handler = commandBuilder(CommandHandler.Type.Mention, color = embedColor) {
+        hiddenHelp = true
         arg("info") {
             action(withMessage = false) {
                 buildInfo()

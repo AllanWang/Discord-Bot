@@ -19,6 +19,7 @@ class EchoBot @Inject constructor() : CommandHandlerBot {
     }
 
     override val handler = commandBuilder(CommandHandler.Type.Prefix, color = embedColor) {
+        hiddenHelp = true
         description = "... echo"
         arg("echo") {
             action(withMessage = true) {
