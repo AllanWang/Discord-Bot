@@ -9,6 +9,7 @@ import com.google.common.flogger.FluentLogger
 import dagger.BindsInstance
 import dagger.Module
 import dagger.Subcomponent
+import dev.kord.common.Color
 import dev.kord.core.Kord
 import dev.kord.core.behavior.channel.MessageChannelBehavior
 import kotlinx.coroutines.withTimeout
@@ -25,9 +26,11 @@ class OustBot @Inject constructor(
 
     companion object {
         private val logger = FluentLogger.forEnclosingClass()
+
+        private val embedColor = Color(0xfff47720.toInt())
     }
 
-    override val handler = commandBuilder(CommandHandler.Type.Prefix) {
+    override val handler = commandBuilder(CommandHandler.Type.Prefix, color = embedColor) {
         arg("oust") {
             action(withMessage = false) {
                 test()

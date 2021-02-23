@@ -37,7 +37,7 @@ class RandomBot @Inject constructor() : CommandHandlerBot {
         }
     }
 
-    override val handler = commandBuilder(CommandHandler.Type.Prefix) {
+    override val handler = commandBuilder(CommandHandler.Type.Prefix, color = embedColor) {
         arg("flip") {
             action(withMessage = true) {
                 when (message.trim().toLowerCase()) {

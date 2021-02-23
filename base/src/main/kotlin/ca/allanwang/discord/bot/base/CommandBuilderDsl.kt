@@ -2,7 +2,6 @@ package ca.allanwang.discord.bot.base
 
 import com.google.common.flogger.FluentLogger
 import dev.kord.common.Color
-import dev.kord.core.behavior.channel.createEmbed
 import java.util.*
 
 @DslMarker
@@ -14,7 +13,7 @@ data class HelpContext(
 )
 
 @BotCommandDsl
-interface CommandBuilderBaseDsl {
+interface CommandBuilderBaseDsl : CommandHelp {
     var autoGenHelp: Boolean
 
     fun arg(arg: String, block: CommandBuilderArgDsl.() -> Unit)
@@ -22,6 +21,9 @@ interface CommandBuilderBaseDsl {
 
 @BotCommandDsl
 interface CommandBuilderRootDsl : CommandBuilderBaseDsl {
+
+    val color: Color
+
     var description: String?
 }
 
@@ -42,8 +44,9 @@ typealias HelpSupplier = HelpContext.() -> String
 
 fun CommandHandlerBot.commandBuilder(
     vararg types: CommandHandler.Type,
+    color: Color,
     block: CommandBuilderRootDsl.() -> Unit
-): CommandHandler = CommandBuilderRoot(types.toSet()).apply(block)
+): CommandHandler = CommandBuilderRoot(types = types.toSet(), color = color).apply(block)
 
 internal abstract class CommandBuilderBase : CommandBuilderBaseDsl {
 
@@ -60,7 +63,7 @@ internal abstract class CommandBuilderBase : CommandBuilderBaseDsl {
 
     protected abstract val root: CommandBuilderRootDsl
 
-    protected val children: MutableMap<String, CommandBuilderArg> = sortedMapOf()
+    protected val children: MutableMap<String, CommandBuilderArg> = mutableMapOf()
 
     val keys: Set<String> get() = children.keys
 
@@ -74,10 +77,30 @@ internal abstract class CommandBuilderBase : CommandBuilderBaseDsl {
         val argHandler = children[key.toLowerCase(Locale.US)]
         val subMessage = if (key == event.message) "" else event.message.substringAfter(' ')
         if (argHandler != null) {
-            argHandler.handle(event.copy(message = subMessage))
+            argHandler.handle(event.copy(message = subMessage, commandHelp = argHandler))
             return true
         }
         return false
+    }
+
+    override suspend fun handleHelp(event: CommandHandlerEvent) {
+        if (!autoGenHelp) return
+        val context = HelpContext(prefix = event.prefix)
+
+        val commands =
+            help(context).chunkedByLength(length = 1024 /* max field length */, emptyText = "No commands found.")
+
+        event.channel.paginatedMessage(commands) { desc ->
+            title = "$command help"
+            description = root.description
+            color = root.color
+            if (desc != null) {
+                field {
+                    name = "Commands"
+                    value = desc
+                }
+            }
+        }
     }
 
     override fun arg(arg: String, block: CommandBuilderArgDsl.() -> Unit) {
@@ -89,7 +112,7 @@ internal abstract class CommandBuilderBase : CommandBuilderBaseDsl {
     }
 }
 
-internal class CommandBuilderRoot(override val types: Set<CommandHandler.Type>) :
+internal class CommandBuilderRoot(override val types: Set<CommandHandler.Type>, override val color: Color) :
     CommandBuilderBase(),
     CommandBuilderRootDsl,
     CommandHandler {
@@ -99,6 +122,11 @@ internal class CommandBuilderRoot(override val types: Set<CommandHandler.Type>) 
     override var description: String? = null
 
     override val command: String = ""
+
+    override fun help(context: HelpContext): List<String> {
+        if (!autoGenHelp) return emptyList()
+        return children.filterKeys { it != "help" }.values.flatMap { it.help(context) }
+    }
 }
 
 internal class CommandBuilderArg(
@@ -109,8 +137,6 @@ internal class CommandBuilderArg(
 
     companion object {
         private val logger = FluentLogger.forEnclosingClass()
-
-        private val embedColor = Color(0xff2172A6.toInt())
     }
 
     private var action: CommandBuilderAction? = null
@@ -125,27 +151,10 @@ internal class CommandBuilderArg(
 
     private suspend fun handleAction(event: CommandHandlerEvent): Boolean {
         val action = action ?: return false
-        val actionEvent = event.copy(command = command)
+        val actionEvent = event.copy(command = command, commandHelp = this)
         if (action.withMessage) action.action(actionEvent)
         else if (event.message.isBlank()) action.action(actionEvent)
         return true
-    }
-
-    private suspend fun handleHelp(event: CommandHandlerEvent) {
-        if (!autoGenHelp) return
-        val context = HelpContext(prefix = event.prefix)
-        event.channel.createEmbed {
-            title = command
-            description = root.description
-            color = embedColor
-            val helpText = help(context)
-            if (helpText != null) {
-                field {
-                    name = "Commands"
-                    value = helpText
-                }
-            }
-        }
     }
 
     override fun action(withMessage: Boolean, helpArgs: String?, help: HelpSupplier?, action: CommandHandlerAction) {
@@ -172,24 +181,15 @@ internal class CommandBuilderArg(
         }
     }
 
-    fun help(context: HelpContext): String? {
-        /*
-         * TODO
-         *
-         * Remove help from arg? Only add to root and action.
-         * Avoid double line breaks.
-         * Maybe use dsl to add actions to avoid duplicate parsing language
-         * Support help markdown mode?
-         */
+    override fun help(context: HelpContext): List<String> {
+        if (!autoGenHelp) return emptyList()
         val actionHelp = action?.help(context)
-        val nestedHelp = children.filterKeys { it != "help" }.values.mapNotNull { it.help(context) }
-        if (actionHelp == null && nestedHelp.isEmpty()) return null
-        return buildString {
-            appendLine(actionHelp)
-            nestedHelp.forEach {
-                appendLine(it)
-            }
-        }.trim()
+        val nestedHelp = children.filterKeys { it != "help" }.values.flatMap { it.help(context) }
+
+        return mutableListOf<String>().apply {
+            if (actionHelp != null) add(actionHelp)
+            addAll(nestedHelp)
+        }
     }
 }
 

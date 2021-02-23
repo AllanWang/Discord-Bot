@@ -8,6 +8,7 @@ import com.google.firebase.database.DatabaseReference
 import dagger.Module
 import dagger.Provides
 import dagger.multibindings.IntoSet
+import dev.kord.common.Color
 import dev.kord.common.entity.Snowflake
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterNotNull
@@ -49,9 +50,10 @@ class PrefixBot @Inject constructor(
     companion object {
         private val logger = FluentLogger.forEnclosingClass()
         private val whitespaceRegex = Regex("\\s")
+        private val embedColor = Color(0xff306EA4.toInt())
     }
 
-    override val handler = commandBuilder(CommandHandler.Type.Prefix, CommandHandler.Type.Mention) {
+    override val handler = commandBuilder(CommandHandler.Type.Prefix, CommandHandler.Type.Mention, color = embedColor) {
         arg("prefix") {
             action(withMessage = true) {
                 prefix()

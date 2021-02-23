@@ -11,6 +11,7 @@ import com.google.common.flogger.FluentLogger
 import dagger.BindsInstance
 import dagger.Module
 import dagger.Subcomponent
+import dev.kord.common.Color
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.behavior.channel.MessageChannelBehavior
 import dev.kord.core.behavior.channel.createEmbed
@@ -37,6 +38,8 @@ class CincoBot @Inject constructor(
     companion object {
         private val logger = FluentLogger.forEnclosingClass()
 
+        private val baseEmbedColor = Color(0xff306EA4.toInt())
+
         private val participationEmoji: ReactionEmoji = Emojis.whiteCheckMark.toReaction()
 
         /**
@@ -50,7 +53,7 @@ class CincoBot @Inject constructor(
         private const val PARTICIPATION_WAIT_TIME_INDICATOR_SECONDS = 10
     }
 
-    override val handler = commandBuilder(CommandHandler.Type.Prefix) {
+    override val handler = commandBuilder(CommandHandler.Type.Prefix, color = baseEmbedColor) {
         description = "Games around 5-letter words."
         arg("cinco") {
             action(

@@ -5,6 +5,7 @@ import ca.allanwang.discord.bot.core.withTimeout
 import dagger.Module
 import dagger.Provides
 import dagger.multibindings.IntoSet
+import dev.kord.common.Color
 import dev.kord.core.Kord
 import dev.kord.core.behavior.edit
 import kotlinx.coroutines.flow.collect
@@ -19,7 +20,12 @@ import javax.inject.Singleton
 class DevBot @Inject constructor(
     private val kord: Kord
 ) : CommandHandlerBot {
-    override val handler = commandBuilder(CommandHandler.Type.Mention) {
+
+    companion object {
+        private val embedColor = Color(0xff306EA4.toInt())
+    }
+
+    override val handler = commandBuilder(CommandHandler.Type.Mention, color = embedColor) {
         arg("dev") {
             arg("channel") {
                 action(withMessage = false) {

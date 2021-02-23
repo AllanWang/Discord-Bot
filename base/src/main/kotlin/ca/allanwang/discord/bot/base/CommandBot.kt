@@ -55,7 +55,8 @@ abstract class CommandBot(
                     prefix = prefixedMessage.prefix,
                     command = key,
                     message = prefixedMessage.message,
-                    origMessage = message.content
+                    origMessage = message.content,
+                    commandHelp = handler
                 )
             )
         }

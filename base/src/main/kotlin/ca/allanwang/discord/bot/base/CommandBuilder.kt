@@ -11,7 +11,8 @@ data class CommandHandlerEvent(
     val prefix: String,
     val command: String,
     val message: String,
-    val origMessage: String
+    val origMessage: String,
+    val commandHelp: CommandHelp,
 ) {
     val channel get() = event.message.channel
     val authorId get() = event.message.author?.id
@@ -25,7 +26,13 @@ data class CommandHandlerEvent(
     }
 }
 
-interface CommandHandler {
+interface CommandHelp {
+    suspend fun handleHelp(event: CommandHandlerEvent)
+
+    fun help(context: HelpContext): List<String>
+}
+
+interface CommandHandler : CommandHelp {
 
     val types: Set<Type>
 
