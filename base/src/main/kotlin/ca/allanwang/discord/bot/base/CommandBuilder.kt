@@ -1,5 +1,6 @@
 package ca.allanwang.discord.bot.base
 
+import dev.kord.common.Color
 import dev.kord.core.Kord
 import dev.kord.core.event.message.MessageCreateEvent
 import dev.kord.rest.builder.message.EmbedBuilder
@@ -55,6 +56,7 @@ interface CommandHandler : CommandHelp {
 
 interface CommandHandlerBot {
     suspend fun Kord.attach(): Unit = Unit
+    val embedColor: Color
     val handler: CommandHandler
 }
 

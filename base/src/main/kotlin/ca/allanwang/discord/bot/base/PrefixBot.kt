@@ -45,6 +45,7 @@ class PrefixApi @Inject constructor(
 
 @Singleton
 class PrefixBot @Inject constructor(
+    colorPalette: ColorPalette,
     private val prefixApi: PrefixApi,
     private val botPrefixSupplier: BotPrefixSupplier,
 ) : CommandHandlerBot {
@@ -52,11 +53,12 @@ class PrefixBot @Inject constructor(
     companion object {
         private val logger = FluentLogger.forEnclosingClass()
         private val whitespaceRegex = Regex("\\s")
-        private val embedColor = Color(0xff306EA4.toInt())
     }
 
+    override val embedColor: Color = colorPalette.default
+
     override val handler =
-        commandBuilder("prefix", embedColor, CommandHandler.Type.Prefix, CommandHandler.Type.Mention, description = "Bot prefix configuration") {
+        commandBuilder("prefix", CommandHandler.Type.Prefix, CommandHandler.Type.Mention, description = "Bot prefix configuration") {
             action(
                 withMessage = true, helpArgs = "[prefix]",
                 help = {

@@ -21,6 +21,7 @@ import kotlin.math.min
 
 @Singleton
 class GameEventBot @Inject internal constructor(
+    colorPalette: ColorPalette,
     private val mentions: Mentions,
     private val timeApi: TimeApi,
     private val timeConfigBot: TimeConfigBot,
@@ -28,7 +29,6 @@ class GameEventBot @Inject internal constructor(
     companion object {
         private val logger = FluentLogger.forEnclosingClass()
 
-        val embedColor = Color(0xff599E70.toInt())
 
         private val dayInMs = TimeUnit.DAYS.toMillis(1)
 
@@ -44,9 +44,10 @@ class GameEventBot @Inject internal constructor(
         logger.atInfo().log("Game event attached")
     }
 
+    override val embedColor: Color = colorPalette.green
+
     override val handler = commandBuilder(
         "gameEvent",
-        embedColor,
         CommandHandler.Type.Prefix,
         description = "Schedule events with attendance and queues"
     ) {

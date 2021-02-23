@@ -1,5 +1,6 @@
 package ca.allanwang.discord.bot.qotd
 
+import ca.allanwang.discord.bot.base.ColorPalette
 import ca.allanwang.discord.bot.base.Mentions
 import com.google.common.flogger.FluentLogger
 import dev.kord.common.Color
@@ -21,6 +22,7 @@ import kotlin.math.abs
 @Singleton
 class Qotd @Inject constructor(
     private val kord: Kord,
+    colorPalette: ColorPalette,
     private val mentions: Mentions,
     private val api: QotdApi
 ) {
@@ -56,7 +58,7 @@ class Qotd @Inject constructor(
 
     private val loopers: ConcurrentHashMap<Snowflake, Job> = ConcurrentHashMap()
 
-    val embedColor = Color(0xFFAB98D2.toInt())
+    val embedColor = colorPalette.lavendar
 
     suspend fun initLoops() {
         api.coreSnapshotAll().forEach {

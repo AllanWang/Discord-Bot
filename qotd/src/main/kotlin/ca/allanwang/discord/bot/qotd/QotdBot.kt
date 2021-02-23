@@ -5,6 +5,7 @@ import ca.allanwang.discord.bot.firebase.FirebaseCache
 import ca.allanwang.discord.bot.time.TimeApi
 import ca.allanwang.discord.bot.time.TimeConfigBot
 import com.google.common.flogger.FluentLogger
+import dev.kord.common.Color
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.Kord
 import dev.kord.core.behavior.channel.MessageChannelBehavior
@@ -39,8 +40,10 @@ class QotdBot @Inject constructor(
         qotd.initLoops()
     }
 
+    override val embedColor: Color = qotd.embedColor
+
     override val handler =
-        commandBuilder("qotd", qotd.embedColor, CommandHandler.Type.Prefix, description = "Question/Quote of the Day") {
+        commandBuilder("qotd", CommandHandler.Type.Prefix, description = "Question/Quote of the Day") {
             arg("init") {
                 action(
                     withMessage = false,

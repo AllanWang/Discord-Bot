@@ -15,6 +15,7 @@ import javax.inject.Singleton
 @Singleton
 class HelpBot @Inject constructor(
     private val kord: Kord,
+    colorPalette: ColorPalette,
     private val prefixSupplier: BotPrefixSupplier,
     private val mentions: Mentions,
     handlers: Set<@JvmSuppressWildcards CommandHandlerBot>,
@@ -22,9 +23,9 @@ class HelpBot @Inject constructor(
 
     companion object {
         private val logger = FluentLogger.forEnclosingClass()
-
-        private val embedColor = Color(0xff306EA4.toInt())
     }
+
+    private val embedColor: Color = colorPalette.default
 
     private val handlers = CommandHandler.Type.values().associateWith { type ->
         handlers.map { it.handler }

@@ -74,13 +74,12 @@ typealias HelpSupplier = HelpContext.() -> String
 
 fun CommandHandlerBot.commandBuilder(
     command: String,
-    color: Color,
     vararg types: CommandHandler.Type,
     description: String? = null,
     block: CommandBuilderRootDsl.() -> Unit
 ): CommandHandler = CommandBuilderRoot(
     types = types.toSet(),
-    color = color,
+    color = embedColor,
     command = command,
     description = description
 ).apply {

@@ -1,9 +1,6 @@
 package ca.allanwang.discord.bot.oust
 
-import ca.allanwang.discord.bot.base.CommandHandler
-import ca.allanwang.discord.bot.base.CommandHandlerBot
-import ca.allanwang.discord.bot.base.CommandHandlerEvent
-import ca.allanwang.discord.bot.base.commandBuilder
+import ca.allanwang.discord.bot.base.*
 import ca.allanwang.discord.bot.oust.game.*
 import com.google.common.flogger.FluentLogger
 import dagger.BindsInstance
@@ -21,17 +18,18 @@ import javax.inject.Singleton
 @Singleton
 class OustBot @Inject constructor(
     private val kord: Kord,
+    colorPalette: ColorPalette,
     private val oustProvider: Provider<OustComponent.Builder>
 ) : CommandHandlerBot {
 
     companion object {
         private val logger = FluentLogger.forEnclosingClass()
-
-        private val embedColor = Color(0xfff47720.toInt())
     }
 
+    override val embedColor: Color = colorPalette.orange
+
     override val handler = commandBuilder(
-        "oust", embedColor,
+        "oust",
         CommandHandler.Type.Prefix,
     ) {
         hiddenHelp = true

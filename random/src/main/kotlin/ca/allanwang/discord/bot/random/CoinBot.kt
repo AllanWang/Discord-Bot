@@ -10,18 +10,20 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class CoinBot @Inject constructor() : CommandHandlerBot {
+class CoinBot @Inject constructor(
+    colorPalette: ColorPalette
+) : CommandHandlerBot {
 
     companion object {
         private val logger = FluentLogger.forEnclosingClass()
 
         private inline val rnd: Random get() = ThreadLocalRandom.current()
-
-        private val embedColor = Color(0xFFEEB501.toInt())
     }
 
+    override val embedColor: Color = colorPalette.gold
+
     override val handler =
-        commandBuilder("flip", embedColor, CommandHandler.Type.Prefix, description = "RNG coin") {
+        commandBuilder("flip", CommandHandler.Type.Prefix, description = "RNG coin") {
             action(
                 withMessage = true,
                 help = {

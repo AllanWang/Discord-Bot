@@ -10,7 +10,9 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class DiceBot @Inject constructor() : CommandHandlerBot {
+class DiceBot @Inject constructor(
+    colorPalette: ColorPalette
+) : CommandHandlerBot {
 
     companion object {
         private val logger = FluentLogger.forEnclosingClass()
@@ -18,8 +20,6 @@ class DiceBot @Inject constructor() : CommandHandlerBot {
         private inline val rnd: Random get() = ThreadLocalRandom.current()
 
         private val rangeRegex = Regex("^\\s*(\\d+)(?:[\\s-]+(\\d+))?\\s*$")
-
-        private val embedColor = Color(0xFFEEB501.toInt())
 
         /**
          * Extract start and end range from input.
@@ -34,8 +34,10 @@ class DiceBot @Inject constructor() : CommandHandlerBot {
         }
     }
 
+    override val embedColor: Color = colorPalette.gold
+
     override val handler =
-        commandBuilder("roll", embedColor, CommandHandler.Type.Prefix, description = "RNG die") {
+        commandBuilder("roll", CommandHandler.Type.Prefix, description = "RNG die") {
             action(
                 withMessage = true,
                 help = {

@@ -32,13 +32,12 @@ import javax.inject.*
 @Singleton
 class CincoBot @Inject constructor(
     private val cincoProvider: Provider<CincoComponent.Builder>,
+    colorPalette: ColorPalette,
     private val wordBank: WordBank
 ) : CommandHandlerBot {
 
     companion object {
         private val logger = FluentLogger.forEnclosingClass()
-
-        private val baseEmbedColor = Color(0xff306EA4.toInt())
 
         private val participationEmoji: ReactionEmoji = Emojis.whiteCheckMark.toReaction()
 
@@ -53,9 +52,10 @@ class CincoBot @Inject constructor(
         private const val PARTICIPATION_WAIT_TIME_INDICATOR_SECONDS = 10
     }
 
+    override val embedColor: Color = colorPalette.default
+
     override val handler = commandBuilder(
         "cinco",
-        baseEmbedColor,
         CommandHandler.Type.Prefix,
         description = "Games around 5-letter words."
     ) {
