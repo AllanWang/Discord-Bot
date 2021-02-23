@@ -41,10 +41,10 @@ class HelpBot @Inject constructor(
         onMessage {
             val prefix = prefixSupplier.prefix(groupSnowflake())
             if (commandBots.any {
-                    with(it) {
-                        prefixedMessage()?.message?.equals("help", ignoreCase = true) == true
-                    }
+                with(it) {
+                    prefixedMessage()?.message?.equals("help", ignoreCase = true) == true
                 }
+            }
             ) {
                 kord.launch {
                     help(prefix)

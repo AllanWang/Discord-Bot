@@ -93,7 +93,7 @@ class BotPrefixGroupFeature @Inject constructor(
 @Singleton
 class BotMentionGroupFeature @Inject constructor(
     handlers: Set<@JvmSuppressWildcards CommandHandlerBot>,
-    private val mentions: Mentions,
+    mentions: Mentions,
     kord: Kord
 ) : CommandBot(handlers = handlers, type = CommandHandler.Type.Mention) {
 
@@ -101,11 +101,13 @@ class BotMentionGroupFeature @Inject constructor(
         private val logger = FluentLogger.forEnclosingClass()
     }
 
+    private val mentionRegex = Regex("^${mentions.userMentionRegex.pattern}\\s*(.*)$")
+
     override suspend fun MessageCreateEvent.prefixedMessage(): PrefixedMessage? {
-        val match = mentions.userMentionRegex.find(message.content) ?: return null
-        logger.atInfo().log("Bot mention matched")
+        val match = mentionRegex.find(message.content) ?: return null
+        logger.atFine().log("Bot mention matched")
         val prefix = match.groupValues[1]
-        val message = message.content.substringAfter(prefix).trimStart().takeIf { it.isNotBlank() } ?: return null
+        val message = match.groupValues[2].takeIf { it.isNotBlank() } ?: return null
         return PrefixedMessage(prefix = prefix, message = message)
     }
 }
