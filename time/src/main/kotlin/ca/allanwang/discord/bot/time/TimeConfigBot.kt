@@ -27,7 +27,7 @@ class TimeConfigBot @Inject constructor(
 
     override val handler = commandBuilder(CommandHandler.Type.Prefix) {
         arg("timezone") {
-            action(withMessage = true) {
+            action(withMessage = true, helpArgs = "[city]", help = { "Set timezone to matching [city]" }) {
                 logger.atInfo().log("action")
                 if (message.isBlank()) getTimezone()
                 else setTimezone(message)
