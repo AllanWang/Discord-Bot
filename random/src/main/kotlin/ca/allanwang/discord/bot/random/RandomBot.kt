@@ -1,9 +1,6 @@
 package ca.allanwang.discord.bot.random
 
-import ca.allanwang.discord.bot.base.CommandHandler
-import ca.allanwang.discord.bot.base.CommandHandlerBot
-import ca.allanwang.discord.bot.base.CommandHandlerEvent
-import ca.allanwang.discord.bot.base.commandBuilder
+import ca.allanwang.discord.bot.base.*
 import com.google.common.flogger.FluentLogger
 import dev.kord.common.Color
 import dev.kord.core.behavior.channel.createEmbed
@@ -38,8 +35,29 @@ class RandomBot @Inject constructor() : CommandHandlerBot {
     }
 
     override val handler = commandBuilder(CommandHandler.Type.Prefix, color = embedColor) {
+        description = "RNG provider"
         arg("flip") {
-            action(withMessage = true) {
+            action(
+                withMessage = true,
+                help = {
+                    buildString {
+                        append("Flip heads or tails. ")
+                        append("Optionally provide one of ")
+                        val options = listOf("h", "heads", "t", "tails")
+                        options.forEachIndexed { index, s ->
+                            if (index != 0) {
+                                append(",")
+                            }
+                            if (index == options.lastIndex) {
+                                append(" or")
+                            }
+                            append(" ")
+                            appendCodeBlock { append(s) }
+                        }
+                        append(" to mark a selection.")
+                    }
+                }
+            ) {
                 when (message.trim().toLowerCase()) {
                     "h", "heads" -> flipCoin(true)
                     "t", "tails" -> flipCoin(false)
@@ -48,7 +66,29 @@ class RandomBot @Inject constructor() : CommandHandlerBot {
             }
         }
         arg("roll") {
-            action(withMessage = true) {
+            action(
+                withMessage = true,
+                help = {
+                    buildString {
+                        append("Roll a die. ")
+                        append("Optionally provide two numbers to change the range (both inclusive). ")
+                        append("Eg ")
+                        appendCodeBlock {
+                            append(prefix)
+                            append("roll 1 6")
+                        }
+                        append(". ")
+                        append("If only one number is provided, the range will start with 1 and end with that number (")
+                        appendCodeBlock {
+                            append(prefix)
+                            append("roll 8 = ")
+                            append(prefix)
+                            append("roll 1 8")
+                        }
+                        append(").")
+                    }
+                }
+            ) {
                 val range = rollRange(message) ?: 1 to 6
                 roll(range.first, range.second)
             }
