@@ -14,13 +14,13 @@ data class HelpContext(
 
 @BotCommandDsl
 interface CommandBuilderRootDsl {
+    var autoGenHelp: Boolean
+
     fun arg(arg: String, block: CommandBuilderArgDsl.() -> Unit)
 }
 
 @BotCommandDsl
 interface CommandBuilderArgDsl : CommandBuilderRootDsl {
-
-    var autoGenHelp: Boolean
 
     fun action(withMessage: Boolean, action: CommandHandlerAction)
 }
@@ -39,16 +39,22 @@ typealias HelpSupplier = HelpContext.() -> String
 fun CommandHandlerBot.commandBuilder(
     vararg types: CommandHandler.Type,
     block: CommandBuilderRootDsl.() -> Unit
-): CommandHandler =
-    CommandBuilderRoot(types.toSet()).apply(block).also { it.finish() }
+): CommandHandler = CommandBuilderRoot(types.toSet()).apply(block)
 
-internal open class CommandBuilderBase : CommandBuilderRootDsl {
+internal abstract class CommandBuilderBase : CommandBuilderRootDsl {
 
     companion object {
         private val logger = FluentLogger.forEnclosingClass()
     }
 
-    protected var children: MutableMap<String, CommandBuilderArg> = mutableMapOf()
+    override var autoGenHelp: Boolean = true
+
+    /**
+     * Command used to reach this node. Blank for roots
+     */
+    protected abstract val command: String
+
+    protected val children: MutableMap<String, CommandBuilderArg> = sortedMapOf()
 
     val keys: Set<String> get() = children.keys
 
@@ -69,22 +75,21 @@ internal open class CommandBuilderBase : CommandBuilderRootDsl {
     }
 
     override fun arg(arg: String, block: CommandBuilderArgDsl.() -> Unit) {
-        val builder = CommandBuilderArg("", arg).apply {
+        val builder = CommandBuilderArg(command, arg).apply {
             block()
-            finish()
+            postCreate(this@CommandBuilderBase)
         }
         children[builder.arg.toLowerCase(Locale.US)] = builder
-    }
-
-    internal fun finish() {
-        children = children.toSortedMap()
     }
 }
 
 internal class CommandBuilderRoot(override val types: Set<CommandHandler.Type>) :
     CommandBuilderBase(),
     CommandBuilderRootDsl,
-    CommandHandler
+    CommandHandler {
+
+    override val command: String = ""
+}
 
 internal class CommandBuilderArg(
     val prevCommand: String,
@@ -95,17 +100,12 @@ internal class CommandBuilderArg(
         private val logger = FluentLogger.forEnclosingClass()
     }
 
-    override var autoGenHelp: Boolean = true
-
     private var action: CommandBuilderAction? = null
 
-    private var help: HelpSupplier? = null
-
-    private val command: String = if (prevCommand.isBlank()) arg else "$prevCommand $arg"
+    override val command: String = if (prevCommand.isBlank()) arg else "$prevCommand $arg"
 
     override suspend fun handleImpl(event: CommandHandlerEvent): Boolean {
         if (super.handleImpl(event)) return true
-        if (handleHelp(event)) return true
         if (handleAction(event)) return true
         return false
     }
@@ -118,35 +118,23 @@ internal class CommandBuilderArg(
         return true
     }
 
-    private suspend fun handleHelp(event: CommandHandlerEvent): Boolean {
-        if (!autoGenHelp) return false
-        val key = event.message.substringBefore(' ').toLowerCase(Locale.US)
-        if (key != "help") return false
+    private suspend fun handleHelp(event: CommandHandlerEvent) {
+        if (!autoGenHelp) return
         val context = HelpContext(prefix = event.prefix)
         event.channel.createEmbed {
             title = command
-            description = help?.invoke(context)
-            val childHelp = childHelp(context)
-            if (childHelp != null) {
+            val helpText = help(context)
+            if (helpText != null) {
                 field {
                     name = "Commands"
-                    value = childHelp
+                    value = helpText
                 }
             }
         }
-        return true
-    }
-
-    override fun arg(arg: String, block: CommandBuilderArgDsl.() -> Unit) {
-        val builder = CommandBuilderArg(command, arg).apply {
-            block()
-            finish()
-        }
-        children[builder.arg.toLowerCase(Locale.US)] = builder
     }
 
     override fun action(withMessage: Boolean, action: CommandHandlerAction) {
-        val builder = CommandBuilderAction().apply {
+        val builder = CommandBuilderAction(command = command).apply {
             this.withMessage = withMessage
             this.action = action
             finish()
@@ -154,43 +142,42 @@ internal class CommandBuilderArg(
         this.action = builder
     }
 
-    private fun childHelp(context: HelpContext): String? {
-        val nestedHelp = children.values.map { it.help(context) }
-        if (nestedHelp.isEmpty()) return null
-        return buildString {
-            nestedHelp.forEach {
-                append(it)
-                append("\n\n")
+    internal fun postCreate(parent: CommandBuilderRootDsl) {
+        if (!parent.autoGenHelp) {
+            autoGenHelp = false
+        }
+        if (autoGenHelp && !keys.contains("help")) {
+            arg("help") {
+                autoGenHelp = false
+                action(withMessage = false) {
+                    this@CommandBuilderArg.handleHelp(this)
+                }
             }
         }
     }
 
-    fun help(context: HelpContext): String {
-        val currentHelp = help?.invoke(context)
+    fun help(context: HelpContext): String? {
+        /*
+         * TODO
+         *
+         * Remove help from arg? Only add to root and action.
+         * Avoid double line breaks.
+         * Maybe use dsl to add actions to avoid duplicate parsing language
+         * Support help markdown mode?
+         */
+        val actionHelp = action?.help(context)
+        val nestedHelp = children.filterKeys { it != "help" }.values.mapNotNull { it.help(context) }
+        if (actionHelp == null && nestedHelp.isEmpty()) return null
         return buildString {
-            appendCodeBlock {
-                append(context.prefix)
-                append(command)
+            appendLine(actionHelp)
+            nestedHelp.forEach {
+                appendLine(it)
             }
-            /*
-             * TODO
-             *
-             * Remove help from arg? Only add to root and action.
-             * Avoid double line breaks.
-             * Maybe use dsl to add actions to avoid duplicate parsing language
-             * Support help markdown mode?
-             */
-            if (currentHelp != null) {
-                append(": ")
-                append(currentHelp)
-            }
-            append("\n\n")
-            append(childHelp(context))
-        }
+        }.trim()
     }
 }
 
-internal class CommandBuilderAction : CommandBuilderActionDsl {
+internal class CommandBuilderAction(val command: String) : CommandBuilderActionDsl {
 
     companion object {
         private val logger = FluentLogger.forEnclosingClass()
@@ -200,9 +187,7 @@ internal class CommandBuilderAction : CommandBuilderActionDsl {
         }
     }
 
-    var hasHelp: Boolean = false
-
-    var help: HelpSupplier? = null
+    private var help: HelpSupplier? = null
 
     override var withMessage: Boolean = false
 
@@ -212,7 +197,17 @@ internal class CommandBuilderAction : CommandBuilderActionDsl {
     }
 
     override fun help(action: HelpSupplier) {
-        hasHelp = true
         help = action
+    }
+
+    fun help(helpContext: HelpContext): String = buildString {
+        appendCodeBlock {
+            append(helpContext.prefix)
+            append(command)
+            help?.invoke(helpContext)?.let { description ->
+                append(": ")
+                append(description)
+            }
+        }
     }
 }
