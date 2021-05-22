@@ -1,9 +1,6 @@
 package ca.allanwang.discord.bot.oust.game
 
-import ca.allanwang.discord.bot.base.appendBold
-import ca.allanwang.discord.bot.base.appendItalic
-import ca.allanwang.discord.bot.base.appendPlural
-import ca.allanwang.discord.bot.base.toReaction
+import ca.allanwang.discord.bot.base.*
 import com.gitlab.kordlib.kordx.emoji.Emojis
 import com.google.common.flogger.FluentLogger
 import dev.kord.common.Color
@@ -29,14 +26,15 @@ import kotlin.coroutines.cancellation.CancellationException
 @OustScope
 class OustDiscordClient @Inject constructor(
     private val kord: Kord,
+    colorPalette: ColorPalette,
     private val channel: MessageChannelBehavior,
 ) : OustClient {
 
     companion object {
         private val logger = FluentLogger.forEnclosingClass()
-
-        private val embedColor: Color = Color(0xFFDC1E28.toInt())
     }
+
+    private val embedColor: Color = colorPalette.red
 
     override fun createEntry(player: OustPlayer, public: Boolean): OustClient.Entry = Entry(player = player)
 

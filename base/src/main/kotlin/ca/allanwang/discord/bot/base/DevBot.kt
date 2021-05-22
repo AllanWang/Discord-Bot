@@ -2,9 +2,11 @@ package ca.allanwang.discord.bot.base
 
 import ca.allanwang.discord.bot.core.CoreModule
 import ca.allanwang.discord.bot.core.withTimeout
+import com.google.common.flogger.FluentLogger
 import dagger.Module
 import dagger.Provides
 import dagger.multibindings.IntoSet
+import dev.kord.common.Color
 import dev.kord.core.Kord
 import dev.kord.core.behavior.edit
 import kotlinx.coroutines.flow.collect
@@ -17,19 +19,26 @@ import javax.inject.Singleton
  */
 @Singleton
 class DevBot @Inject constructor(
-    private val kord: Kord
+    private val kord: Kord,
+    colorPalette: ColorPalette
 ) : CommandHandlerBot {
-    override val handler = commandBuilder(CommandHandler.Type.Mention) {
-        arg("dev") {
-            arg("channel") {
-                action(withMessage = false) {
-                    channelInfo()
-                }
+
+    companion object {
+        private val logger = FluentLogger.forEnclosingClass()
+    }
+
+    override val embedColor: Color = colorPalette.default
+
+    override val handler = commandBuilder("dev", CommandHandler.Type.Mention,) {
+        hiddenHelp = true
+        arg("channel") {
+            action(withMessage = false) {
+                channelInfo()
             }
-            arg("emoji") {
-                action(withMessage = false) {
-                    emojiInfo()
-                }
+        }
+        arg("emoji") {
+            action(withMessage = false) {
+                emojiInfo()
             }
         }
     }

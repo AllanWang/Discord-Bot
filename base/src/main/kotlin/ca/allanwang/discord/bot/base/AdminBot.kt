@@ -13,20 +13,19 @@ import javax.inject.Singleton
 
 @Singleton
 class AdminBot @Inject constructor(
-    private val build: Build
+    private val build: Build,
+    colorPalette: ColorPalette
 ) : CommandHandlerBot {
 
     companion object {
         private val logger = FluentLogger.forEnclosingClass()
-
-        private val embedColor: Color = Color(0xFF4DB6C1.toInt())
     }
 
-    override val handler = commandBuilder(CommandHandler.Type.Mention) {
-        arg("info") {
-            action(withMessage = false) {
-                buildInfo()
-            }
+    override val embedColor: Color = colorPalette.aqua
+
+    override val handler = commandBuilder("info", CommandHandler.Type.Mention, description = "Bot build info") {
+        action(withMessage = false) {
+            buildInfo()
         }
     }
 

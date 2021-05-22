@@ -1,14 +1,12 @@
 package ca.allanwang.discord.bot.oust
 
-import ca.allanwang.discord.bot.base.CommandHandler
-import ca.allanwang.discord.bot.base.CommandHandlerBot
-import ca.allanwang.discord.bot.base.CommandHandlerEvent
-import ca.allanwang.discord.bot.base.commandBuilder
+import ca.allanwang.discord.bot.base.*
 import ca.allanwang.discord.bot.oust.game.*
 import com.google.common.flogger.FluentLogger
 import dagger.BindsInstance
 import dagger.Module
 import dagger.Subcomponent
+import dev.kord.common.Color
 import dev.kord.core.Kord
 import dev.kord.core.behavior.channel.MessageChannelBehavior
 import kotlinx.coroutines.withTimeout
@@ -20,6 +18,7 @@ import javax.inject.Singleton
 @Singleton
 class OustBot @Inject constructor(
     private val kord: Kord,
+    colorPalette: ColorPalette,
     private val oustProvider: Provider<OustComponent.Builder>
 ) : CommandHandlerBot {
 
@@ -27,11 +26,15 @@ class OustBot @Inject constructor(
         private val logger = FluentLogger.forEnclosingClass()
     }
 
-    override val handler = commandBuilder(CommandHandler.Type.Prefix) {
-        arg("oust") {
-            action(withMessage = false) {
-                test()
-            }
+    override val embedColor: Color = colorPalette.orange
+
+    override val handler = commandBuilder(
+        "oust",
+        CommandHandler.Type.Prefix,
+    ) {
+        hiddenHelp = true
+        action(withMessage = false) {
+            test()
         }
     }
 

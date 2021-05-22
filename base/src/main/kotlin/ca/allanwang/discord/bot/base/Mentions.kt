@@ -9,6 +9,10 @@ class Mentions @Inject constructor() {
     val channelMentionRegex = Regex("<#([0-9]+)>")
     fun channelMention(snowflake: Snowflake) = "<#${snowflake.value}>"
 
+    /**
+     * Discord ids are sent via text via `<@{id}>`.
+     * If there is a nickname, an additional `!` will follow `@`
+     */
     val userMentionRegex = Regex("<@!?([0-9]+)>")
     fun userMention(snowflake: Snowflake) = "<@${snowflake.value}>"
 
