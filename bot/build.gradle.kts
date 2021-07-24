@@ -8,6 +8,7 @@ dependencies {
     implementation(project(":cinco"))
     implementation(project(":qotd"))
     implementation(project(":gameevent"))
+    implementation(project(":overwatch"))
 
     implementation(bot.Dependencies.slf4j("simple"))
 //    implementation(bot.Dependencies.flogger("slf4j-backend"))

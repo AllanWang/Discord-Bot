@@ -5,8 +5,10 @@ package ca.allanwang.discord.bot
 import ca.allanwang.discord.bot.base.*
 import ca.allanwang.discord.bot.cinco.CincoBotModule
 import ca.allanwang.discord.bot.core.BotFeature
+import ca.allanwang.discord.bot.echo.EchoBotModule
 import ca.allanwang.discord.bot.gameevent.GameEventBotModule
 import ca.allanwang.discord.bot.oust.OustBotModule
+import ca.allanwang.discord.bot.overwatch.OverwatchBotModule
 import ca.allanwang.discord.bot.qotd.QotdBotModule
 import ca.allanwang.discord.bot.random.RandomBotModule
 import ca.allanwang.discord.bot.time.TimeBotModule
@@ -71,6 +73,7 @@ suspend fun main(args: Array<String>) {
 @Component(
     modules = [
         StartBotModule::class,
+        EchoBotModule::class,
         CommandBotModule::class,
         AdminBotModule::class,
         DevBotModule::class,
@@ -79,11 +82,11 @@ suspend fun main(args: Array<String>) {
         TimeBotModule::class,
         OustBotModule::class,
         CincoBotModule::class,
+        OverwatchBotModule::class,
         QotdBotModule::class,
         GameEventBotModule::class,
 
         // ca.allanwang.discord.bot.base.LogBotModule::class,
-        // ca.allanwang.discord.bot.echo.EchoBotModule::class,
     ]
 )
 interface BotComponent {

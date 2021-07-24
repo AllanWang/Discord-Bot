@@ -14,6 +14,8 @@ object Dependencies {
 
     fun firebase(type: String) = "com.google.firebase:firebase-${type}:${Versions.firebase}"
 
+    const val jsoup = "org.jsoup:jsoup:${Versions.jsoup}"
+
     const val dagger = "com.google.dagger:dagger:${Versions.dagger}"
     const val daggerKapt = "com.google.dagger:dagger-compiler:${Versions.dagger}"
 

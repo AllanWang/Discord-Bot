@@ -25,6 +25,9 @@ object Versions {
     // https://firebase.google.com/docs/admin/setup#add-sdk
     const val firebase = "8.0.0"
 
+    // https://github.com/jhy/jsoup/releases
+    const val jsoup = "1.14.1"
+
     // https://github.com/google/dagger/releases
     const val dagger = "2.38"
 
