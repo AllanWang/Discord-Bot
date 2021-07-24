@@ -68,7 +68,7 @@ class HelpBot @Inject constructor(
             color = embedColor
             description = buildString {
                 append("List of commands. Call ")
-                appendCodeBlock { append("[command]  help") }
+                appendCodeBlock { append("[command] help") }
                 append(" for more info on a specific command.")
             }
             field {
