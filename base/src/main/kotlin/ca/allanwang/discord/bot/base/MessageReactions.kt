@@ -1,7 +1,6 @@
 package ca.allanwang.discord.bot.base
 
 import ca.allanwang.discord.bot.core.withTimeout
-import com.gitlab.kordlib.kordx.emoji.Emojis
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.behavior.channel.MessageChannelBehavior
 import dev.kord.core.behavior.channel.createEmbed
@@ -9,6 +8,8 @@ import dev.kord.core.behavior.edit
 import dev.kord.core.entity.Message
 import dev.kord.core.event.message.ReactionAddEvent
 import dev.kord.rest.builder.message.EmbedBuilder
+import dev.kord.x.emoji.Emojis
+import dev.kord.x.emoji.toReaction
 import kotlinx.coroutines.flow.*
 import java.util.concurrent.TimeUnit
 

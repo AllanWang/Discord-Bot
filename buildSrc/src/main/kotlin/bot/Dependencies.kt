@@ -4,7 +4,7 @@ object Dependencies {
     const val kord = "dev.kord:kord-core:${Versions.kord}"
     const val kordxCommands = "com.gitlab.kordlib.kordx:kordx-commands-runtime-kord:${Versions.kordxCommands}"
     const val kordxCommandsKapt = "com.gitlab.kordlib.kordx:kordx-commands-processor:${Versions.kordxCommands}"
-    const val kordxEmojis = "com.gitlab.kordlib:kordx.emoji:${Versions.kordxEmojis}"
+    const val kordxEmojis = "dev.kord.x:emoji:${Versions.kordxEmojis}"
 
     val slf4j = slf4j("api")
     fun slf4j(type: String) = "org.slf4j:slf4j-${type}:${Versions.slf4j}"
