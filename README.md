@@ -19,3 +19,7 @@ General purpose Discord bot, using [Kord](https://github.com/kordlib/kord). 100%
 * Manage user timezones
 * Auto display times when pinged
 * Use reactions to display times otherwise
+
+## [Overwatch](overwatch#readme)
+
+* Stat display
