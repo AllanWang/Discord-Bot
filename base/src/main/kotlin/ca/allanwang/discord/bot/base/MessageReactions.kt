@@ -37,11 +37,12 @@ suspend fun Message.confirmationReaction(user: Snowflake? = null): Boolean {
 
 suspend fun MessageChannelBehavior.paginatedMessage(
     descriptions: List<String>,
-    template: suspend MessageChannelBehavior.(builder: EmbedBuilder.() -> Unit) -> Message = { createEmbed(it) },
+    addFooter: Boolean = true,
+    template: EmbedBuilder.(description: String?) -> Unit = { description = it },
 ): Message {
     if (descriptions.size <= 1) {
-        return template {
-            description = descriptions.firstOrNull()
+        return createEmbed {
+            template(descriptions.firstOrNull())
         }
     }
 
@@ -51,14 +52,16 @@ suspend fun MessageChannelBehavior.paginatedMessage(
     var currentIndex = 0
 
     fun EmbedBuilder.pageEmbed(index: Int) {
-        description = descriptions[index]
-        footer {
-            text = "${index + 1}/${descriptions.size}"
+        template(descriptions[index])
+        if (addFooter) {
+            footer {
+                text = "${index + 1}/${descriptions.size}"
+            }
         }
     }
 
-    val message = template {
-        pageEmbed(currentIndex)
+    val message = createEmbed {
+        pageEmbed(0)
     }
 
     message.addReaction(left)

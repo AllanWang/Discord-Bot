@@ -78,6 +78,7 @@ suspend fun main(args: Array<String>) {
         AdminBotModule::class,
         DevBotModule::class,
         PrefixBotModule::class,
+        HelpBotModule::class,
         RandomBotModule::class,
         TimeBotModule::class,
         OustBotModule::class,

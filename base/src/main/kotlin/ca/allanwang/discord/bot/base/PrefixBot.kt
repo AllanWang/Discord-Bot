@@ -8,6 +8,7 @@ import com.google.firebase.database.DatabaseReference
 import dagger.Module
 import dagger.Provides
 import dagger.multibindings.IntoSet
+import dev.kord.common.Color
 import dev.kord.common.entity.Snowflake
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterNotNull
@@ -23,6 +24,8 @@ class PrefixApi @Inject constructor(
         private const val PREFIX = "prefix"
         private val logger = FluentLogger.forEnclosingClass()
     }
+
+    val defaultPrefix: String = "!"
 
     private val ref: DatabaseReference = rootRef.child(PREFIX)
 
@@ -42,6 +45,7 @@ class PrefixApi @Inject constructor(
 
 @Singleton
 class PrefixBot @Inject constructor(
+    colorPalette: ColorPalette,
     private val prefixApi: PrefixApi,
     private val botPrefixSupplier: BotPrefixSupplier,
 ) : CommandHandlerBot {
@@ -51,13 +55,22 @@ class PrefixBot @Inject constructor(
         private val whitespaceRegex = Regex("\\s")
     }
 
-    override val handler = commandBuilder(CommandHandler.Type.Prefix, CommandHandler.Type.Mention) {
-        arg("prefix") {
-            action(withMessage = true) {
+    override val embedColor: Color = colorPalette.default
+
+    override val handler =
+        commandBuilder("prefix", CommandHandler.Type.Prefix, CommandHandler.Type.Mention, description = "Bot prefix configuration") {
+            action(
+                withMessage = true, helpArgs = "[prefix]",
+                help = {
+                    buildString {
+                        append("Set new prefix. Default is ")
+                        appendCodeBlock { append(prefixApi.defaultPrefix) }
+                    }
+                }
+            ) {
                 prefix()
             }
         }
-    }
 
     private suspend fun CommandHandlerEvent.prefix() {
         if (message.isBlank()) {

@@ -10,6 +10,7 @@ import com.google.common.flogger.FluentLogger
 import dagger.BindsInstance
 import dagger.Module
 import dagger.Subcomponent
+import dev.kord.common.Color
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.behavior.channel.MessageChannelBehavior
 import dev.kord.core.behavior.channel.createEmbed
@@ -32,6 +33,7 @@ import javax.inject.*
 @Singleton
 class CincoBot @Inject constructor(
     private val cincoProvider: Provider<CincoComponent.Builder>,
+    colorPalette: ColorPalette,
     private val wordBank: WordBank
 ) : CommandHandlerBot {
 
@@ -51,22 +53,31 @@ class CincoBot @Inject constructor(
         private const val PARTICIPATION_WAIT_TIME_INDICATOR_SECONDS = 10
     }
 
-    override val handler = commandBuilder(CommandHandler.Type.Prefix) {
-        arg("cinco") {
-            action(withMessage = false) {
-                selectVariant()
+    override val embedColor: Color = colorPalette.default
+
+    override val handler = commandBuilder(
+        "cinco",
+        CommandHandler.Type.Prefix,
+        description = "Games around 5-letter words."
+    ) {
+        action(
+            withMessage = false,
+            help = {
+                "List available games (currently starts azul)"
             }
-            CincoVariant.values().forEach {
-                arg(it.tag) {
-                    action(withMessage = false) {
-                        startVariant(it)
-                    }
+        ) {
+            selectVariant()
+        }
+        CincoVariant.values().forEach {
+            arg(it.tag) {
+                action(withMessage = false, help = { it.description }) {
+                    startVariant(it)
                 }
             }
-            arg("check") {
-                action(withMessage = true) {
-                    checkWord()
-                }
+        }
+        arg("check") {
+            action(withMessage = true, helpArgs = "[word]", help = { "Check if [word] is a registered word" }) {
+                checkWord()
             }
         }
     }

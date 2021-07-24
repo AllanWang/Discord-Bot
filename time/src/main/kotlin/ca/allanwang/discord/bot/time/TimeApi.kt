@@ -1,5 +1,6 @@
 package ca.allanwang.discord.bot.time
 
+import ca.allanwang.discord.bot.base.ColorPalette
 import ca.allanwang.discord.bot.firebase.*
 import com.google.common.flogger.FluentLogger
 import com.google.firebase.database.DatabaseReference
@@ -19,7 +20,8 @@ import javax.inject.Singleton
 
 @Singleton
 class TimeApi @Inject constructor(
-    @FirebaseRootRef rootRef: DatabaseReference
+    @FirebaseRootRef rootRef: DatabaseReference,
+    colorPalette: ColorPalette
 ) {
 
     companion object {
@@ -45,7 +47,7 @@ class TimeApi @Inject constructor(
 
     val reactionThresholdTime: Long = 5 * 60 * 1000
 
-    val embedColor: Color = Color(0xFF03a5fc.toInt())
+    val embedColor: Color = colorPalette.lightBlue
 
     suspend fun getTime(group: Snowflake, id: Snowflake): TimeZone? =
         ref.child(group).child(id).single<String>()?.let { TimeZone.getTimeZone(it) }

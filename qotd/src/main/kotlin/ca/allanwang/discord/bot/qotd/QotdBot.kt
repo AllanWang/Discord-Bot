@@ -5,6 +5,7 @@ import ca.allanwang.discord.bot.firebase.FirebaseCache
 import ca.allanwang.discord.bot.time.TimeApi
 import ca.allanwang.discord.bot.time.TimeConfigBot
 import com.google.common.flogger.FluentLogger
+import dev.kord.common.Color
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.Kord
 import dev.kord.core.behavior.channel.MessageChannelBehavior
@@ -40,86 +41,159 @@ class QotdBot @Inject constructor(
         qotd.initLoops()
     }
 
-    override val handler = commandBuilder(CommandHandler.Type.Prefix) {
-        arg("qotd") {
+    override val embedColor: Color = qotd.embedColor
+
+    override val handler =
+        commandBuilder("qotd", CommandHandler.Type.Prefix, description = "Question/Quote of the Day") {
             arg("init") {
-                action(withMessage = false) {
+                action(
+                    withMessage = false,
+                    help = {
+                        buildString {
+                            append("Admin only. ")
+                            append("Set the main channel for QOTD commands. ")
+                            append("Other admin only commands are only valid in the main channel.")
+                        }
+                    }
+                ) {
                     init()
                 }
             }
-            arg("help") {
-                action(withMessage = false) {
-                    help()
-                }
-            }
             arg("status") {
-                action(withMessage = false) {
+                action(withMessage = false, help = { "Admin only. View QOTD Status." }) {
                     status()
                 }
             }
-            arg("sample") {
-                action(withMessage = false) {
-                    sample()
-                }
-            }
-            arg("questions") {
-                action(withMessage = false) {
-                    questions()
-                }
-            }
             arg("addQuestion") {
-                action(withMessage = true) {
+                action(
+                    withMessage = true,
+                    help = {
+                        buildString {
+                            append("Admin only. ")
+                            append("Adds a new question for QOTD. ")
+                            append("Questions are sent in order, and each question is deleted after one use.")
+                        }
+                    }
+                ) {
                     addQuestion()
                 }
             }
+            arg("questions") {
+                action(withMessage = false, help = { "Admin only. Show current question pool." }) {
+                    questions()
+                }
+            }
             arg("deleteQuestion") {
-                action(withMessage = true) {
+                action(
+                    withMessage = true,
+                    help = {
+                        buildString {
+                            append("Admin only. ")
+                            append("List questions with ids. Pass id to delete a specific question.")
+                        }
+                    }
+                ) {
                     deleteQuestion()
                 }
             }
+            arg("sample") {
+                action(withMessage = false, help = { "Admin only. Show sample QOTD with all configurations." }) {
+                    sample()
+                }
+            }
             arg("now") {
-                action(withMessage = false) {
+                action(withMessage = false, help = { "Admin only. Send QOTD now." }) {
                     now()
                 }
             }
             configCommands()
         }
-    }
 
-    private fun CommandBuilderRootDsl.configCommands() {
+    private fun CommandBuilderArgDsl.configCommands() {
+
+        fun CommandBuilderArgDsl.removableAction(
+            helpArgs: String? = null,
+            help: HelpSupplier,
+            helpRemove: String,
+            block: suspend CommandHandlerEvent.(remove: Boolean) -> Unit
+        ) {
+            arg(REMOVE_KEY) {
+                autoGenHelp = false
+                action(withMessage = false) { block(true) }
+            }
+            action(
+                withMessage = true, helpArgs = helpArgs,
+                help = {
+                    buildString {
+                        append(help())
+                        append(" Send ")
+                        appendCodeBlock { append(REMOVE_KEY) }
+                        append(" to ")
+                        append(helpRemove)
+                    }
+                }
+            ) {
+                block(false)
+            }
+        }
+
         arg("channel") {
-            arg(REMOVE_KEY) { action(withMessage = false) { channel(remove = true) } }
-            action(withMessage = true) {
-                channel()
+            removableAction(
+                help = { "Set the channel where QOTD will send messages for everyone to see." },
+                helpRemove = "disable QOTD."
+            ) {
+                channel(it)
             }
         }
         arg("image") {
-            arg(REMOVE_KEY) { action(withMessage = false) { image(remove = true) } }
-            action(withMessage = true) {
-                image()
+            removableAction(
+                help = { "Provide image url to attach to question." },
+                helpRemove = "remove image."
+            ) {
+                image(it)
             }
         }
         arg("template") {
-            arg(REMOVE_KEY) { action(withMessage = false) { template(remove = true) } }
-            action(withMessage = true) {
-                template()
+            removableAction(
+                help = {
+                    buildString {
+                        append("Add a template for QOTD. ")
+                        append(" Add ")
+                        appendCodeBlock { append(Qotd.QUESTION_PLACEHOLDER) }
+                        append("in the template, which will be replaced by the selected question.")
+                    }
+                },
+                helpRemove = "remove template."
+            ) {
+                template(it)
             }
         }
         arg("time") {
-            arg(REMOVE_KEY) { action(withMessage = false) { time(remove = true) } }
-            action(withMessage = true) {
-                time()
+            removableAction(
+                help = {
+                    buildString {
+                        append("Set a time when QOTD will start its questions. ")
+                        append("Please make sure you've set your timezone (")
+                        append(timeConfigBot.timezoneCommand(prefix))
+                        append(").")
+                    }
+                },
+                helpRemove = "disable QOTD."
+            ) {
+                time(it)
             }
         }
         arg("timeInterval") {
-            action(withMessage = true) {
+            action(withMessage = true, help = { "Set number of hours to wait between QOTD messages." }) {
                 timeInterval()
             }
         }
         arg("roleMention") {
-            arg(REMOVE_KEY) { action(withMessage = false) { roleMention(remove = true) } }
-            action(withMessage = true) {
-                roleMention()
+            removableAction(
+                help = { "Add role to mention with each QOTD." },
+                helpRemove = "remove mentions."
+            ) {
+                roleMention(it)
             }
         }
     }
@@ -131,9 +205,13 @@ class QotdBot @Inject constructor(
     private suspend fun CommandHandlerEvent.statusGuildId(): Snowflake? =
         event.guildId?.takeIf { statusChannelCache.get(it) == channel.id }
 
-    private suspend fun MessageChannelBehavior.createQotd(builder: EmbedBuilder.() -> Unit) = createEmbed {
+    private fun EmbedBuilder.baseQotd() {
         color = qotd.embedColor
         title = "QOTD"
+    }
+
+    private suspend fun MessageChannelBehavior.createQotd(builder: EmbedBuilder.() -> Unit) = createEmbed {
+        baseQotd()
         builder()
     }
 
@@ -152,89 +230,18 @@ class QotdBot @Inject constructor(
 
         channel.createQotd {
             description = "Welcome to QOTD! All setup and status updates will be sent to this channel"
-            commandFields(prefix)
         }
-    }
-
-    private suspend fun CommandHandlerEvent.help() {
-        channel.createQotd {
-            commandFields(prefix)
-        }
-    }
-
-    private fun EmbedBuilder.commandFields(prefix: String) {
-        fun StringBuilder.appendCommand(command: String, description: String) {
-            appendCodeBlock {
-                append(prefix)
-                append("qotd ")
-                append(command)
-            }
-            append(": ")
-            append(description)
-            appendLine()
-        }
-
-        field {
-            name = "Commands"
-            value = buildString {
-                appendCommand("help", "see this message again.")
-                appendCommand(
-                    "init",
-                    "Set the main channel for QOTD commands. All commands below can only be used in the main channel."
-                )
-                appendCommand(
-                    "addQuestion [question]",
-                    "Adds a new question for QOTD. If the question pool isn't empty, a random one will be used for a QOTD. Every question is deleted after one use."
-                )
-                appendCommand("status", "View QOTD status")
-                appendCommand("questions", "Shows current question pool.")
-                appendCommand("sample", "Shows a sample QOTD with all the configurations.")
-                appendCommand("now", "Send a real QOTD now.")
-            }.trim()
-        }
-
-        field {
-            name = "Configuration Commands"
-            value = buildString {
-                appendCommand(
-                    "channel",
-                    "Set the channel where QOTD will send messages for everyone to see. Send `remove` to disable QOTD."
-                )
-                appendCommand(
-                    "time",
-                    "Set a time when QOTD will start its questions. Please make sure you've set your timezone (see `${prefix}timezone help`). Send `remove` to disable QOTD."
-                )
-                appendCommand("timeInterval", "Set number of hours to wait between QOTD messages.")
-                appendCommand("image", "Provide image url to attach to question. Send `remove` to remove image.")
-                appendCommand("roleMention", "Add role to mention with each QOTD. Send `remove` to remove mentions.")
-                appendCommand("template", "Add a template for QOTD. Send `remove` to remove template.")
-            }.trim()
-        }
-
-        templateFormat()
-    }
-
-    private fun EmbedBuilder.templateFormat() {
-        field {
-            name = "Template Format"
-            value = buildString {
-                append("Add any text here, along with ")
-                appendCodeBlock { append(Qotd.QUESTION_PLACEHOLDER) }
-                appendLine(".")
-                appendCodeBlock { append(Qotd.QUESTION_PLACEHOLDER) }
-                append(" will be replaced by the selected question.")
-            }.trim()
-        }
+        handler.handleHelp(this)
     }
 
     private suspend fun CommandHandlerEvent.status() {
         val guildId = statusGuildId() ?: return
         val status = qotd.status(guildId)
         if (status == null) {
-            channel.createEmbed {
+            channel.createQotd {
                 description = "QOTD not set up"
-                commandFields(prefix)
             }
+            handler.handleHelp(this)
             return
         }
         with(status) {
@@ -267,10 +274,10 @@ class QotdBot @Inject constructor(
         val guildId = statusGuildId() ?: return
         val core = api.coreSnapshot(guildId)
         if (core == null) {
-            channel.createEmbed {
+            channel.createQotd {
                 description = "QOTD not set up"
-                commandFields(prefix)
             }
+            handler.handleHelp(this)
             return
         }
         if (!qotd.qotdNow(core)) {
@@ -331,8 +338,8 @@ class QotdBot @Inject constructor(
         if (!qotd.isValidTemplate(message)) {
             channel.createQotd {
                 description = "Invalid template"
-                templateFormat()
             }
+            commandHelp.handleHelp(this)
             return
         }
         api.template(guildId, message)
@@ -430,7 +437,8 @@ class QotdBot @Inject constructor(
         val questionPages = questionText.chunkedByLength(emptyText = "No questions found")
 
         channel.paginatedMessage(questionPages) {
-            createQotd(it)
+            baseQotd()
+            description = it
         }
     }
 

@@ -43,6 +43,7 @@ abstract class CommandBot(
     private suspend fun MessageCreateEvent.handleCommands(candidates: Map<String, CommandHandler>) {
         val prefixedMessage = prefixedMessage() ?: return
         val key = prefixedMessage.message.substringBefore(' ')
+        val subMessage = if (key == prefixedMessage.message) "" else prefixedMessage.message.substringAfter(' ')
         val handler = candidates[key.toLowerCase(Locale.US)] ?: return
         kord.launch(
             CoroutineExceptionHandler { _, throwable ->
@@ -53,9 +54,11 @@ abstract class CommandBot(
                 CommandHandlerEvent(
                     event = this@handleCommands,
                     prefix = prefixedMessage.prefix,
+                    type = type,
                     command = key,
-                    message = prefixedMessage.message,
-                    origMessage = message.content
+                    message = subMessage,
+                    origMessage = message.content,
+                    commandHelp = handler
                 )
             )
         }
@@ -105,7 +108,7 @@ class BotMentionGroupFeature @Inject constructor(
 
     override suspend fun MessageCreateEvent.prefixedMessage(): PrefixedMessage? {
         val match = mentionRegex.find(message.content) ?: return null
-        logger.atInfo().log("Bot mention matched")
+        logger.atFine().log("Bot mention matched")
         val prefix = match.groupValues[1]
         val message = match.groupValues[2].takeIf { it.isNotBlank() } ?: return null
         return PrefixedMessage(prefix = prefix, message = message)
@@ -122,5 +125,15 @@ object CommandBotModule {
     @Provides
     @IntoSet
     @Singleton
+    fun prefixCommandBot(bot: BotPrefixGroupFeature): CommandBot = bot
+
+    @Provides
+    @IntoSet
+    @Singleton
     fun mentionBot(bot: BotMentionGroupFeature): BotFeature = bot
+
+    @Provides
+    @IntoSet
+    @Singleton
+    fun mentionCommandBot(bot: BotMentionGroupFeature): CommandBot = bot
 }

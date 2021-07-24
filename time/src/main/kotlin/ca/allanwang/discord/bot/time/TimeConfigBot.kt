@@ -5,6 +5,7 @@ import ca.allanwang.discord.bot.maps.MapsApi
 import com.google.common.flogger.FluentLogger
 import com.google.maps.model.AddressType
 import com.google.maps.model.GeocodingResult
+import dev.kord.common.Color
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.behavior.channel.MessageChannelBehavior
 import dev.kord.core.behavior.channel.createEmbed
@@ -25,13 +26,17 @@ class TimeConfigBot @Inject constructor(
         private val logger = FluentLogger.forEnclosingClass()
     }
 
-    override val handler = commandBuilder(CommandHandler.Type.Prefix) {
-        arg("timezone") {
-            action(withMessage = true) {
-                logger.atInfo().log("action")
-                if (message.isBlank()) getTimezone()
-                else setTimezone(message)
-            }
+    override val embedColor: Color = timeApi.embedColor
+
+    override val handler = commandBuilder(
+        "timezone",
+        CommandHandler.Type.Prefix,
+        description = "Show registered timezones for messages (12 hour format)"
+    ) {
+        action(withMessage = true, helpArgs = "[city]", help = { "Set timezone to matching [city]" }) {
+            logger.atInfo().log("action")
+            if (message.isBlank()) getTimezone()
+            else setTimezone(message)
         }
     }
 

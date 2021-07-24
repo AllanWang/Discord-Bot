@@ -1,9 +1,6 @@
 package ca.allanwang.discord.bot.random
 
-import ca.allanwang.discord.bot.base.CommandHandler
-import ca.allanwang.discord.bot.base.CommandHandlerBot
-import ca.allanwang.discord.bot.base.CommandHandlerEvent
-import ca.allanwang.discord.bot.base.commandBuilder
+import ca.allanwang.discord.bot.base.*
 import com.google.common.flogger.FluentLogger
 import dev.kord.common.Color
 import dev.kord.core.behavior.channel.createEmbed
@@ -13,7 +10,9 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class RandomBot @Inject constructor() : CommandHandlerBot {
+class DiceBot @Inject constructor(
+    colorPalette: ColorPalette
+) : CommandHandlerBot {
 
     companion object {
         private val logger = FluentLogger.forEnclosingClass()
@@ -21,8 +20,6 @@ class RandomBot @Inject constructor() : CommandHandlerBot {
         private inline val rnd: Random get() = ThreadLocalRandom.current()
 
         private val rangeRegex = Regex("^\\s*(\\d+)(?:[\\s-]+(\\d+))?\\s*$")
-
-        private val embedColor = Color(0xFFEEB501.toInt())
 
         /**
          * Extract start and end range from input.
@@ -37,35 +34,37 @@ class RandomBot @Inject constructor() : CommandHandlerBot {
         }
     }
 
-    override val handler = commandBuilder(CommandHandler.Type.Prefix) {
-        arg("flip") {
-            action(withMessage = true) {
-                when (message.trim().toLowerCase()) {
-                    "h", "heads" -> flipCoin(true)
-                    "t", "tails" -> flipCoin(false)
-                    else -> flipCoin(null)
+    override val embedColor: Color = colorPalette.gold
+
+    override val handler =
+        commandBuilder("roll", CommandHandler.Type.Prefix, description = "RNG die") {
+            action(
+                withMessage = true,
+                help = {
+                    buildString {
+                        append("Roll a die. ")
+                        append("Optionally provide two numbers to change the range (both inclusive). ")
+                        append("Eg ")
+                        appendCodeBlock {
+                            append(prefix)
+                            append("roll 1 6")
+                        }
+                        append(". ")
+                        append("If only one number is provided, the range will start with 1 and end with that number (")
+                        appendCodeBlock {
+                            append(prefix)
+                            append("roll 8 = ")
+                            append(prefix)
+                            append("roll 1 8")
+                        }
+                        append(").")
+                    }
                 }
-            }
-        }
-        arg("roll") {
-            action(withMessage = true) {
+            ) {
                 val range = rollRange(message) ?: 1 to 6
                 roll(range.first, range.second)
             }
         }
-    }
-
-    private suspend fun CommandHandlerEvent.flipCoin(expectHeads: Boolean?) {
-        val heads = rnd.nextBoolean()
-        channel.createEmbed {
-            title = if (heads) "Heads" else "Tails"
-            color = embedColor
-            if (expectHeads != null) {
-                description = "You ${if (expectHeads == heads) "win!" else "lose!"}"
-            }
-            userFooter()
-        }
-    }
 
     private suspend fun CommandHandlerEvent.roll(min: Int, max: Int) {
         if (min >= max) {

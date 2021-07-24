@@ -10,32 +10,42 @@ import javax.inject.Singleton
 
 @Singleton
 class OverwatchBot @Inject constructor(
-    private val overwatchApi: OverwatchApi
+    private val overwatchApi: OverwatchApi,
+    colorPalette: ColorPalette
 ) : CommandHandlerBot {
+
     companion object {
         private val logger = FluentLogger.forEnclosingClass()
-        private val embedColor = Color(0xFFEE9C30.toInt())
     }
 
-    override val handler: CommandHandler = commandBuilder(CommandHandler.Type.Prefix) {
-        arg("ow") {
+    override val embedColor: Color = colorPalette.overwatch
+
+    override val handler: CommandHandler =
+        commandBuilder("ow", CommandHandler.Type.Prefix, description = "Overwatch stats") {
             arg("link") {
-                action(withMessage = true) {
+                action(
+                    withMessage = true, helpArgs = "[battletag]",
+                    help = {
+                        "Link battletag (case sensitive, eg example#1234)"
+                    }
+                ) {
                     link()
                 }
             }
             arg("stats") {
-                action(withMessage = false) {
+                action(withMessage = false, help = { "View player stats" }) {
                     stats()
                 }
                 arg("cached") {
-                    action(withMessage = false) {
+                    action(
+                        withMessage = false,
+                        help = { "View player stats from cache only; does not query playOverwatch" }
+                    ) {
                         stats(cacheOnly = true)
                     }
                 }
             }
         }
-    }
 
     private suspend fun CommandHandlerEvent.link() {
         val authorId = authorId ?: return
