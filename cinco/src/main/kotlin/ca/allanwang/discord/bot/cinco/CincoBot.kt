@@ -6,7 +6,6 @@ import ca.allanwang.discord.bot.cinco.game.CincoGame
 import ca.allanwang.discord.bot.cinco.game.WordBank
 import ca.allanwang.discord.bot.cinco.game.features.CincoGameFeatureModule
 import ca.allanwang.discord.bot.cinco.game.features.CincoVariant
-import com.gitlab.kordlib.kordx.emoji.Emojis
 import com.google.common.flogger.FluentLogger
 import dagger.BindsInstance
 import dagger.Module
@@ -19,6 +18,8 @@ import dev.kord.core.behavior.edit
 import dev.kord.core.entity.ReactionEmoji
 import dev.kord.core.entity.User
 import dev.kord.rest.builder.message.EmbedBuilder
+import dev.kord.x.emoji.Emojis
+import dev.kord.x.emoji.toReaction
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay

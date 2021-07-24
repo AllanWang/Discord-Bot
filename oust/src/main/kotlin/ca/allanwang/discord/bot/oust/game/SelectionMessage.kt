@@ -1,7 +1,9 @@
 package ca.allanwang.discord.bot.oust.game
 
-import ca.allanwang.discord.bot.base.*
-import com.gitlab.kordlib.kordx.emoji.Emojis
+import ca.allanwang.discord.bot.base.ColorPalette
+import ca.allanwang.discord.bot.base.appendBold
+import ca.allanwang.discord.bot.base.appendItalic
+import ca.allanwang.discord.bot.base.appendPlural
 import com.google.common.flogger.FluentLogger
 import dev.kord.common.Color
 import dev.kord.common.entity.Snowflake
@@ -16,6 +18,8 @@ import dev.kord.core.event.Event
 import dev.kord.core.event.message.ReactionAddEvent
 import dev.kord.core.event.message.ReactionRemoveEvent
 import dev.kord.rest.builder.message.EmbedBuilder
+import dev.kord.x.emoji.Emojis
+import dev.kord.x.emoji.toReaction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first

@@ -117,8 +117,8 @@ internal abstract class CommandBuilderBase : CommandBuilderArgDsl {
 
     private suspend fun handleArg(event: CommandHandlerEvent): Boolean {
         val key = event.message.substringBefore(' ')
-        logger.atInfo().log("Test key %s in %s", key, keys)
-        val argHandler = children[key.toLowerCase(Locale.US)]
+        logger.atFine().log("Test key %s in %s", key, keys)
+        val argHandler = children[key.lowercase(Locale.US)]
         val subMessage = if (key == event.message) "" else event.message.substringAfter(' ')
         if (argHandler != null) {
             argHandler.handle(event.copy(message = subMessage, commandHelp = argHandler))

@@ -4,7 +4,7 @@ object Dependencies {
     const val kord = "dev.kord:kord-core:${Versions.kord}"
     const val kordxCommands = "com.gitlab.kordlib.kordx:kordx-commands-runtime-kord:${Versions.kordxCommands}"
     const val kordxCommandsKapt = "com.gitlab.kordlib.kordx:kordx-commands-processor:${Versions.kordxCommands}"
-    const val kordxEmojis = "com.gitlab.kordlib:kordx.emoji:${Versions.kordxEmojis}"
+    const val kordxEmojis = "dev.kord.x:emoji:${Versions.kordxEmojis}"
 
     val slf4j = slf4j("api")
     fun slf4j(type: String) = "org.slf4j:slf4j-${type}:${Versions.slf4j}"
@@ -13,6 +13,8 @@ object Dependencies {
     fun flogger(type: String) = "com.google.flogger:flogger-${type}:${Versions.flogger}"
 
     fun firebase(type: String) = "com.google.firebase:firebase-${type}:${Versions.firebase}"
+
+    const val jsoup = "org.jsoup:jsoup:${Versions.jsoup}"
 
     const val dagger = "com.google.dagger:dagger:${Versions.dagger}"
     const val daggerKapt = "com.google.dagger:dagger-compiler:${Versions.dagger}"

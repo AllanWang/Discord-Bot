@@ -15,5 +15,8 @@ class ColorPalette @Inject internal constructor() {
     val lavendar: Color = Color(0xFFAB98D2.toInt())
     val red: Color = Color(0xFFDC1E28.toInt())
 
+    // Orange
+    val overwatch: Color = Color(0xFFEE9C30.toInt())
+
     val default: Color = blue
 }

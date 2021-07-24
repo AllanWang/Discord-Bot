@@ -10,6 +10,7 @@ plugins {
 buildscript {
     repositories {
         jcenter()
+        google()
     }
 
     dependencies {
@@ -19,6 +20,7 @@ buildscript {
 
 repositories {
     jcenter()
+    google()
 }
 
 subprojects {
@@ -35,7 +37,8 @@ subprojects {
 
     repositories {
         jcenter()
-        maven(url = "https://dl.bintray.com/kordlib/Kord")
+        google()
+        maven(url = "https://oss.sonatype.org/content/repositories/snapshots")
     }
 
     dependencies {

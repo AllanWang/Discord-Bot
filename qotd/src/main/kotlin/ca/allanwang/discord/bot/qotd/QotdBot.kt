@@ -11,6 +11,7 @@ import dev.kord.core.Kord
 import dev.kord.core.behavior.channel.MessageChannelBehavior
 import dev.kord.core.behavior.channel.createEmbed
 import dev.kord.rest.builder.message.EmbedBuilder
+import kotlinx.datetime.toKotlinInstant
 import java.time.Instant
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -258,7 +259,7 @@ class QotdBot @Inject constructor(
                     append("Repeats every ")
                     appendPlural(timeIntervalHours.toInt(), "hour")
                     appendLine()
-                    timestamp = qotdTime?.let { Instant.ofEpochMilli(it) }
+                    timestamp = qotdTime?.let { Instant.ofEpochMilli(it).toKotlinInstant() }
                 }.trim()
             }
         }
