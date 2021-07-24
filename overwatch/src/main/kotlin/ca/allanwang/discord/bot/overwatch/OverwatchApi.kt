@@ -76,10 +76,13 @@ class OverwatchApi @Inject constructor(
     }
 
     private fun Element.level(): Int? =
-        selectFirst(".player-level")?.text()?.trim()?.toIntOrNull()
+        selectFirst(".player-level")
+            ?.selectFirst(".u-vertical-center")?.text()?.trim()?.toIntOrNull()
 
+    // potentially less stable so non blocking
     private fun Element.endorsementLevel(): Int? =
-        selectFirst(".endorsement-level")?.text()?.trim()?.toIntOrNull()
+        selectFirst(".endorsement-level")?.parent()
+            ?.selectFirst(".u-center")?.text()?.trim()?.toIntOrNull() ?: 0
 
     private fun Element.gameStats(winId: String = "3F5", lossId: String = "42E"): OverwatchUser.GameStats? {
         val win = tableRow(winId)?.toIntOrNull() ?: return missing("win")

@@ -40,12 +40,13 @@ class OverwatchBot @Inject constructor(
     private suspend fun CommandHandlerEvent.link() {
         val authorId = authorId ?: return
         val tag = message.trim()
-        val data = overwatchApi.parseUserData(tag)
-        if (data == null) {
+        channel.type()
+        val user = overwatchApi.parseUserData(tag)?.takeIf { it.isComplete }
+        if (user == null) {
             channel.createMessage("Could not find account info from ${overwatchApi.userDataUrl(tag)}")
         } else {
-            channel.createMessage(data.toString())
-            overwatchApi.saveUserData(authorId, data)
+            overwatchApi.saveUserData(authorId, user)
+            showData(OverwatchFullData(old = user, new = user))
         }
     }
 
@@ -56,6 +57,7 @@ class OverwatchBot @Inject constructor(
                 val user = overwatchApi.getUserData(authorId)?.takeIf { it.isComplete }
                 OverwatchFullData(old = user, new = user)
             } else {
+                channel.type()
                 val data = overwatchApi.getFullUserData(authorId)
                 data?.new?.let { newUser ->
                     overwatchApi.saveUserData(authorId, newUser)
@@ -86,11 +88,11 @@ class OverwatchBot @Inject constructor(
             }
             title = "Quick Play Stats"
 
-            field("Level", user.level.toString(), delta?.level?.leadingFormat())
+            field("Level", user.level.toString(), delta?.level?.deltaFormat())
             field(
                 "Endorsement",
                 user.endorsementLevel.toString(),
-                delta?.endorsementLevel?.leadingFormat(),
+                delta?.endorsementLevel?.deltaFormat(),
                 inline = true
             )
 
@@ -116,13 +118,14 @@ class OverwatchBot @Inject constructor(
     }
 
     private fun EmbedBuilder.gameStats(gameStats: OverwatchUser.GameStats, delta: OverwatchDelta.GameStatsDelta?) {
-        field("Wins", gameStats.wins.toString(), delta?.wins?.leadingFormat())
-        field("Losses", gameStats.losses.toString(), delta?.losses?.leadingFormat(), inline = true)
-        field("Win Rate", gameStats.winRate.percentFormat(), delta?.winRate?.percentFormat(leadingSign = true))
+        field("Wins", gameStats.wins.toString(), delta?.wins?.deltaFormat())
+        field("Losses", gameStats.losses.toString(), delta?.losses?.deltaFormat(), inline = true)
+        field("Win Rate", gameStats.winRate.percentFormat(), delta?.winRate?.deltaFormat())
     }
 
-    private fun Int.leadingFormat(): String = "%+d".format(this)
+    private fun Int.deltaFormat(): String? = if (this == 0) null else "%+d".format(this)
 
-    private fun Float.percentFormat(leadingSign: Boolean = false): String =
-        "%${if (leadingSign) "+" else ""}.2f%%".format(this * 100)
+    private fun Float.deltaFormat(): String? = if (this == 0f) null else "%+.2f%%".format(this * 100)
+
+    private fun Float.percentFormat(): String = "%.2f%%".format(this * 100)
 }
