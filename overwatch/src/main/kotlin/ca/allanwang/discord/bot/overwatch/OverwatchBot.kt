@@ -102,7 +102,7 @@ class OverwatchBot @Inject constructor(
             field(
                 "Endorsement",
                 user.endorsementLevel.toString(),
-                delta?.endorsementLevel?.deltaFormat(),
+                null, // Don't show endorsement delta
                 inline = true
             )
 
