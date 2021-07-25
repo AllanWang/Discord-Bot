@@ -16,7 +16,8 @@ import javax.inject.Singleton
 
 @Singleton
 class OverwatchApi @Inject constructor(
-    @FirebaseRootRef rootRef: DatabaseReference
+    @FirebaseRootRef rootRef: DatabaseReference,
+    private val overwatchPrestige: OverwatchPrestige,
 ) {
 
     companion object {
@@ -75,9 +76,16 @@ class OverwatchApi @Inject constructor(
         return el.child(1).ownText()
     }
 
-    private fun Element.level(): Int? =
-        selectFirst(".player-level")
-            ?.selectFirst(".u-vertical-center")?.text()?.trim()?.toIntOrNull()
+    private fun Element.level(): Int? {
+        val rootEl = selectFirst(".player-level") ?: return null
+        val baseLevel = rootEl.selectFirst(".u-vertical-center")?.text()?.trim()?.toIntOrNull() ?: return null
+        val borderLevel = rootEl.attr("style")
+            .let { overwatchPrestige.prestigeBorder(it) }
+        val starLevel = rootEl.selectFirst(".player-rank[style]")
+            ?.attr("style")
+            ?.let { overwatchPrestige.prestigeStars(it) } ?: 0
+        return baseLevel + borderLevel * 500 + starLevel * 100
+    }
 
     // potentially less stable so non blocking
     private fun Element.endorsementLevel(): Int? =
