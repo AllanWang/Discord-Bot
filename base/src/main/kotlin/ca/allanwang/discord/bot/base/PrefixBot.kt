@@ -1,8 +1,8 @@
 package ca.allanwang.discord.bot.base
 
 import ca.allanwang.discord.bot.firebase.FirebaseRootRef
-import ca.allanwang.discord.bot.firebase.listenSnapshot
 import ca.allanwang.discord.bot.firebase.setValue
+import ca.allanwang.discord.bot.firebase.singleSnapshot
 import com.google.common.flogger.FluentLogger
 import com.google.firebase.database.DatabaseReference
 import dagger.Module
@@ -10,9 +10,7 @@ import dagger.Provides
 import dagger.multibindings.IntoSet
 import dev.kord.common.Color
 import dev.kord.common.entity.Snowflake
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.map
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -25,14 +23,23 @@ class PrefixApi @Inject constructor(
         private val logger = FluentLogger.forEnclosingClass()
     }
 
+    private val prefixes: ConcurrentHashMap<Snowflake, String> = ConcurrentHashMap()
+
     val defaultPrefix: String = "!"
 
     private val ref: DatabaseReference = rootRef.child(PREFIX)
 
-    suspend fun setPrefix(group: Snowflake, prefix: String): Boolean = ref.child(group.asString).setValue(prefix)
+    suspend fun setPrefix(group: Snowflake, prefix: String): Boolean {
+        prefixes[group] = prefix
+        return ref.child(group.asString).setValue(prefix)
+    }
 
-    suspend fun listen(): Flow<Map<Snowflake, String>> = ref.listenSnapshot().filterNotNull().map { snapshot ->
-        snapshot.children
+    fun getPrefix(group: Snowflake): String =
+        prefixes[group] ?: defaultPrefix
+
+    private suspend fun fetchAll(): Map<Snowflake, String> {
+        val snapshot = ref.singleSnapshot()
+        return snapshot.children
             .mapNotNull {
                 runCatching {
                     Snowflake(it.key) to it.getValue(String::class.java)
@@ -40,6 +47,11 @@ class PrefixApi @Inject constructor(
                     logger.atWarning().withCause(it).log("Prefix decode failure at ${snapshot.key}")
                 }.getOrNull()
             }.toMap()
+    }
+
+    suspend fun sync() {
+        logger.atInfo().log("Syncing prefixes")
+        prefixes.putAll(fetchAll())
     }
 }
 
@@ -58,7 +70,12 @@ class PrefixBot @Inject constructor(
     override val embedColor: Color = colorPalette.default
 
     override val handler =
-        commandBuilder("prefix", CommandHandler.Type.Prefix, CommandHandler.Type.Mention, description = "Bot prefix configuration") {
+        commandBuilder(
+            "prefix",
+            CommandHandler.Type.Prefix,
+            CommandHandler.Type.Mention,
+            description = "Bot prefix configuration"
+        ) {
             action(
                 withMessage = true, helpArgs = "[prefix]",
                 help = {

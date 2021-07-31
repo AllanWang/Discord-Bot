@@ -6,9 +6,10 @@ import dagger.Binds
 import dagger.Module
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.Kord
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -25,19 +26,16 @@ class BotPrefixSupplierImpl @Inject constructor(
         private val logger = FluentLogger.forEnclosingClass()
     }
 
-    private val atomicPrefix: AtomicReference<Map<Snowflake, String>> = AtomicReference(emptyMap())
-
     init {
         kord.launch {
-            prefixApi.listen()
-                .collect {
-                    logger.atInfo().log("Updated prefix %s", it)
-                    atomicPrefix.set(it)
-                }
+            while (isActive) {
+                prefixApi.sync()
+                delay(TimeUnit.DAYS.toMillis(1))
+            }
         }
     }
 
-    override suspend fun prefix(group: Snowflake): String = atomicPrefix.get()[group] ?: prefixApi.defaultPrefix
+    override suspend fun prefix(group: Snowflake): String = prefixApi.getPrefix(group)
 }
 
 @Module(includes = [FirebaseModule::class])
