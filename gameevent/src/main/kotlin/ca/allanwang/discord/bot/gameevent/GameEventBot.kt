@@ -12,6 +12,7 @@ import dev.kord.core.behavior.channel.createEmbed
 import dev.kord.core.behavior.edit
 import dev.kord.core.entity.ReactionEmoji
 import dev.kord.rest.builder.message.EmbedBuilder
+import dev.kord.rest.builder.message.modify.embed
 import kotlinx.coroutines.flow.*
 import kotlinx.datetime.toKotlinInstant
 import java.time.Instant

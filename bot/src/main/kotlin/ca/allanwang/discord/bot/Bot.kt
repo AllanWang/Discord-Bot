@@ -16,6 +16,7 @@ import com.google.common.flogger.FluentLogger
 import dagger.BindsInstance
 import dagger.Component
 import dev.kord.core.Kord
+import kotlinx.datetime.Clock
 import javax.inject.Singleton
 
 suspend fun main(args: Array<String>) {
@@ -66,7 +67,12 @@ suspend fun main(args: Array<String>) {
         """.trimIndent()
     )
 
-    kord.login { playing("beep boop") }
+    kord.login {
+        presence {
+            playing("beep boop")
+            since = Clock.System.now()
+        }
+    }
 }
 
 @Singleton

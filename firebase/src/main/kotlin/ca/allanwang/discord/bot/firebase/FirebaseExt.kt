@@ -43,7 +43,7 @@ suspend fun DatabaseReference.listenSnapshot(): Flow<DataSnapshot> = withContext
     callbackFlow<DataSnapshot> {
         val valueListener = object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
-                offer(dataSnapshot)
+                trySend(dataSnapshot)
             }
 
             override fun onCancelled(databaseError: DatabaseError) {
