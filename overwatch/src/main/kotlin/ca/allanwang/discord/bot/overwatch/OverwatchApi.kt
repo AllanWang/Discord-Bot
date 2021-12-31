@@ -109,7 +109,8 @@ class OverwatchApi @Inject constructor(
             tag = tag,
             name = name,
             portraitUrl = portraitUrl,
-            level = level,
+            // Levels are displayed at 0 on site and 100 in game
+            level = level.let { if (it == 0) 100 else it },
             endorsementLevel = endorsementLevel,
             quickPlay = quickPlay,
             competitive = competitive,
