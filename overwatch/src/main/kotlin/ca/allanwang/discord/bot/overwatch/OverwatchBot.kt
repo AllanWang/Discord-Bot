@@ -81,12 +81,15 @@ class OverwatchBot @Inject constructor(
                         delay(8_000)
                     }
                 }
-                val data = overwatchApi.getFullUserData(authorId)
-                data?.new?.let { newUser ->
-                    overwatchApi.saveUserData(authorId, newUser)
+                try {
+                    val data = overwatchApi.getFullUserData(authorId)
+                    data?.new?.let { newUser ->
+                        overwatchApi.saveUserData(authorId, newUser)
+                    }
+                    data
+                } finally {
+                    typing = false
                 }
-                typing = false
-                data
             }
         showData(data)
     }

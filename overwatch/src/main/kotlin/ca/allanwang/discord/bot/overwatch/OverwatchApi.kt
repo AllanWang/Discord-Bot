@@ -121,7 +121,7 @@ class OverwatchApi @Inject constructor(
     fun userDataUrl(tag: String) = "$PLAY_OVERWATCH_URL${tag.replace('#', '-')}"
 
     suspend fun parseUserData(tag: String): OverwatchUser? = withContext(Dispatchers.IO) {
-        val doc = Jsoup.connect(userDataUrl(tag)).timeout(TimeUnit.MINUTES.toMillis(1L).toInt()).get()
+        val doc = Jsoup.connect(userDataUrl(tag)).timeout(TimeUnit.MINUTES.toMillis(2L).toInt()).get()
         doc.parseUserData(tag)
     }
 }
