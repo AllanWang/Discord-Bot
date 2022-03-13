@@ -3,10 +3,16 @@ package ca.allanwang.discord.bot.overwatch
 import ca.allanwang.discord.bot.base.*
 import com.google.common.flogger.FluentLogger
 import dev.kord.common.Color
+import dev.kord.core.behavior.channel.MessageChannelBehavior
 import dev.kord.core.behavior.channel.createEmbed
+import dev.kord.core.behavior.channel.withTyping
 import dev.kord.rest.builder.message.EmbedBuilder
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 
 @Singleton
 class OverwatchBot @Inject constructor(
@@ -67,11 +73,19 @@ class OverwatchBot @Inject constructor(
                 val user = overwatchApi.getUserData(authorId)?.takeIf { it.isComplete }
                 OverwatchFullData(old = user, new = user)
             } else {
-                channel.type()
+                // copied from Kord typing implementation
+                var typing  = true
+                channel.kord.launch {
+                    while (typing) {
+                        channel.type()
+                        delay(8_000)
+                    }
+                }
                 val data = overwatchApi.getFullUserData(authorId)
                 data?.new?.let { newUser ->
                     overwatchApi.saveUserData(authorId, newUser)
                 }
+                typing = false
                 data
             }
         showData(data)

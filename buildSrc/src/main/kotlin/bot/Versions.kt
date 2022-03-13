@@ -40,8 +40,8 @@ object Versions {
     // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
     const val junit = "5.8.2"
 
-    // https://github.com/npryce/hamkrest/releases
-    const val hamkrest = "1.8.0.1"
+    // https://search.maven.org/artifact/com.google.truth/truth
+    const val truth = "1.1.3"
 
     // https://github.com/diffplug/spotless/blob/master/plugin-gradle/CHANGES.md
     const val spotless = "5.15.0"

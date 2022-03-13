@@ -11,6 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -120,7 +121,7 @@ class OverwatchApi @Inject constructor(
     fun userDataUrl(tag: String) = "$PLAY_OVERWATCH_URL${tag.replace('#', '-')}"
 
     suspend fun parseUserData(tag: String): OverwatchUser? = withContext(Dispatchers.IO) {
-        val doc = Jsoup.connect(userDataUrl(tag)).get()
+        val doc = Jsoup.connect(userDataUrl(tag)).timeout(TimeUnit.MINUTES.toMillis(1L).toInt()).get()
         doc.parseUserData(tag)
     }
 }

@@ -1,7 +1,6 @@
 package ca.allanwang.discord.bot.oust.game
 
-import com.natpryce.hamkrest.assertion.assertThat
-import com.natpryce.hamkrest.equalTo
+import com.google.common.truth.Truth.assertThat
 import org.junit.jupiter.api.Test
 
 class OustTest {
@@ -14,6 +13,6 @@ class OustTest {
 
         println(game)
 
-        assertThat("Id set match", players.map { it.id }.toSet(), equalTo(game.players.map { it.info.id }.toSet()))
+        assertThat(players.map { it.id }.toSet()).isEqualTo(game.players.map { it.info.id }.toSet())
     }
 }

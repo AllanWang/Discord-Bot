@@ -49,7 +49,7 @@ subprojects {
         implementation(bot.Dependencies.coroutines)
 
         testImplementation(bot.Dependencies.flogger("system-backend"))
-        testImplementation(bot.Dependencies.hamkrest)
+        testImplementation(bot.Dependencies.truth)
         testImplementation(kotlin("test-junit5"))
         testImplementation(bot.Dependencies.junit("api"))
         testImplementation(bot.Dependencies.junit("params"))
